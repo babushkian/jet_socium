@@ -54,11 +54,18 @@ class Health:
 		self.food_sum = 0
 
 	def have_food_change(self, number):
+		"""
+		Изменяет количество добытой человектом еды на пареметр number
+		:param number: количество еды, на которе нужно изменить переменную  have_food
+		"""
 		self.have_food_prev = self.have_food
 		self.have_food += number
 		self.have_food = self.have_food if self.have_food > 0 else 0
 
 	def have_food_equal(self, number):
+		"""
+		Присваивает человеку количество добытой еды =  number
+		"""
 		self.have_food_prev = self.have_food
 		self.have_food = number
 		self.have_food = self.have_food if self.have_food > 0 else 0
@@ -123,7 +130,7 @@ def lust_coef(age):
 
 
 class Genes:
-	gene_profile_0 = (5, 5, 5, 5, 5, 5)
+	gene_profile_0 = (7, 5, 5, 5, 5, 9)
 	gene_profile_1 = (6, 4, 5, 4, 2, 9)
 	gene_profile_2 = (10, 9, 9, 5, 6, 6)
 	gene_profile_3 = (7, 4, 5, 5, 8, 3) # нежизнеспособный

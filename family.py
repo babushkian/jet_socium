@@ -220,7 +220,8 @@ class Family:
 			family_feeding.write(s)
 
 	def food_dist(self):
-		pref = "%d:%d| %s|" % (self.head.socium.anno.year, self.head.socium.anno.month, self.id)
+		# префикс для описания описания питания семей, создающийся каждый цикл
+		pref = f'{self.head.socium.anno.year}:{self.head.socium.anno.month}| {self.id}|'
 		s = pref +"---- питание ---------\n"
 		s = s+ pref +"Запасы: %6.1f\n" % self.resource
 		# кормим детей
@@ -228,7 +229,7 @@ class Family:
 			dependents_budget = self.resource / 2
 			self.resource /= 2
 			ideal_food = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF
-			# кормим миждивенцев поровну
+			# кормим иждивенцев поровну
 			food_addon_per_child = dependents_budget / len(self.dependents)
 			s = s + pref + "Кромим %d детей\n" % len(self.dependents)
 			s = s + pref + "Каждому выдаем по %5.1f еды\n" % food_addon_per_child
@@ -347,23 +348,23 @@ class Family:
 
 
 	def family_info(self) -> str:
-		strok = "===========\nСемья: %s\n" % self.id
-		strok += "\tГлава: %s| %s\n" % (self.head.id, self.head.name.display())
+		strok = f'===========\nСемья: {self.id}\n'
+		strok += f'\tГлава:  {self.head.id}| {self.head.name.display()}\n'
 		if self.wife:
-			strok += "\tЖена:  %s| %s\n" % (self.wife.id, self.wife.name.display())
+			strok += f'\tЖена:   {self.wife.id}| {self.wife.name.display()}\n'
 		if len(self.dependents)>0:
-			strok += "\tДети:\n"
+			strok += f'\tДети:  \n'
 			for i in self.dependents:
-				strok += "\t\t%s| %s\n" % (i.id, i.name.display())
-		return strok + "\n"
+				strok += f'\t\t{i.id}| {i.name.display()}\n'
+		return strok + '\n'
 
 
 
 
 
 def generate_family_id() -> str:
-	ALFABET =("BBCCDDFFGHJKLKLMMNPQRSTPQRRSSTVWXZ","AEIAEEIOOUY")
-	id = ""
+	ALFABET =('BBCCDDFFGHJKLKLMMNPQRSTPQRRSSTVWXZ', 'AEIAEEIOOUY')
+	id = ''
 	while  len(id) < 7:
 		for l in range(2):
 			for sec in range(round(random.random() * .75) + 1):

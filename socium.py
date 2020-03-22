@@ -8,11 +8,14 @@ import genetics
 import score
 import soc_roles
 feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding = "utf16")
+
+
 class Socium:
-	ESTIMAED_NUMBER_OF_PEOPLE = 200 # предполагаемое количество людей
+	ESTIMAED_NUMBER_OF_PEOPLE = 2500 # предполагаемое количество людей
+	# общее клоичестов пищи за ход, которое люди делят между собой
 	FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * ESTIMAED_NUMBER_OF_PEOPLE
 
-	def __init__(self, anno=1700):
+	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
 		self.soc_list = []
 		self.families = []
@@ -26,9 +29,6 @@ class Socium:
 		self.global_death_count = 0
 		# давно умершие родственники (чтобы зря не крутить большие циклы)
 		self.forgotten = []
-
-
-
 
 
 	def add_human(self, human):
@@ -65,7 +65,6 @@ class Socium:
 			#Socium.FOOD_RESOURCE =Socium.FOOD_RESOURCE - (0.03*genetics.NORMAL_CONSUME_RATE* Socium.ESTIMAED_NUMBER_OF_PEOPLE)
 			#Socium.FOOD_RESOURCE = int(1.002 * Socium.FOOD_RESOURCE )
 			pass
-
 
 
 	def tictac(self):
@@ -138,7 +137,7 @@ class Socium:
 				genetics.lust_coef(person.age.year))
 			return attraction >= random.random()
 		# если есть возможность создать хоть одну пару
-		if min(self.stat.unmarried_adult_men_number, self.stat.unmarried_adult_women_number) >0:			
+		if min(self.stat.unmarried_adult_men_number, self.stat.unmarried_adult_women_number) > 0:
 			print("Холостых мужчин: ", self.stat.unmarried_adult_men_number)
 			print("Холостых женщин: ", self.stat.unmarried_adult_women_number)
 			if self.stat.unmarried_adult_men_number < self.stat.unmarried_adult_women_number:
@@ -148,13 +147,13 @@ class Socium:
 				b = self.stat.unmarried_adult_men
 				a = self.stat.unmarried_adult_women
 			random.shuffle(b)
-			# за один раз можно попытать счастья тольео с одним избранниким
+			# за один раз можно попытать счастья только с одним избранниким
 			# цикл идет по представителям пола, который сейчас в меньшинстве
 			for human in a:
-				if human.close_ancestors.isdisjoint(b[-1].close_ancestors):
+				if human.close_ancestors.isdisjoint(b[-1].close_ancestors): # ксли не являются близкими родственниками
 					if success_marry_chanse(human, b[-1]):
-						template = "%s| %s| свадьба между %s(%d) и %s(%d)"
-						print(template % (human.id, b[-1].id, human.name.display(), human.age.year, b[-1].name.display(), b[-1].age.year))
+						template = f'{human.id}| {b[-1].id}| свадьба между'
+						print(f'{template} {human.name.display()}({human.age.year}) и {b[-1].name.display()}({b[-1].age.year})')
 						human.get_marry(b[-1])
 						b[-1].get_marry(human)
 						human.score.update(human.score.MARRY_SCORE)
@@ -163,14 +162,16 @@ class Socium:
 							human.family.unite_families(b[-1].family)
 						else:
 							b[-1].family.unite_families(human.family)
-					b.pop()
+					b.pop() # человек удаляется из списка кандидатов в супруги независтмо от того, заключил он брак или нет
 
 
 
 	def food_distribution(self):
 		# флаг изобилия. Когда изобилие, люди не отбирают еду у других людей, 
 		# просто берут из природных резервов
-		# abundance - изобилие
+		# сюда склажываются излищки еды, образовавшиеся при первоначальном прспределении, потом наспределятся повторно
+		food_waste = 0
+		# abundance - изобилие, при отором не должна происходить конкуренция между семьями за еду
 		abundance = False
 		# первоначальное распределение еды
 		food_per_man = Socium.FOOD_RESOURCE / self.stat.people_alive_number
@@ -179,20 +180,31 @@ class Socium:
 			food_per_man_corrected = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF# это ограничение надо будет потом убрать
 		else:
 			food_per_man_corrected = food_per_man
-		s = "\n==================\n%d:%d\n" % (self.anno.year, self.anno.month)
-		s += "Общее количество еды: %10.2f\n" % Socium.FOOD_RESOURCE
-		s += "Количество людей: %d\n" % self.stat.people_alive_number
-		s += "Изначальное количество еды на человека: %7.2f\n" % food_per_man
-		s += "Скорректированое количество еды на человека: %7.2f\n" % food_per_man_corrected
+		s = f'\n==================\n{self.anno.year}:{self.anno.month}\n'
+		s += f'Общее количество еды: {Socium.FOOD_RESOURCE:10.2f}\n'
+		s += f'Количество людей: {self.stat.people_alive_number}\n'
+		s += f'Изначальное количество еды на человека: {food_per_man:7.2f}\n'
+		s += f'Скорректированое количество еды на человека: {food_per_man_corrected:7.2f}\n'
 		for person  in self.people_alive:
+			# присваивает каждому человеку первоначальное количество пищи
 			person.health.have_food_equal(food_per_man_corrected)
+			# дети до трех лет пищу не добывают
 			# дети добывают вдвое меньше еды
-			if not person.is_big():
-				person.health.have_food_equal(person.health.have_food/ 2)
+			if person.is_baby():
+				person.health.have_food_equal(0)
+				food_waste += food_per_man_corrected
+			elif not person.is_big():
+				half_food = person.health.have_food/ 2
+				person.health.have_food_equal(half_food)
+				food_waste += food_per_man_corrected - half_food
 			# женщины с детьми добывают меньше (минус за каждого иждивенца в семье)
 			# по идее эту дельту надо передавать в детский бюджет, а не выкидывать в ппустоту
 			elif person.gender == 0:
-				person.health.have_food_change(-len(person.family.dependents)* genetics.FOOD_COEF/2)
+				woman_food_delta = -len(person.family.dependents)* genetics.FOOD_COEF/2 # штраф к еде за каждого ребенка
+				person.health.have_food_change(woman_food_delta)
+				food_waste -= woman_food_delta # штраф отрицательный, поэтому не прибавляем, а отнимаем
+				# тут должен быть else. но его случай обрабатывается в самом начале без условий : это взрослые мужчины
+				#print(f'человек: {person.id}  пол: {person.gender} возраст:{person.age.display()}')
 		# === строгий подсчет потребляемой пищи по людям ===
 		men = 0
 		men_count = 0
@@ -231,6 +243,7 @@ class Socium:
 		s += "Дети %d| потребили фактически %8.2f| теоретически %8.2f|\n" % (children_count, children, teor_children)
 		real_f = men + women_childless + women_with_children + children
 		teor_f = teor_men + teor_women_childless + teor_women_with_children + teor_children
+		s += f'Остатки пищи: {food_waste}\n'
 		s += "Итог фактич  %8.2f| теоретич  %8.2f|\n" % (real_f, teor_f)
 
 		#================================

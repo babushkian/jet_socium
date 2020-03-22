@@ -7,11 +7,11 @@ import genetics
 
 
 # хочется повторяемости картины, фиксируем сид
-random.seed(666)
+#random.seed(666)
 
-FIRST_POPULATION = 10
-moskau = Socium(1000)  # создется социум и передается начальный год
-TIMELINE = Date(1000)  # кличество лет симуляции
+FIRST_POPULATION = 1200
+moskau = Socium()  # создется социум
+TIMELINE = Date(3000)  # кличество лет симуляции
 
 # количество людей в начальной популяции
 for p in range(FIRST_POPULATION):

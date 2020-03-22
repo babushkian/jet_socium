@@ -25,7 +25,7 @@ class Soc_stat():
 
 		# список, содержащий все гены человека для подсчета их средних значений
 
-		self.genes_average = open("./xoutput/genes_average.csv", "w")
+		self.genes_average = open("./xoutput/genes_average.csv", "w", encoding="UTF16")
 		header = "year\t"
 		sex = ["women_", "men_"]
 		for g in range(len(sex)):
@@ -34,7 +34,7 @@ class Soc_stat():
 		header = header[:-1] +"\n"
 		self.genes_average.write(header)
 
-		self.ss = open("./xoutput/statistics.csv", "w")
+		self.ss = open("./xoutput/statistics.csv", "w", encoding="UTF16")
 		# для вычисления среднего возраста смерти содержатся люди умершие за последние 5 дет
 
 		self.death_dist = open("./xoutput/death_distribution.csv", "w", encoding="UTF16")
@@ -202,8 +202,11 @@ class Soc_stat():
 
 
 	def count_genes_average(self):
-		g_m = {i:0 for i in genetics.Genes.GENOTYPE}
-		g_f = {i: 0 for i in genetics.Genes.GENOTYPE}
+		"""
+		рассчет средних значений генов у всей популяции
+		"""
+		g_m = {i:0 for i in genetics.Genes.GENOTYPE} # мужчины отдельно
+		g_f = g_m.copy() # женщины отдельно
 		g = [g_m, g_f]
 		col = [self.women, self.men]
 		for person in self.socium.people_alive:
@@ -214,7 +217,10 @@ class Soc_stat():
 
 		for gen in range(2):
 			for i in g[gen]:
-				avg = str(g[gen][i]/col[gen])
+				if col[gen] > 0:
+					avg = str(g[gen][i]/col[gen])
+				else:
+					avg = '0'
 				genome_record +=  "%s\t" % avg.replace(".", ",")
 		genome_record = genome_record [:-1] +"\n"
 

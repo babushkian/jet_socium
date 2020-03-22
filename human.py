@@ -17,7 +17,7 @@ import fetus
 PREGNANCY_CONST = 0.398
 
 AGE_BABY = Date(0)
-AGE_CHILD = Date(4)
+AGE_CHILD = Date(3)
 AGE_TEEN = Date(13)
 AGE_ADULT = Date(18)
 AGE_AGED = Date(55)
