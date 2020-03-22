@@ -130,7 +130,7 @@ def lust_coef(age):
 
 
 class Genes:
-	gene_profile_0 = (7, 5, 5, 5, 5, 9)
+	gene_profile_0 = (9, 5, 5, 5, 5, 8)
 	gene_profile_1 = (6, 4, 5, 4, 2, 9)
 	gene_profile_2 = (10, 9, 9, 5, 6, 6)
 	gene_profile_3 = (7, 4, 5, 5, 8, 3) # нежизнеспособный
@@ -141,6 +141,7 @@ class Genes:
 				'abstinence', # способность насытится малым
 				'harshness', # склонность к разводам
 				'altruism') # склонность отдавать часть еды родным
+
 	def __init__(self, person, modifier=0):
 		# приспособленность к жизни,параметр ответающиий за добычу пищи
 		self.person = person

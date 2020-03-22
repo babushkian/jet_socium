@@ -11,7 +11,7 @@ feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding = "ut
 
 
 class Socium:
-	ESTIMAED_NUMBER_OF_PEOPLE = 2500 # предполагаемое количество людей
+	ESTIMAED_NUMBER_OF_PEOPLE = 2000 # предполагаемое количество людей
 	# общее клоичестов пищи за ход, которое люди делят между собой
 	FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * ESTIMAED_NUMBER_OF_PEOPLE
 
