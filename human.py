@@ -117,7 +117,7 @@ class Human:
 			self.score.update(self.score.LIVE_SCORE)
 			if self.is_adult():
 				# Рожаем детей
-				if self.married() and self.gender == False:
+				if self.married() and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
 					self.check_pregnant()
 				# Разводимся
 				# шанс развода: 1 на три семьи, если они живут вместе по 40 лет в серднем (два прохода на обоих супругов)
@@ -221,10 +221,25 @@ class Human:
 			if self.pregnant[0].age > Date(0, 3):
 				self.give_birth()
 
+	def check_fertil_age(self) -> bool:
+		def count_fertil_age(trait: int) -> Date:
+			return Date(0, 0, trait*6) + Date(17, 0, 0)
+		fert = False
+		if self.age > count_fertil_age(self.genes.get_trait('fert_age')):
+			if self.spouse.age > count_fertil_age(self.spouse.genes.get_trait('fert_age')):
+				fert = True
+		return fert
+
+	def check_fertil_satiety(self) -> bool:
+		fert = False
+		if self.health.satiety > self.genes.get_trait('fert_satiety') and \
+						self.spouse.health.satiety > self.spouse.genes.get_trait('fert_satiety'):
+			fert = True
+		return fert
 
 	def give_birth(self) -> None:
 		# сделать цикл для двойни, тройни и тд
-		while len(self.pregnant) >0 :
+		while len(self.pregnant) > 0 :
 			child = self.pregnant.pop().born(self.socium)
 			self.socium.add_human(child)
 			self.children.append(child)
@@ -236,7 +251,6 @@ class Human:
 			fit_bonus = self.genes.g['fitness'].value * 0.2 # меньше родовая травма
 			birth_injury = genetics.HEALTH_PER_DAY * (2 + abs(prop.gauss_sigma_2() - fit_bonus))
 			self.health.reduce(birth_injury)
-
 
 
 	def adult_and_free(self) -> bool:
