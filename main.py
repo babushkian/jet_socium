@@ -99,6 +99,12 @@ class Simulation:
 		self.lohfile.close()
 		self.every_man_state_log.close()
 
+	def close(self):
+		self.lohfile.close()
+		self.every_man_state_log.close()
+		self.tribes_verbose.close()
+		self.soc.close()
+
 
 if __name__ == '__main__':
 	print('Hello')

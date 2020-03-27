@@ -107,6 +107,11 @@ class Human:
 							self.father.name.display(), self.father.age.year))
 
 
+
+	@staticmethod
+	def close():
+		Human.GLOBAL_HUMAN_NUMBER = 0
+
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
 		self.age += TIK

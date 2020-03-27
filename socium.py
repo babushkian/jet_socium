@@ -7,16 +7,17 @@ import statistics
 import genetics
 import score
 import soc_roles
-feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding = "utf16")
+
 
 
 class Socium:
-	ESTIMAED_NUMBER_OF_PEOPLE = 2000 # предполагаемое количество людей
-	# общее клоичестов пищи за ход, которое люди делят между собой
-	FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * ESTIMAED_NUMBER_OF_PEOPLE
+	ESTIMAED_NUMBER_OF_PEOPLE = None
+	FOOD_RESOURCE = None
+
 
 	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
+		Socium.class_var_init()
 		self.soc_list = []
 		self.families = []
 		
@@ -30,6 +31,17 @@ class Socium:
 		# давно умершие родственники (чтобы зря не крутить большие циклы)
 		self.forgotten = []
 
+	@staticmethod
+	def class_var_init():
+		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 2000 # предполагаемое количество людей
+		# общее клоичестов пищи за ход, которое люди делят между собой
+		Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
+		Socium.feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding="utf16")
+
+	def close(self):
+		self.__class__.class_var_init()
+		self.feeding_log.close()
+		human.Human.close()
 
 	def add_human(self, human):
 		self.soc_list.append(human)
@@ -269,7 +281,7 @@ class Socium:
 		s += "%s первоначальное распределение еды : %7.1f\n" % (self.anno.display(), soc_food_budget)
 
 		# откладываем часть еды в семейный бюджет
-		feeding_log.write(s)
+		self.feeding_log.write(s)
 		for fam in self.families:
 			fam.make_food_supplies()
 
@@ -288,7 +300,7 @@ class Socium:
 			fam.food_display("После создания запасов")
 			soc_food_budget += fam.budget
 			sum_family_resourses += fam.resource
-		feeding_log.write("%s еда после создания запасов : %7.1f + %7.1f = %7.1f\n" % (self.anno.display(), soc_food_budget, sum_family_resourses, soc_food_budget + sum_family_resourses))
+		self.feeding_log.write("%s еда после создания запасов : %7.1f + %7.1f = %7.1f\n" % (self.anno.display(), soc_food_budget, sum_family_resourses, soc_food_budget + sum_family_resourses))
 
 		for i in range(len(group_1)):
 			family.Family.figth_for_food(self.families[group_1[i]], self.families[group_2[i]], abundance)
@@ -297,7 +309,7 @@ class Socium:
 			fam.food_dist()
 			fam.food_display("FINAL")
 			soc_food_budget += fam.budget
-		feeding_log.write("%s Потребленная еда: %7.1f\n" % (self.anno.display(), soc_food_budget))
+		self.feeding_log.write("%s Потребленная еда: %7.1f\n" % (self.anno.display(), soc_food_budget))
 
 
 
@@ -364,3 +376,4 @@ class Socium:
 			hall.write("\n====================================\n")
 			hall.write(person.necrolog())
 		hall.close()
+
