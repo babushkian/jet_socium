@@ -4,12 +4,11 @@ from typing import Optional, List
 import genetics
 import human
 
-family_log_file = open("./xoutput/families.log", "w", encoding = "utf16")
-family_food_file = open("./xoutput/family_food_distrib.log", "w", encoding = "utf16")
-family_feeding = open("./xoutput/family_feeding.log", "w", encoding = "utf16")
+
 ALTRUISM_COEF = .66/12 # при максимальном альтруизме вкадывает в семей. бюдж. 2/3 еды
 
 class Family:
+
 	id: str
 	head: Optional['human.Human']
 	husband: Optional['human.Human']
@@ -39,8 +38,20 @@ class Family:
 		self.resource = 0
 		s = "Новая семья: %s| %s | %s| возраст - %d лет.\n" % (self.id, self.head.name.display(),
 															   self.head.id, self.head.age.year)
-		family_log_file.write(s)
+		self.family_log_file.write(s)
 
+
+	@staticmethod
+	def init_files():
+		Family.family_log_file = open("./xoutput/families.log", "w", encoding="utf16")
+		Family.family_food_file = open("./xoutput/family_food_distrib.log", "w", encoding="utf16")
+		Family.family_feeding = open("./xoutput/family_feeding.log", "w", encoding="utf16")
+
+	@staticmethod
+	def close():
+		Family.family_log_file.close()
+		Family.family_food_file.close()
+		Family.family_feeding.close()
 
 	def add_parents(self):
 		for i in [self.head.father, self.head.mother]:
@@ -72,7 +83,7 @@ class Family:
 		s = "Объединились семьи:\n"
 		s += "\t %s| %s| %s\n" % (self.id, self.head.id, self.head.name.display())
 		s += "\t %s| %s| %s\n" % (other.id, other.head.id, other.head.name.display())
-		family_log_file.write(s)
+		self.family_log_file.write(s)
 		self.wife = other.head
 		self.husband = self.head
 		self.wife.tribe_name = self.head.tribe_name
@@ -89,7 +100,7 @@ class Family:
 		s = "=======Семья | %s | распалась\n" % self.id
 		s += "\t %s| %s\n" % (self.head.id, self.head.name.display())
 		s += "\t %s| %s\n" % (self.wife.id, self.wife.name.display())
-		family_log_file.write(s)
+		self.family_log_file.write(s)
 		children = self.wife.family.dependents[:] # передаем содержимое, а не объект
 		self.wife.family = Family(self.wife, children)
 		# мужчина бросает всех иждивенцев на жену
@@ -140,7 +151,7 @@ class Family:
 			self.all.remove(self.wife)
 			self.husband = None
 			self.wife = None
-		family_log_file.write(s)
+		self.family_log_file.write(s)
 
 
 	def orphane_family(self):
@@ -151,7 +162,7 @@ class Family:
 				i.family = Family(i)
 		else:
 			s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
-		family_log_file.write(s)
+		self.family_log_file.write(s)
 		self.family_disband(self)
 
 
@@ -189,8 +200,9 @@ class Family:
 				i.health.have_food_change(-give)
 				self.resource += give
 		s = s + pref + " Всего запас: %6.1f\n" %  self.resource
-		family_feeding.write(s)
+		self.family_feeding.write(s)
 
+	@staticmethod
 	def figth_for_food(first: 'Family', second: 'Family', abundance):
 		family_fitnes = []
 		for i in (first, second):
@@ -217,7 +229,7 @@ class Family:
 				fam.resource += movement
 				direct = "семья нашла " if movement > 0 else "семья потеряла "
 				s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
-			family_feeding.write(s)
+			Family.family_feeding.write(s)
 
 	def food_dist(self):
 		# префикс для описания описания питания семей, создающийся каждый цикл
@@ -296,11 +308,11 @@ class Family:
 				self.resource = 0
 
 				s = s + pref + "Остатками еды кормим родителей по %5.1f\n" % food_per_parent
-		family_feeding.write(s)
+		self.family_feeding.write(s)
 
 	def food_display(self, message=""):
 		pref = "%s|=================%s\n" % (self.id, message)
-		family_food_file.write(pref)
+		self.family_food_file.write(pref)
 		pref = "%d:%d| %s|" % (self.head.socium.anno.year, self.head.socium.anno.month, self.id)
 		self.budget = 0
 		budget_prev = 0
@@ -315,9 +327,9 @@ class Family:
 				role = "реб"
 			s = pref + " %s| %5.1f| %5.1f| %2d\n" % (role, i.health.have_food, i.health.have_food_prev,
 													 int(i.health.have_food/genetics.FOOD_COEF) )
-			family_food_file.write(s)
+			self.family_food_file.write(s)
 		b = "Бюждет до %6.1f  после %6.1f \n" % (budget_prev, self.budget)
-		family_food_file.write(pref + b)
+		self.family_food_file.write(pref + b)
 
 
 	def del_grown_up_children(self): # проверить, работает ли она вообще
@@ -340,11 +352,11 @@ class Family:
 
 	def print_something(self, some):
 		some += "\n"
-		family_log_file.write(some)
+		self.family_log_file.write(some)
 
 
 	def print_family(self) -> None:
-		family_log_file.write(self.family_info())
+		self.family_log_file.write(self.family_info())
 
 
 	def family_info(self) -> str:

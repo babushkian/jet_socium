@@ -18,6 +18,7 @@ class Socium:
 	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
 		Socium.class_var_init()
+		family.Family.init_files()
 		self.soc_list = []
 		self.families = []
 		
@@ -42,6 +43,7 @@ class Socium:
 		self.__class__.class_var_init()
 		self.feeding_log.close()
 		human.Human.close()
+		family.Family.close()
 
 	def add_human(self, human):
 		self.soc_list.append(human)

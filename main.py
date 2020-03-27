@@ -27,6 +27,11 @@ class Simulation:
 		self.populate(first_popul)
 		self.soc.stat.count_soc_state()
 
+	def close(self):
+		self.lohfile.close()
+		self.every_man_state_log.close()
+		self.tribes_verbose.close()
+		self.soc.close()
 
 	def populate(self, first_popul):
 		for p in range(first_popul):
@@ -99,11 +104,7 @@ class Simulation:
 		self.lohfile.close()
 		self.every_man_state_log.close()
 
-	def close(self):
-		self.lohfile.close()
-		self.every_man_state_log.close()
-		self.tribes_verbose.close()
-		self.soc.close()
+
 
 
 if __name__ == '__main__':
