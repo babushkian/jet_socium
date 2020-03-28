@@ -1,6 +1,6 @@
 ﻿from soc_time import Date
-from human import *
-from socium import *
+from human import Human
+from socium import Socium
 import random
 import soc_time
 import genetics
@@ -10,7 +10,7 @@ import genetics
 #random.seed(666)
 # количество людей в начальной популяции
 FIRST_POPULATION = 100
-TIMELINE = Date(100)  # кличество лет симуляции
+TIMELINE = Date(300)  # кличество лет симуляции
 
 
 class Simulation:
@@ -47,16 +47,17 @@ class Simulation:
 				print("Население вымерло.")
 				extinct = True
 				break
-
+			self.write_chronicle_title()
 			self.soc.tictac()
-			print()
-			print("="*40)
-			print(self.soc.anno.display())
-			print("население: %d" % self.soc.stat.people_alive_number)
+			Human.write_chronicle(f'население: {self.soc.stat.people_alive_number}')
 			self.write_to_logs()
 		self.last_record_to_annals()
-		self.close_files()
+		self.close()
 		return not extinct
+
+	def write_chronicle_title(self):
+		s = f'\n {"="*40}\n{self.soc.anno.display()}\nнаселение: {self.soc.stat.people_alive_number}'
+		Human.write_chronicle(s)
 
 	def write_to_logs(self):
 		def write_lohfile(town):
@@ -99,12 +100,6 @@ class Simulation:
 			if not person.is_alive:
 				dead.append(person)
 		self.soc.hall_of_fame(dead)
-
-	def close_files(self):
-		self.lohfile.close()
-		self.every_man_state_log.close()
-
-
 
 
 if __name__ == '__main__':

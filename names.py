@@ -35,15 +35,20 @@ class CharName:
 				self.family = CharName.family_name[random.randrange(len(CharName.family_name))]
 
 	def display(self):
-		family = self.family[self.gender]
-		return "%s %s %s" % (self.first, self.second, family)
-		#return "%s %s %s (%d)" % (self.first, self.second, family, self.person.age)
+		'''
+		Выводит Имя Отчество Фамилию
+		'''
+		return f'{self.first} {self.second} {self.family[self.gender]}'
 
-	def change_family(self, husband):
+
+	def change_family(self, head):
+		'''
+		При замужестве изменяет фамилию жены и ее детей от предыдущих браков на фамилию мужа.
+		'''
 		# если это жена, а не ребенок, который тоже меняет фамилию
-		if self.person.is_big:
-			print("%s сменила фмаилию на %s"%(self.family[0], husband.name.family[0]))
-		self.family = husband.name.family
+		#if self.person.is_big:
+		#	print("%s сменила фмаилию на %s"%(self.family[0], head.name.family[0]))
+		self.family = head.name.family
 
 	def change_father(self, stepfather):
 		point = CharName.male_name.index(stepfather.name.first)

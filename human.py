@@ -32,6 +32,17 @@ PREGNANCY_CHANCE = PREGNANCY_CONST/FERTIL_RERIOD
 
 class Human:
 	GLOBAL_HUMAN_NUMBER = 0
+
+	chronicle_stranger_come = '{0}| В социум влился {1}, возраст - {2} лет.'
+	chronicle_marriage = '{0}| {1}| свадьба между {2}({3}) и {4}({5})'
+	chronicle_pregnacy = '{0}| {1} беременна. Ожидается {2} ребенка.'
+	chronicle_born = '{0}| Родился {1}. Мать: |{2}| {3}({4}). Отец: |{5}| {6}({7}).'
+	chronicle_divorce = '{0}| {1}| {2}({3}) и {4}({5}) развелись.'
+	chronicle_widowed_fem = '{0}| {1} овдовела.'
+	chronicle_widowed_mal = '{0}| {1} овдовел.'
+	chronicle_died_fem = '{0}| {1} умерла в возрасте {2} лет'
+	chronicle_died_mal = '{0}| {1} умер в возрасте {2} лет'
+
 	#DIVORCE_CASES_DICT = {spouse_cause: "по вине супруга", self_cause: "по своей инициативе",
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
@@ -52,7 +63,7 @@ class Human:
 	def __init__(self, socium, gender: Optional[int]=None, mother: Optional['Human']=None,
 				 father: Optional['Human']=None, age: int=0):
 		Human.GLOBAL_HUMAN_NUMBER += 1
-		self.id = "%07d" % Human.GLOBAL_HUMAN_NUMBER
+		self.id = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
 		self.socium.stat.people_inc()
 
@@ -97,20 +108,25 @@ class Human:
 		if self.mother is None:
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
-			form = "%s| В социум влился %s, возраст - %d лет."
-			print(form % (self.id, self.name.display(), self.age.year))
+			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
 		else:
 			self.tribe_name = self.mother.tribe_name
-			form = "%s| Родился %s. Мать: |%s| %s(%d). Отец: |%s| %s(%d)."
-			print(form % (self.id, self.name.display(), self.mother.id,
-							self.mother.name.display(), self.mother.age.year, self.father.id,
-							self.father.name.display(), self.father.age.year))
+			tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
+				   self.father.id,	self.father.name.display(), self.father.age.year)
+			Human.write_chronicle(Human.chronicle_born.format(*tup))
 
-
+	@staticmethod
+	def init_files():
+		Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf16')
 
 	@staticmethod
 	def close():
 		Human.GLOBAL_HUMAN_NUMBER = 0
+		Human.chronicle.close()
+
+	@staticmethod
+	def write_chronicle( message):
+		Human.chronicle.write(message + '\n')
 
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
@@ -144,25 +160,23 @@ class Human:
 		self.state = False
 		self.death_date = self.socium.anno.create()
 		if self.gender:
-			form = "%s| %s умер в возрасте %d лет"
+			form = Human.chronicle_died_mal
 		else:
-			form = "%s| %s умерла в возрасте %d лет"
-		print(form % (self.id, self.name.display(), self.age.year))
+			form = Human.chronicle_died_fem
+		Human.write_chronicle(form.format(self.id, self.name.display(), self.age.year))
 		self.socium.stat.add_to_deadpool(self)
 		if self.spouse:
 			if self.gender:
-				form = "%s| %s овдовела."
+				form = Human.chronicle_widowed_fem
 			else:
-				form = "%s| %s овдовел."
-			print(form % (self.spouse.id, self.spouse.name.display()))
+				form = Human.chronicle_widowed_mal
+			Human.write_chronicle(form.format(self.spouse.id, self.spouse.name.display()))
 			self.add_divorce_date()
 			self.spouse.add_divorce_date()
 			spouse = self.spouse
 			self.spouse = None
 			spouse.spouse = None
 		self.family.dead_in_family(self)
-
-
 
 
 	def define_close_ancestors(self) -> None:
@@ -179,13 +193,11 @@ class Human:
 		get_close_ancestors(self, s, 2)
 		self.close_ancestors = s
 
-
 	def get_marry(self, spouse: Optional['Human']) -> None:
 		self.spouse = spouse
 		self.add_marry_date()
 		if self.gender == False:
 			self.name.change_family(spouse)
-
 
 	def add_marry_date(self) -> None:
 		self.marry_dates[self.socium.anno.create()] = self.spouse
@@ -193,32 +205,46 @@ class Human:
 
 	def make_divorce(self) -> None:
 		spouse = self.spouse
-		print("%s| %s| %s(%d) и %s(%d) развелись." % (self.id, spouse.id, self.name.display(), self.age.year,
-													  spouse.name.display(), spouse.age.year))
+		tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
+		Human.write_chronicle(Human.chronicle_divorce.format(*tup))
+
 		self.divorce()
 		spouse.divorce()
 		self.family.divide_families()
-
 
 	def	divorce(self) -> None:
 		self.add_divorce_date()
 		self.spouse = None
 
-
 	def add_divorce_date(self) -> None:
 		self.divorce_dates[self.socium.anno.create()] = self.spouse
+
+	def give_birth(self) -> None:
+		# сделать цикл для двойни, тройни и тд
+		while len(self.pregnant) > 0 :
+			child = self.pregnant.pop().born(self.socium)
+			self.socium.add_human(child)
+			self.children.append(child)
+			self.spouse.children.append(child)
+
+			self.score.update(self.score.MAKE_CHILD)
+			self.spouse.score.update(self.score.MAKE_CHILD)
+
+			fit_bonus = self.genes.g['fitness'].value * 0.2 # меньше родовая травма
+			birth_injury = genetics.HEALTH_PER_DAY * (2 + abs(prop.gauss_sigma_2() - fit_bonus))
+			self.health.reduce(birth_injury)
 
 
 	def check_pregnant(self) -> None:
 		if len(self.pregnant) == 0:
 			check = PREGNANCY_CHANCE*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
 			if  check > random.random():
-				fetus_num = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
-				if fetus_num < 1:
-					fetus_num = 1
-				for num in range(fetus_num):
+				fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
+				if fetus_amount < 1:
+					fetus_amount = 1
+				for num in range(fetus_amount):
 					self.pregnant.append(fetus.Fetus(self))
-				print("%s| %s беременна. Ожидается %d ребенка." % (self.id, self.name.display(), fetus_num))
+				Human.write_chronicle(Human.chronicle_pregnacy.format(self.id, self.name.display(), fetus_amount))
 		else:
 			for i in self.pregnant:
 				i.age += TIK
@@ -241,21 +267,6 @@ class Human:
 						self.spouse.health.satiety > self.spouse.genes.get_trait('fert_satiety'):
 			fert = True
 		return fert
-
-	def give_birth(self) -> None:
-		# сделать цикл для двойни, тройни и тд
-		while len(self.pregnant) > 0 :
-			child = self.pregnant.pop().born(self.socium)
-			self.socium.add_human(child)
-			self.children.append(child)
-			self.spouse.children.append(child)
-
-			self.score.update(self.score.MAKE_CHILD)
-			self.spouse.score.update(self.score.MAKE_CHILD)
-
-			fit_bonus = self.genes.g['fitness'].value * 0.2 # меньше родовая травма
-			birth_injury = genetics.HEALTH_PER_DAY * (2 + abs(prop.gauss_sigma_2() - fit_bonus))
-			self.health.reduce(birth_injury)
 
 
 	def adult_and_free(self) -> bool:

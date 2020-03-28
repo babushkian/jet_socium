@@ -2,7 +2,7 @@ import random
 
 from soc_time import Date, Anno
 import family
-import human
+from human import Human
 import statistics
 import genetics
 import score
@@ -14,10 +14,10 @@ class Socium:
 	ESTIMAED_NUMBER_OF_PEOPLE = None
 	FOOD_RESOURCE = None
 
-
 	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
 		Socium.class_var_init()
+		Human.init_files()
 		family.Family.init_files()
 		self.soc_list = []
 		self.families = []
@@ -42,7 +42,7 @@ class Socium:
 	def close(self):
 		self.__class__.class_var_init()
 		self.feeding_log.close()
-		human.Human.close()
+		Human.close()
 		family.Family.close()
 
 	def add_human(self, human):
@@ -146,14 +146,14 @@ class Socium:
 
 
 	def	search_spouce(self):
-		def success_marry_chanse(human, person):
-			attraction = (genetics.lust_coef(human.age.year) * 
-				genetics.lust_coef(person.age.year))
+		def success_marry_chanse(person1, person2):
+			attraction = (genetics.lust_coef(person1.age.year) *
+				genetics.lust_coef(person2.age.year))
 			return attraction >= random.random()
 		# если есть возможность создать хоть одну пару
 		if min(self.stat.unmarried_adult_men_number, self.stat.unmarried_adult_women_number) > 0:
-			print("Холостых мужчин: ", self.stat.unmarried_adult_men_number)
-			print("Холостых женщин: ", self.stat.unmarried_adult_women_number)
+			s = f'Холостых мужчин: {self.stat.unmarried_adult_men_number}\nХолостых женщин: {self.stat.unmarried_adult_women_number}'
+			Human.write_chronicle(s)
 			if self.stat.unmarried_adult_men_number < self.stat.unmarried_adult_women_number:
 				a = self.stat.unmarried_adult_men
 				b = self.stat.unmarried_adult_women
@@ -163,19 +163,19 @@ class Socium:
 			random.shuffle(b)
 			# за один раз можно попытать счастья только с одним избранниким
 			# цикл идет по представителям пола, который сейчас в меньшинстве
-			for human in a:
-				if human.close_ancestors.isdisjoint(b[-1].close_ancestors): # ксли не являются близкими родственниками
-					if success_marry_chanse(human, b[-1]):
-						template = f'{human.id}| {b[-1].id}| свадьба между'
-						print(f'{template} {human.name.display()}({human.age.year}) и {b[-1].name.display()}({b[-1].age.year})')
-						human.get_marry(b[-1])
-						b[-1].get_marry(human)
-						human.score.update(human.score.MARRY_SCORE)
+			for person in a:
+				if person.close_ancestors.isdisjoint(b[-1].close_ancestors): # ксли не являются близкими родственниками
+					if success_marry_chanse(person, b[-1]):
+						tup = (person.id, b[-1].id, person.name.display(), person.age.year, b[-1].name.display(), b[-1].age.year)
+						Human.write_chronicle(Human.chronicle_marriage.format(*tup))
+						person.get_marry(b[-1])
+						b[-1].get_marry(person)
+						person.score.update(person.score.MARRY_SCORE)
 						b[-1].score.update(b[-1].score.MARRY_SCORE)
-						if human.gender:
-							human.family.unite_families(b[-1].family)
+						if person.gender:
+							person.family.unite_families(b[-1].family)
 						else:
-							b[-1].family.unite_families(human.family)
+							b[-1].family.unite_families(person.family)
 					b.pop() # человек удаляется из списка кандидатов в супруги независтмо от того, заключил он брак или нет
 
 
@@ -325,7 +325,7 @@ class Socium:
 		if self.short_death_count > random.randrange(9):
 			# пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
 			stranger_gender =  random.randrange(2)
-			self.add_human(human.Human(self, stranger_gender, None, None, random.randrange(18, 35)))
+			self.add_human(Human(self, stranger_gender, None, None, random.randrange(18, 35)))
 			self.short_death_count = 0
 
 
