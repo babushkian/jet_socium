@@ -368,8 +368,6 @@ class Socium:
 		return st
 
 
-
-
 	def hall_of_fame(self, list_of_dead):
 		hall= open("./xoutput/hall_of_fame.txt", "a", encoding = "UTF16")
 		list_of_dead.sort(key=lambda x: x.id)

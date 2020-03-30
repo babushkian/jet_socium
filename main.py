@@ -53,7 +53,7 @@ class Simulation:
 			self.write_to_logs()
 		self.last_record_to_annals()
 		self.close()
-		return not extinct
+		return not extinct, self.soc.anno.display()
 
 	def write_chronicle_title(self):
 		s = f'\n {"="*40}\n{self.soc.anno.display()}\nнаселение: {self.soc.stat.people_alive_number}'
@@ -101,10 +101,15 @@ class Simulation:
 				dead.append(person)
 		self.soc.hall_of_fame(dead)
 
+def display_start_genotype() -> str:
+	s = ''
+	for name, num in zip(genetics.Genes.GENOTYPE, genetics.Genes.gene_profile_0 ):
+		s += f'\n{name:<13s}:{num:>3d}'
+	return s
 
 if __name__ == '__main__':
-	print('Hello')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
-	result = town.simulate()
-	print(result)
+	result, message = town.simulate()
+	print(display_start_genotype())
+	print(message)
 

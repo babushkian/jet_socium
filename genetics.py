@@ -2,10 +2,12 @@
 здесь будут все индивидуальные панраметры человека, влияющие на его поведение
 
 """
+import random
+from typing import List
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
-import random
+
 import human
 import score
 
@@ -129,6 +131,11 @@ def lust_coef(age):
 	return attraction
 
 
+def generate_genome()-> List:
+	genome = [random.randint(3, 9) for _ in range(8)]
+	genome[0] = 9 # ген наследования
+	return genome
+
 class Genes:
 	gene_profile_0 = (9,  # наследование генов
 					5,  # плодовитость
@@ -138,7 +145,7 @@ class Genes:
 					8,  # альтруизм
 					2,  # возраст деторождения
 					3)  # сытость, при которой невозможно зачать ребенка
-
+	gene_profile_0 = generate_genome()
 
 	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
 				'fertility',   # плодовитость
