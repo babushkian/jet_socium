@@ -1,6 +1,6 @@
 ﻿import random
 from typing import Optional, List
-
+from soc_time import Date
 import genetics
 import human
 
@@ -14,6 +14,8 @@ class Family:
 	husband: Optional['human.Human']
 	wife: Optional['human.Human']
 	dependents: List['human.Human']
+	favorite_child: Optional['human.Human']
+	favorite_child_timer: Date
 	parents: List['human.Human']
 	all: List['human.Human']
 	def __init__(self, head: 'human.Human', depend: Optional[List['human.Human']]=None):  # (человек; список иждивенцев)
@@ -25,6 +27,8 @@ class Family:
 		self.wife = None
 		self.parents = list()
 		self.add_parents()
+		self.favorite_child = None
+		self.favorite_child_timer = self.head.socium.anno + Date(2, 0, 0)  # счетчик на два года
 		self.all = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
 		# список детей до 18 лет (не обязательно родных)
 		self.dependents = []
@@ -33,6 +37,8 @@ class Family:
 			#self.dependents = depend
 			for i in depend:
 				self.add_child(i)
+
+		# временная мера: любимый ребенок в семье. В будущем у каждого родителя будет свой любимчик
 
 		# пищевой ресурс семьи
 		self.resource = 0
@@ -63,6 +69,7 @@ class Family:
 		self.dependents.append(person)
 		self.all.append(person)
 		person.family = self
+		self.favorite_child = self.get_favorite_child()
 
 
 	def add_dependents(self, family: 'Family'):
@@ -83,7 +90,7 @@ class Family:
 		s = "Объединились семьи:\n"
 		s += "\t %s| %s| %s\n" % (self.id, self.head.id, self.head.name.display())
 		s += "\t %s| %s| %s\n" % (other.id, other.head.id, other.head.name.display())
-		self.family_log_file.write(s)
+		Family.family_log_file.write(s)
 		self.wife = other.head
 		self.husband = self.head
 		self.wife.tribe_name = self.head.tribe_name
@@ -95,12 +102,14 @@ class Family:
 
 
 	def divide_families(self):
-		# это разводик
-		# у жены генерится новая семья, дети к совоему отцу перестают иметь отношение
+		"""
+		это разводик
+		у жены генерится новая семья, дети к совоему отцу перестают иметь отношение
+		"""
 		s = "=======Семья | %s | распалась\n" % self.id
 		s += "\t %s| %s\n" % (self.head.id, self.head.name.display())
 		s += "\t %s| %s\n" % (self.wife.id, self.wife.name.display())
-		self.family_log_file.write(s)
+		Family.family_log_file.write(s)
 		children = self.wife.family.dependents[:] # передаем содержимое, а не объект
 		self.wife.family = Family(self.wife, children)
 		# мужчина бросает всех иждивенцев на жену
@@ -151,7 +160,7 @@ class Family:
 			self.all.remove(self.wife)
 			self.husband = None
 			self.wife = None
-		self.family_log_file.write(s)
+		Family.family_log_file.write(s)
 
 
 	def orphane_family(self):
@@ -162,14 +171,36 @@ class Family:
 				i.family = Family(i)
 		else:
 			s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
-		self.family_log_file.write(s)
+		Family.family_log_file.write(s)
 		self.family_disband(self)
 
 
 	def child_dies(self, person: 'human.Human'):
 		self.dependents.remove(person)
 		self.all.remove(person)
+		if person == self.favorite_child:
+			self.favorite_child = self.get_favorite_child()
 
+	def get_favorite_child(self) -> Optional['human.Human']:
+		favorite = None
+		if self.dependents:
+			tail = 0
+			child_weights = {}
+			for child in self.dependents:
+				head = tail
+				square = (18 - child.age.year) ** 2
+				tail += square  # вероятность стать любимчиком падает по кавдратичному закону
+				child_weights[child] = [head, tail]
+			# print(f'{child.number} -- {child.age:>2d} -- {square:>4d} -- [{child_weights[child][0]:>5d}:{child_weights[child][1]:>5d}]')
+			point = random.randrange(tail)
+			# print(f'max : {tail}')
+			# print(f'random: {point}')
+			for prob in child_weights:
+				if point in range(child_weights[prob][0], child_weights[prob][1]):
+					favorite = prob
+					break
+			self.favorite_child_timer = self.head.socium.anno + Date(2, 0, 0) # счетчик на два года
+		return favorite
 
 	def make_food_supplies(self):
 		'''
@@ -332,31 +363,45 @@ class Family:
 		self.family_food_file.write(pref + b)
 
 
-	def del_grown_up_children(self): # проверить, работает ли она вообще
-		# убираем повзрослевших иждивенцев
+	def del_grown_up_children(self)->bool:
+		"""
+		убираем повзрослевших иждивенцев
+		возвращает True если среди повзрослевших был любимчик
+		"""
+		grow_up = False
 		too_old =[]
-		for i in self.dependents:
-			if i.is_big():
-				too_old.append(i)
-		if len(too_old) > 0:
+		for dep in self.dependents:
+			if dep.is_big():
+				too_old.append(dep)
+		if too_old:
+			if self.favorite_child in too_old:
+				grow_up = True
 			for i in too_old:
 				self.dependents.remove(i)
 				self.all.remove(i)
 				i.family = Family(i)
-
+		return grow_up
 
 	def live(self):
 		for i in self.all:
 			i.live()
 
+	def update(self):
+		grow_up = self.del_grown_up_children()
+		if grow_up:
+			self.favorite_child = self.get_favorite_child()
+		if self.head.socium.anno == self.favorite_child_timer: # любимчики - это временное явление
+			self.favorite_child = self.get_favorite_child()
+		self.print_family()
 
-	def print_something(self, some):
+	@staticmethod
+	def print_something(some):
 		some += "\n"
-		self.family_log_file.write(some)
+		Family.family_log_file.write(some)
 
 
 	def print_family(self) -> None:
-		self.family_log_file.write(self.family_info())
+		Family.family_log_file.write(self.family_info())
 
 
 	def family_info(self) -> str:

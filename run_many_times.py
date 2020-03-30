@@ -5,7 +5,8 @@ while True:
     counter += 1
     print(f'Номер симуляции: {counter}')
     town = main.Simulation(4000, Date(1200))
-    result = town.simulate()
+    result, summary = town.simulate()
+    print(summary)
     if result:
         break
     else:

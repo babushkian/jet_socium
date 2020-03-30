@@ -7,7 +7,7 @@ import genetics
 
 
 # хочется повторяемости картины, фиксируем сид
-#random.seed(666)
+random.seed(666)
 # количество людей в начальной популяции
 FIRST_POPULATION = 100
 TIMELINE = Date(300)  # кличество лет симуляции
@@ -44,7 +44,8 @@ class Simulation:
 		extinct = False
 		for year in range(self.timeline.len()):
 			if self.soc.stat.people_alive_number < 6:
-				print("Население вымерло.")
+				Human.write_chronicle('Население вымерло.')
+				print('Население вымерло.')
 				extinct = True
 				break
 			self.write_chronicle_title()
@@ -53,7 +54,7 @@ class Simulation:
 			self.write_to_logs()
 		self.last_record_to_annals()
 		self.close()
-		return not extinct
+		return not extinct, self.create_summary()
 
 	def write_chronicle_title(self):
 		s = f'\n {"="*40}\n{self.soc.anno.display()}\nнаселение: {self.soc.stat.people_alive_number}'
@@ -101,10 +102,11 @@ class Simulation:
 				dead.append(person)
 		self.soc.hall_of_fame(dead)
 
+	def create_summary(self):
+		return self.soc.anno.display()
 
 if __name__ == '__main__':
-	print('Hello')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
-	result = town.simulate()
-	print(result)
+	result, summary = town.simulate()
+	print(summary)
 

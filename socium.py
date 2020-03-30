@@ -1,7 +1,7 @@
 import random
 
 from soc_time import Date, Anno
-import family
+from family import Family
 from human import Human
 import statistics
 import genetics
@@ -18,7 +18,7 @@ class Socium:
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
 		Socium.class_var_init()
 		Human.init_files()
-		family.Family.init_files()
+		Family.init_files()
 		self.soc_list = []
 		self.families = []
 		
@@ -34,7 +34,7 @@ class Socium:
 
 	@staticmethod
 	def class_var_init():
-		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 2000 # предполагаемое количество людей
+		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 6000 # предполагаемое количество людей
 		# общее клоичестов пищи за ход, которое люди делят между собой
 		Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
 		Socium.feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding="utf16")
@@ -126,15 +126,13 @@ class Socium:
 		# добавляем странника именно в это место, потому что список живых людей еще не модифицирован
 		# и участвовать в общественной жизни страннику нельзя
 		if self.anno.year_starts():
-			#pass
 			if self.anno.year < 1200:
 				self.stranger_comes_to_socium()
 
-		self.families[0].print_something("\n==============================\n"+ self.anno.display())
-		self.families[0].print_something("Количество семей: %d" % len(self.families))
+		Family.print_something("\n==============================\n"+ self.anno.display())
+		Family.print_something("Количество семей: %d" % len(self.families))
 		for fam in self.families:
-				fam.del_grown_up_children()
-				fam.print_family()
+				fam.update()
 		# подсчет статистики социума
 		self.stat.count_soc_state()
 		self.stat.get_families_in_socium()
@@ -305,7 +303,7 @@ class Socium:
 		self.feeding_log.write("%s еда после создания запасов : %7.1f + %7.1f = %7.1f\n" % (self.anno.display(), soc_food_budget, sum_family_resourses, soc_food_budget + sum_family_resourses))
 
 		for i in range(len(group_1)):
-			family.Family.figth_for_food(self.families[group_1[i]], self.families[group_2[i]], abundance)
+			Family.figth_for_food(self.families[group_1[i]], self.families[group_2[i]], abundance)
 		soc_food_budget = 0
 		for fam in self.families:
 			fam.food_dist()

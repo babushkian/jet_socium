@@ -100,6 +100,7 @@ class Human:
 
 		self.name = names.CharName(self, father)
 		# формирование семьи
+		# НЕПРАВИЛЬНО, что семья формируется здесь. Это должно делаться одним способом серез семью
 		if self.mother:
 			self.mother.family.add_child(self)
 		else:
