@@ -8,7 +8,9 @@ import human
 ALTRUISM_COEF = .66/12 # при максимальном альтруизме вкадывает в семей. бюдж. 2/3 еды
 
 class Family:
-
+	family_log_file = None
+	family_food_file = None
+	family_feeding = None
 	id: str
 	head: Optional['human.Human']
 	husband: Optional['human.Human']

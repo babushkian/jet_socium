@@ -145,7 +145,7 @@ class Genes:
 					8,  # альтруизм
 					2,  # возраст деторождения
 					3)  # сытость, при которой невозможно зачать ребенка
-	gene_profile_0 = generate_genome()
+
 
 	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
 				'fertility',   # плодовитость
@@ -160,6 +160,9 @@ class Genes:
 		# приспособленность к жизни,параметр ответающиий за добычу пищи
 		self.person = person
 		self.g = {i: Gene(i, self.person) for i in self.GENOTYPE}
+	@staticmethod
+	def init_constants():
+		Genes.gene_profile_0 = generate_genome()
 
 	def define(self):
 		for i in self.g.values():

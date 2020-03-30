@@ -108,6 +108,7 @@ def display_start_genotype() -> str:
 	return s
 
 if __name__ == '__main__':
+	print('Start.')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
 	result, message = town.simulate()
 	print(display_start_genotype())
