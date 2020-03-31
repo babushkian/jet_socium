@@ -9,7 +9,7 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 #random.seed(666)
 # количество людей в начальной популяции
-FIRST_POPULATION = 100
+FIRST_POPULATION = 200
 TIMELINE = Date(300)  # кличество лет симуляции
 
 
@@ -53,7 +53,7 @@ class Simulation:
 			self.write_to_logs()
 		self.last_record_to_annals()
 		self.close()
-		return not extinct, self.soc.anno.display()
+		return not extinct, self.soc.anno
 
 	def write_chronicle_title(self):
 		s = f'\n {"="*40}\n{self.soc.anno.display()}\nнаселение: {self.soc.stat.people_alive_number}'
@@ -101,16 +101,16 @@ class Simulation:
 				dead.append(person)
 		self.soc.hall_of_fame(dead)
 
-def display_start_genotype() -> str:
+def display_start_genotype(genome) -> str:
 	s = ''
-	for name, num in zip(genetics.Genes.GENOTYPE, genetics.Genes.gene_profile_0 ):
-		s += f'\n{name:<13s}:{num:>3d}'
+	for name, num in zip(genetics.Genes.GEN_PSEUDONYM,  genome):
+		s += f'| {genetics.Genes.GEN_PSEUDONYM[name]:4s}:{num:3d} '
 	return s
 
 if __name__ == '__main__':
 	print('Start.')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
-	result, message = town.simulate()
-	print(display_start_genotype())
-	print(message)
+	result, final_date = town.simulate()
+	print(display_start_genotype(genetics.Genes.gene_profile_0))
+	print(f'Последний год: {final_date.display()}')
 

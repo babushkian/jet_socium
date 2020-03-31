@@ -132,7 +132,7 @@ def lust_coef(age):
 
 
 def generate_genome()-> List:
-	genome = [random.randint(3, 9) for _ in range(8)]
+	genome = [random.randint(2, 9) for _ in range(8)]
 	genome[0] = 9 # ген наследования
 	return genome
 
@@ -155,6 +155,14 @@ class Genes:
 				'altruism',    # склонность отдавать часть еды родным
 				'fert_age',    #  возраст деторождения
 				'fert_satiety') # # сытость, при которой невозможно зачать ребенка
+	GEN_PSEUDONYM = {'enheritance':'enhr',
+				'fertility': 'fert',
+				'fitness': 'fitn',
+				'abstinence':'abst',
+				'harshness': 'hars',
+				'altruism': 'altr',
+				'fert_age': 'fage',
+				'fert_satiety': 'fsat'}
 
 	def __init__(self, person, modifier=0):
 		# приспособленность к жизни,параметр ответающиий за добычу пищи
