@@ -1,7 +1,7 @@
 ﻿import sqlite3
 
 def load_family_names():
-	family_names = open("mix_fam.csv", "r").readlines()
+	family_names = open("./имена и фамилии/mix_fam.csv", "r").readlines()
 	families = list()
 	for i in family_names:
 		i = i.rstrip()
@@ -11,7 +11,7 @@ def load_family_names():
 
 
 def load_male_names():
-	table = open("men_names.csv", "r").readlines()
+	table = open("./имена и фамилии/men_names.csv", "r").readlines()
 	names = []
 	for rec in table:
 		rec = rec.rstrip()
@@ -20,7 +20,7 @@ def load_male_names():
 
 
 def load_fem_names():
-	table = open("fem_names.csv", "r").readlines()
+	table = open("./имена и фамилии/fem_names.csv", "r").readlines()
 	fem_name = []
 	for rec in table:
 		rec = rec.rstrip()
@@ -28,7 +28,7 @@ def load_fem_names():
 	return tuple(fem_name)
 
 
-conn = sqlite3.connect('../names.db')
+conn = sqlite3.connect('names.db')
 c = conn.cursor()
 
 c.execute('DROP TABLE IF EXISTS family')

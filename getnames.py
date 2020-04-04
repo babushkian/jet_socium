@@ -1,32 +1,44 @@
-﻿
+﻿import sqlite3
+
 def load_family_names():
-	family_names = open("./имена и фамилии/mix_fam.csv", "r").readlines()
-	families = list()
-	for i in family_names:
-		i = i.rstrip()
-		ff, mf = i.split("\t")
-		families.append((ff, mf))
+	conn = sqlite3.connect('names.db')
+	c = conn.cursor()
+	command = 'SELECT fem, male FROM  family'
+	c.execute(command)
+	families = c.fetchall()
+	conn.close()
 	return tuple(families)
 
 
 def load_male_names():
-	table = open("./имена и фамилии/men_names.csv", "r").readlines()
 	first_name = []
 	fem_name = []
 	male_name = []
-	for rec in table:
-		rec = rec.rstrip()
-		n = rec.split("\t")
-		first_name.append(n[0])
-		fem_name .append(n[1])
-		male_name.append(n[2])
+	conn = sqlite3.connect('names.db')
+	c = conn.cursor()
+	command = 'SELECT first_name, second_name_fem, second_name_male  FROM  male_names'
+	c.execute(command)
+	while True:
+		record = c.fetchone()
+		if record == None:
+			break
+		else:
+			first_name.append(record[0])
+			fem_name.append(record[1])
+			male_name.append(record[2])
+	conn.close()
 	return tuple(first_name), tuple(fem_name), tuple(male_name)
 
 
 def load_fem_names():
-	table = open("./имена и фамилии/fem_names.csv", "r").readlines()
-	fem_name = []
-	for rec in table:
-		rec = rec.rstrip()
-		fem_name.append(rec)
-	return tuple(fem_name)
+	conn = sqlite3.connect('names.db')
+	c = conn.cursor()
+	command = 'SELECT first_name FROM fem_names'
+	c.execute(command)
+	name_tuple = c.fetchall()
+	nl = []
+	for n in name_tuple:
+		nl.append(n[0])
+	conn.close()
+	fem_name = tuple(nl)
+	return fem_name
