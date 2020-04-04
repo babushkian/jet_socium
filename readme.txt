@@ -858,6 +858,9 @@ fert_satiety: минимальная сытость, при которой не�
 | enhr:  9 | fert:  6 | fitn:  4 | abst:  9 | hars:  5 | altr:  6 | fage:  2 | fsat:  4
 | enhr:  9 | fert:  9 | fitn:  6 | abst:  8 | hars:  2 | altr:  8 | fage:  2 | fsat:  5
 | enhr:  9 | fert:  7 | fitn:  4 | abst:  8 | hars:  4 | altr:  7 | fage:  4 | fsat:  2
+| enhr:  9 | fert:  7 | fitn:  3 | abst:  8 | hars:  8 | altr:  9 | fage:  3 | fsat:  4
+| enhr:  9 | fert:  8 | fitn:  8 | abst:  9 | hars:  4 | altr:  9 | fage:  5 | fsat:  4
+
 
 ================================================================================
 TODO:
