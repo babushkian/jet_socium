@@ -44,7 +44,7 @@ class Simulation:
 		extinct = False
 		for year in range(self.timeline.len()):
 			if self.soc.stat.people_alive_number < 6:
-				print("Население вымерло.")
+				#print("Население вымерло.")
 				extinct = True
 				break
 			self.write_chronicle_title()
