@@ -3,7 +3,7 @@
 
 """
 import random
-from typing import List
+from typing import List, Dict
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
@@ -131,8 +131,8 @@ def lust_coef(age):
 	return attraction
 
 
-def generate_genome()-> List:
-	genome = [random.randint(2, 9) for _ in range(8)]
+def generate_genome(genome_len: int)-> List:
+	genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
 	genome[0] = 9 # ген наследования
 	return genome
 
@@ -144,8 +144,8 @@ class Genes:
 					5,  # неуживчивость
 					8,  # альтруизм
 					2,  # возраст деторождения
-					3)  # сытость, при которой невозможно зачать ребенка
-
+					3,  # сытость, при которой невозможно зачать ребенка
+					3)  # вероятность мутации
 
 	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
 				'fertility',   # плодовитость
@@ -154,7 +154,8 @@ class Genes:
 				'harshness',   # склонность к разводам
 				'altruism',    # склонность отдавать часть еды родным
 				'fert_age',    #  возраст деторождения
-				'fert_satiety') # # сытость, при которой невозможно зачать ребенка
+				'fert_satiety', # сытость, при которой невозможно зачать ребенка
+				'mutation') # вероятность мутации, формула: 1/(mutation + 2)**2
 	GEN_PSEUDONYM = {'enheritance':'enhr',
 				'fertility': 'fert',
 				'fitness': 'fitn',
@@ -162,15 +163,15 @@ class Genes:
 				'harshness': 'hars',
 				'altruism': 'altr',
 				'fert_age': 'fage',
-				'fert_satiety': 'fsat'}
+				'fert_satiety': 'fsat',
+				'mutation': 'muta'}
 
 	def __init__(self, person, modifier=0):
-		# приспособленность к жизни,параметр ответающиий за добычу пищи
-		self.person = person
-		self.g = {i: Gene(i, self.person) for i in self.GENOTYPE}
+		self.person: 'human.Human' = person
+		self.g: Dict['Gene'] = {i: Gene(i, self.person) for i in self.GENOTYPE}
 	@staticmethod
 	def init_constants():
-		Genes.gene_profile_0 = generate_genome()
+		Genes.gene_profile_0 = generate_genome(len(Genes.GENOTYPE))
 
 	def define(self):
 		for i in self.g.values():
@@ -193,6 +194,8 @@ class Genes:
 
 
 class Gene:
+	GENE_MIN_VALUE = 0
+	GENE_MAX_VALUE = 11
 	def __init__(self, name, person,  value = 5):
 		self.name = name
 		self.person = person
@@ -205,9 +208,9 @@ class Gene:
 		else:
 			parents = self.person.get_gender_parents()
 		if self.name == 'enheritance':
-			self.inherit_enheritance(parents)
-		else:
 			self.inherit_gene(parents)
+		else:
+			self.inherit_any_gene(parents)
 
 		if self.predecessor:
 			self.pred_value = self.predecessor.genes.get_trait(self.name)
@@ -216,40 +219,40 @@ class Gene:
 		self.gene_score()
 
 
-	def inherit_enheritance(self, par, num=7):
-		trait = None
-		for i in  par:
-			if i is not None:
-				trait = round(i.genes.get_trait('enheritance') + 0.76 * prop.gauss_sigma_1())
-				self.predecessor = i
-				break
-		if trait is None:
-			trait = num
-		if trait > 11:
-			trait = 11
-		if trait < 0:
-			trait = 0
-		self.value = trait
-
+	def inherit_any_gene(self, parents,  default=5):
+		if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
+			parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
+			self.inherit_gene(parents, default)
 
 	def inherit_gene(self, parents,  default=5):
-		trait = None
+		def trait_limit(trait):
+			if trait > Gene.GENE_MAX_VALUE:
+				trait = Gene.GENE_MAX_VALUE
+			if trait < Gene.GENE_MIN_VALUE:
+				trait = Gene.GENE_MIN_VALUE
+			return trait
+		trait = default
 		# parents[0] - родитель одного пола с ребенком
 		# parents[1] - родитель противоположного с ребенком пола
-		if random.random() < 1/ (self.person.genes.get_trait('enheritance') +1) and parents[1] is not None:
-			parents = (parents[1], parents[0]) # предков местами, будем наследовать от родителя противоположного пола
 		for i in  parents:
 			if i is not None:
 				self.predecessor = i
-				trait = round(i.genes.get_trait(self.name) + 0.76 * prop.gauss_sigma_1())
+				trait = self.mutate_gene(i)
 				break
-		if trait is None:
-			trait = default
-		if trait > 11:
-			trait = 11
-		if trait < 0:
-			trait = 0
+		trait = trait_limit(trait)
 		self.value = trait
+
+	def mutate_gene(self, parent):
+		shift = 0 # величина мутации
+		mutation_chance = 1 / (parent.genes.get_trait('mutation') + 2) ** 2
+		if mutation_chance > random.random():
+			shift = 0.45 * prop.gauss_sigma_1()
+			if shift < 0:
+				shift -= 1
+			if shift >= 0:
+				shift += 1
+		trait = round(parent.genes.get_trait(self.name) + shift)
+		return trait
 
 	def gene_score(self):
 		# очки за изменение генов. Изменения в любую сторону, лишь бы значительные
@@ -260,7 +263,7 @@ class Gene:
 
 
 class Gene_Inheritance(Gene):
-	def inherit_gene(self, parents, num=7):
+	def inherit_gene(self, parents, default=5):
 		# надо будет переписать особое поведение гена наслеоования
 		# и удалить из суперкласса inherit_enheritance
 		pass

@@ -1,6 +1,8 @@
 import main
 from soc_time import Date, ZERO_DATE
+import datetime
 from genetics import Genes
+EXPERIMENTS = 1
 def many_runs(crowd, period):
     counter = 0
     best_run = 0
@@ -28,13 +30,19 @@ def many_runs(crowd, period):
 
 
 def many_sucsessful_runs(crowd, period):
+    global EXPERIMENTS
     while True:
+        t = datetime.datetime.now()
+        st = t.strftime("%H:%M:%S %d.%m.%Y")
+
+        print(f'симуляция № {EXPERIMENTS} {st}')
         town = main.Simulation(crowd, Date(period))
         result, final_date = town.simulate()
+        EXPERIMENTS += 1
         if result:
             print(main.display_start_genotype(Genes.gene_profile_0))
         town.close()
 
 if __name__ == '__main__':
-    #many_runs(1000, 1200)
-    many_sucsessful_runs(1000, 1200)
+    many_runs(1000, 1200)
+    #many_sucsessful_runs(1000, 1200)

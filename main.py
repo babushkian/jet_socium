@@ -9,7 +9,7 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 #random.seed(666)
 # количество людей в начальной популяции
-FIRST_POPULATION = 200
+FIRST_POPULATION = 500
 TIMELINE = Date(300)  # кличество лет симуляции
 
 
