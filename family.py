@@ -12,7 +12,6 @@ class Family:
 	family_log_file = None
 	family_food_file = None
 	family_feeding = None
-	dependents
 
 	def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
 		self.obsolete: bool = False
