@@ -12,25 +12,20 @@ class Family:
 	family_log_file = None
 	family_food_file = None
 	family_feeding = None
-	id: str
-	head: Optional[human.Human]
-	husband: Optional[human.Human]
-	wife: Optional[human.Human]
-	dependents: List[human.Human]
-	parents: List[human.Human]
-	all: List[human.Human]
+	dependents
+
 	def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
 		self.obsolete: bool = False
 		self.id: str = generate_family_id()
-		self.head = head
+		self.head: human.Human = head
 		self.head.socium.families.append(self) # добавляет семью в список семей
-		self.husband = None
-		self.wife = None
-		self.parents = list()
+		self.husband: Optional[human.Human] = None
+		self.wife: Optional[human.Human] = None
+		self.parents: List[human.Human] = list()
 		self.add_parents()
-		self.all = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
+		self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
 		# список детей до 18 лет (не обязательно родных)
-		self.dependents = []
+		self.dependents: List[Optional[human.Human]] = list()
 		if depend:
 			# как обычно, массив детей присвоил, а дперписать детей в другую семью забыл
 			#self.dependents = depend
@@ -62,13 +57,13 @@ class Family:
 				if i.is_alive():
 					self.parents.append(i)
 
-	def add_child(self, person):
+	def add_child(self, person: human.Human):
 		self.dependents.append(person)
 		self.all.append(person)
 		person.family = self
 
 
-	def add_dependents(self, family: 'Family'):
+	def add_dependents(self, family: Family):
 		for i in family.dependents:
 			if not i.is_big():
 				i.tribe_name = self.head.tribe_name
@@ -78,7 +73,7 @@ class Family:
 				self.add_child(i)
 
 
-	def unite_families(self, other: 'Family'):
+	def unite_families(self, other: Family):
 		# добавляем жену в семью мужа. Семья жены уничтожается
 		# объединяем родителей жены и мужа
 		# объединяем иждивенцев жены и мужа
@@ -87,8 +82,8 @@ class Family:
 		s += "\t %s| %s| %s\n" % (self.id, self.head.id, self.head.name.display())
 		s += "\t %s| %s| %s\n" % (other.id, other.head.id, other.head.name.display())
 		self.family_log_file.write(s)
-		self.wife = other.head
-		self.husband = self.head
+		self.wife: human.Human  = other.head
+		self.husband: human.Human  = self.head
 		self.wife.tribe_name = self.head.tribe_name
 		self.all.append(self.wife)
 		self.parents.extend(other.parents)
@@ -116,7 +111,7 @@ class Family:
 		self.wife = None
 		self.all = [self.head]
 
-	def family_disband(self, family: 'Family'):
+	def family_disband(self, family: Family):
 		'''
 		Уничтожение семьи происходит в двух случаях:
 		1) при свадьбе семья жены уничтожается - жена с иждивенцами переходит в семью мужа
@@ -129,7 +124,7 @@ class Family:
 		family.all = []
 		family.dependents = []
 
-	def dead_in_family(self, person: 'human.Human'):
+	def dead_in_family(self, person: human.Human):
 		if person not in self.dependents:
 			if self.wife: # нельзя применять person.married(), так как в person.die супруг уже убран
 				self.spouse_dies(person)
@@ -138,7 +133,7 @@ class Family:
 		else:
 			self.child_dies(person)
 
-	def spouse_dies(self, person: 'human.Human'):
+	def spouse_dies(self, person: human.Human):
 		# когда супруг умирает, семья сохраняеися
 		# списки родителей и иждивенцев остаются без изменения
 		# если умирает супруг, жена становится главой семьи
@@ -169,7 +164,7 @@ class Family:
 		self.family_disband(self)
 
 
-	def child_dies(self, person: 'human.Human'):
+	def child_dies(self, person: human.Human):
 		self.dependents.remove(person)
 		self.all.remove(person)
 
@@ -206,7 +201,7 @@ class Family:
 		self.family_feeding.write(s)
 
 	@staticmethod
-	def figth_for_food(first: 'Family', second: 'Family', abundance):
+	def figth_for_food(first: Family, second: Family, abundance):
 		family_fitnes = []
 		for i in (first, second):
 			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому параметры жены малось срезаем
@@ -313,7 +308,7 @@ class Family:
 				s = s + pref + "Остатками еды кормим родителей по %5.1f\n" % food_per_parent
 		self.family_feeding.write(s)
 
-	def food_display(self, message=""):
+	def food_display(self, message: str=''):
 		pref = "%s|=================%s\n" % (self.id, message)
 		self.family_food_file.write(pref)
 		pref = "%d:%d| %s|" % (self.head.socium.anno.year, self.head.socium.anno.month, self.id)
