@@ -1,5 +1,6 @@
+from __future__ import annotations
+from typing import Optional, List, Dict, IO
 import random
-
 from soc_time import Date, Anno
 import family
 from human import Human
@@ -11,6 +12,7 @@ import soc_roles
 
 
 class Socium:
+	feeding_log:IO
 	ESTIMAED_NUMBER_OF_PEOPLE = None
 	FOOD_RESOURCE = None
 
@@ -25,13 +27,14 @@ class Socium:
 		
 		self.stat = statistics.Soc_stat(self)
 		# текущий год
-		self.anno = Anno(anno)
+		self.anno: Anno = Anno(anno)
 		# локальный счетчик смертей, после появления чужака обнуляется
-		self.short_death_count = 0
+		self.short_death_count: int = 0
 		# общий счетчик смертей
-		self.global_death_count = 0
+		self.global_death_count: int = 0
 		# давно умершие родственники (чтобы зря не крутить большие циклы)
-		self.forgotten = []
+		self.forgotten: List = []
+		self.people_alive: List = []
 
 	@staticmethod
 	def class_var_init():
@@ -339,7 +342,7 @@ class Socium:
 			elder_of_tribe = self.stat.tribes_in_socium[tri][0]
 			tribe_family_name = elder_of_tribe.name.family[1]
 			st += '%d:%d| '% (self.anno.year, self.anno.month)
-			st += '%12s| %7s: %4d | ' % ( tribe_family_name, tri, self.stat.families_in_tribe_count[tri])
+			st += '%12s| %7s: %4d | ' % (tribe_family_name, tri, self.stat.families_in_tribe_count[tri])
 			st += '%4d | %s\n' %(self.stat.tribes_in_socium_count[tri], self.stat.count_tribe_genes_average(tri))
 		return st
 
@@ -351,7 +354,6 @@ class Socium:
 		'''
 		st = ''
 		for tri in self.stat.tribes_in_socium:
-			#st += ("=======================\n")
 			elder_of_tribe = self.stat.tribes_in_socium[tri][0]
 			tribe_family_name = elder_of_tribe.name.family[1]
 			for fam in self.stat.families_in_tribe[tri]:

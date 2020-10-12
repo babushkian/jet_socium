@@ -1,8 +1,9 @@
+from __future__ import annotations
 import random
 import math
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, IO, Set, NewType
 
-import names
+from names import CharName
 import genetics
 import prop
 import family
@@ -16,23 +17,26 @@ import fetus
 #PREGNANCY_CONST = 0.218 # вроде маловата, надо больше, люди мрут
 PREGNANCY_CONST = 0.398
 
-AGE_BABY = Date(0)
-AGE_CHILD = Date(3)
-AGE_TEEN = Date(13)
-AGE_ADULT = Date(18)
-AGE_AGED = Date(55)
-AGE_SENILE = Date(70)
+AGE_BABY: Date = Date(0)
+AGE_CHILD: Date = Date(3)
+AGE_TEEN: Date = Date(13)
+AGE_ADULT: Date = Date(18)
+AGE_AGED: Date = Date(55)
+AGE_SENILE: Date = Date(70)
 
 DIVOCE_CHANSE = 1/(240*Date.MONTHS_IN_YEAR * Date.DAYS_IN_MONTH)
 
 FERTIL_RERIOD = (AGE_AGED - AGE_ADULT).year * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST/FERTIL_RERIOD
 
-
+BirthDate = NewType('BirthDate', Date)
+DeathDate = NewType('DeathDate', Date)
+MarryDate = NewType('MarryDate', Date)
+DivorseDate = NewType('DivorseDate', Date)
 
 class Human:
-	GLOBAL_HUMAN_NUMBER = 0
-
+	GLOBAL_HUMAN_NUMBER: int = 0
+	chronicle: IO
 	chronicle_stranger_come = '{0}| В социум влился {1}, возраст - {2} лет.'
 	chronicle_marriage = '{0}| {1}| свадьба между {2}({3}) и {4}({5})'
 	chronicle_pregnacy = '{0}| {1} беременна. Ожидается {2} ребенка.'
@@ -46,64 +50,51 @@ class Human:
 	#DIVORCE_CASES_DICT = {spouse_cause: "по вине супруга", self_cause: "по своей инициативе",
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
-	id: str
-	gender: Optional[int]
-	father: Optional['Human']
-	mother: Optional['Human']
-	age: Date
-	spouse: Optional['Human']
-	children: List['Human']
-	close_ancestors: List['Human']
-	birth_date: Date
-	death_date: Optional[Date]
-	marry_dates: Dict[Date, 'Human']
-	divorce_dates:Dict[Date, 'Human']
-	pregnant: List[fetus.Fetus]
-	family: family.Family
-	def __init__(self, socium, gender: Optional[int]=None, mother: Optional['Human']=None,
-				 father: Optional['Human']=None, age: int=0):
+
+	def __init__(self, socium, gender: Optional[int]=None, mother: Optional[Human]=None,
+				 father: Optional[Human]=None, age: int=0):
 		Human.GLOBAL_HUMAN_NUMBER += 1
-		self.id = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
+		self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
 		self.socium.stat.people_inc()
 
 		if gender is None:
-			self.gender = random.randrange(2)
+			self.gender: int = random.randrange(2)
 		else:
-			self.gender = gender
+			self.gender: int = gender
 		# что если ввести список parents в классе Family
-		self.father = father
-		self.mother = mother
+		self.father: Optional[Human] = father
+		self.mother: Optional[Human] = mother
 		# множество близких родственников для определения, на ком можно жениться
 		# self.close_ancestors = set()
 		self.define_close_ancestors()
 
-		self.state = True
+		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
-		self.age = Date(age)
-		self.birth_date = self.socium.anno - self.age
-		self.death_date = None
+		self.age: Date = Date(age)
+		self.birth_date: BirthDate = self.socium.anno - self.age
+		self.death_date: Optional[DeathDate] = None
 
-		self.health = genetics.Health(self)
+		self.health: genetics.Health = genetics.Health(self)
 		self.score = score.Score()
-		self.genes = genetics.Genes(self)
+		self.genes: genetics.Genes = genetics.Genes(self)
 		self.tribe_name: str = ''
 
-		self.spouse = None  # супруга нет
+		self.spouse: Optional[Human] = None  # супруга нет
 		# текущий супруг в этот список не входит
-		self.children = []
-		self.marry_dates = {}  # для каждого супруга своя дата свадьбы, причем на
+		self.children: List[Optional[Human]] = list()
+		self.marry_dates: Dict[Optional[MarryDate]] = dict()  # для каждого супруга своя дата свадьбы, причем на
 		# одном человеке можно жениться несколько раз, бывает и такое
 		# в этих словарях дата указывает на объект бывшего супруга
-		self.divorce_dates = {}
-		self.pregnant = []
+		self.divorce_dates: Dict[Optional[DivorseDate]] = dict()
+		self.pregnant: List[Optional[fetus.Fetus]] = list()
 
-		self.name = names.CharName(self, father)
+		self.name: CharName = CharName(self, father)
 		# формирование семьи
 		if self.mother:
 			self.mother.family.add_child(self)
 		else:
-			self.family = family.Family(self)
+			self.family: family.Family = family.Family(self)
 
 		if self.mother is None:
 			self.genes.define_adult()
@@ -144,7 +135,7 @@ class Human:
 				# шанс развода: 1 на три семьи, если они живут вместе по 40 лет в серднем (два прохода на обоих супругов)
 
 				if self.married():
-					chanse = DIVOCE_CHANSE / 4 * (self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
+					chanse: float = DIVOCE_CHANSE / 4 * (self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
 												  - self.spouse.genes.get_trait('abstinence')) # супруг сопротивляется разводу
 					if random.random() < chanse:
 						self.score.update(self.score.DIVORSE_ACTIVE_SCORE)

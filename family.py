@@ -1,4 +1,5 @@
-﻿import random
+﻿from __future__ import annotations
+import random
 from typing import Optional, List
 
 import genetics
@@ -12,15 +13,15 @@ class Family:
 	family_food_file = None
 	family_feeding = None
 	id: str
-	head: Optional['human.Human']
-	husband: Optional['human.Human']
-	wife: Optional['human.Human']
-	dependents: List['human.Human']
-	parents: List['human.Human']
-	all: List['human.Human']
-	def __init__(self, head: 'human.Human', depend: Optional[List['human.Human']]=None):  # (человек; список иждивенцев)
-		self.obsolete = False
-		self.id = generate_family_id()
+	head: Optional[human.Human]
+	husband: Optional[human.Human]
+	wife: Optional[human.Human]
+	dependents: List[human.Human]
+	parents: List[human.Human]
+	all: List[human.Human]
+	def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
+		self.obsolete: bool = False
+		self.id: str = generate_family_id()
 		self.head = head
 		self.head.socium.families.append(self) # добавляет семью в список семей
 		self.husband = None
