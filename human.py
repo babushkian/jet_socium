@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 import math
-from typing import Optional, List, Dict, IO, Set, NewType
+from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
@@ -62,12 +62,22 @@ class Human:
 			self.gender: int = random.randrange(2)
 		else:
 			self.gender: int = gender
-		# что если ввести список parents в классе Family
-		self.father: Optional[Human] = father
-		self.mother: Optional[Human] = mother
+
+		self.father: Human = NoneHuman()
+		self.mother: Human = NoneHuman()
+		self.biological_parents: Tuple[Human, Human]
+		self.social_parents: List[Optional[Human]] = list()
+
+		parents_temp = [self.father, self.mother]
+		for ind, par in enumerate((father, mother)):
+			if par is not None:
+				parents_temp[ind] = par
+		self.biological_parents = tuple(parents_temp)
+		del parents_temp
+
 		# множество близких родственников для определения, на ком можно жениться
-		# self.close_ancestors = set()
-		self.define_close_ancestors()
+		self.close_ancestors: Set[Human] = self.define_close_ancestors()
+
 
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
@@ -89,18 +99,21 @@ class Human:
 		self.divorce_dates: Dict[Optional[DivorseDate]] = dict()
 		self.pregnant: List[Optional[fetus.Fetus]] = list()
 
-		self.name: CharName = CharName(self, father)
+		self.name: CharName = CharName(self)
 		# формирование семьи
-		if self.mother:
+		if self.mother.is_human:
 			self.mother.family.add_child(self)
 		else:
 			self.family: family.Family = family.Family(self)
 
-		if self.mother is None:
+		if not self.mother.is_human: # не сгенерированный, а родившийся человек
+			print(type(self.mother))
+			print("Неправильный человек")
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
 			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
-		else:
+		else: #  сгенерированный человек
+			print("Правильный человек")
 			self.tribe_name = self.mother.tribe_name
 			tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
 				   self.father.id,	self.father.name.display(), self.father.age.year)
@@ -119,6 +132,11 @@ class Human:
 	def write_chronicle( message):
 		Human.chronicle.write(message + '\n')
 
+	@property
+	def is_human(parent: Human) -> bool:
+		#return not isinstance(parent, NoneHuman)
+		return True
+
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
 		self.age += TIK
@@ -127,14 +145,14 @@ class Human:
 			self.die() # перс умирает
 		if self.is_alive:
 			self.score.update(self.score.LIVE_SCORE)
-			if self.is_adult():
+			if self.is_adult:
 				# Рожаем детей
-				if self.married() and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
+				if self.is_married and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
 					self.check_pregnant()
 				# Разводимся
 				# шанс развода: 1 на три семьи, если они живут вместе по 40 лет в серднем (два прохода на обоих супругов)
 
-				if self.married():
+				if self.is_married:
 					chanse: float = DIVOCE_CHANSE / 4 * (self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
 												  - self.spouse.genes.get_trait('abstinence')) # супруг сопротивляется разводу
 					if random.random() < chanse:
@@ -170,19 +188,18 @@ class Human:
 		self.family.dead_in_family(self)
 
 
-	def define_close_ancestors(self) -> None:
-		def get_close_ancestors(person: 'Human', close_an: set, step: int) -> None:
-			if step >0:
-				if person.father:
+	def define_close_ancestors(self) -> Set[Human]:
+		def get_close_ancestors(person: Human, close_an: set, step: int) -> None:
+			if step > 0:
+				if person.is_human:
 					close_an.add(person.father)
-					get_close_ancestors(person.father, close_an, step-1)
-				if person.mother:
 					close_an.add(person.mother)
+					get_close_ancestors(person.father, close_an, step-1)
 					get_close_ancestors(person.mother, close_an, step-1)
 		s = set()
 		s.add(self)
 		get_close_ancestors(self, s, 2)
-		self.close_ancestors = s
+		return s
 
 	def get_marry(self, spouse: Optional['Human']) -> None:
 		self.spouse = spouse
@@ -260,39 +277,46 @@ class Human:
 		return fert
 
 
+	@property
 	def adult_and_free(self) -> bool:
-		return self.is_alive() and self.is_adult() and  not self.married()
+		return self.is_alive and self.is_adult and  not self.is_married
 
-	def married(self) -> bool:
+	@property
+	def is_married(self) -> bool:
 		return self.spouse is not None
 
+	@property
 	def is_baby(self) -> bool:
 		return self.age < AGE_CHILD
 
+	@property
 	def is_child(self) -> bool:
 		condition = False
 		if (not self.age < AGE_CHILD) and self.age < AGE_ADULT:
 			condition = True
 		return condition
 
+	@property
 	def is_big(self) -> bool:
 		return not self.age < AGE_ADULT
 
+	@property
 	def is_adult(self) -> bool:
 		condition = False
 		if (not self.age < AGE_ADULT) and self.age < AGE_AGED:
 			condition = True
 		return condition
 
+	@property
 	def is_aged(self) -> bool:
 		return not self.age < AGE_AGED
 
+	@property
 	def is_senile(self) -> bool:
 		return not self.age < AGE_SENILE
 
-	def is_married(self) -> bool:
-		return self.spouse != None
 
+	@property
 	def is_alive(self) -> bool:
 		return self.state
 
@@ -362,3 +386,17 @@ class Human:
 			sp = "\tнет\n"
 		nec += sp
 		return nec
+
+
+class NoneHuman(Human):
+
+	def __init__(self):
+		self.id: str = 'NoneHuman_id'
+		self.gender: int = 1
+		self.state: bool = False
+		self.name: CharName = CharName(self)
+
+	@property
+	def is_human(parent: Human) -> bool:
+		#return not isinstance(parent, NoneHuman)
+		return False

@@ -129,7 +129,7 @@ class Soc_stat():
 				women_death_sum += (person.death_date - person.birth_date).years_float()
 
 		for person in self.socium.soc_list:
-			if not person.is_alive() and self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD)):
+			if not person.is_alive and self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD)):
 				death_dist(person)
 				death_gender(person)
 
@@ -152,7 +152,7 @@ class Soc_stat():
 		no_male = 0
 		no_female = 0
 		for person in self.socium.soc_list:
-			if person.is_adult() and \
+			if person.is_adult and \
 					(person.death_date is None or self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD))):
 				# считаем количество детей у мужчин и у женщин по отдельности
 				ch = len(person.children)
@@ -268,7 +268,7 @@ class Soc_stat():
 		self.socium.clear_people_alive()
 
 		for pers in self.socium.soc_list:	
-			if pers.is_alive():
+			if pers.is_alive:
 				self.socium.people_alive_add(pers)
 
 				alive_age_sum += pers.age.year  # суммируем возраст всех живых людей,
@@ -278,9 +278,9 @@ class Soc_stat():
 					self.men += 1     #  количтество мужчин (любого возраста)
 				else:
 					self.women += 1    #  количтество женщин (любого возраста)
-				if pers.is_baby() or pers.is_child():
+				if pers.is_baby or pers.is_child:
 					self.children +=1  #  количтество детей
-				elif pers.is_adult():
+				elif pers.is_adult:
 					self.adult += 1  #  количтество взрослых
 				else:
 					self.aged +=1    #  количтество стариков
@@ -325,17 +325,17 @@ class Soc_stat():
 		self.unmarried_adult_women = []
 		for person in self.socium.people_alive:
 			# считаем замужних (разделение пополам не требуется, так как их всегда равное число)
-			if person.married():
+			if person.is_married:
 				self.married_people.append(person)
 			# считаем незамужних (всех и отдельно взрослых)
 			else:
 				if person.gender:
 					self.unmarried_men.append(person)
-					if person.is_big():
+					if person.is_big:
 						self.unmarried_adult_men.append(person)
 				else:
 					self.unmarried_women.append(person)
-					if person.is_big():
+					if person.is_big:
 						self.unmarried_adult_women.append(person)
 
 		self.married_people_number = len(self.married_people)

@@ -10,6 +10,7 @@ import score
 import soc_roles
 
 
+TIME_TO_EXCLUDE_DEAD_ANCESTORS = Date(40)
 
 class Socium:
 	feeding_log:IO
@@ -65,7 +66,7 @@ class Socium:
 		temp = []
 		self.forgotten = []
 		for person in self.soc_list:
-			if not person.is_alive() and self.anno - person.death_date > Date(40):
+			if not person.is_alive and self.anno - person.death_date > TIME_TO_EXCLUDE_DEAD_ANCESTORS:
 				self.forgotten.append(person)
 			else:
 				temp.append(person)
@@ -208,10 +209,10 @@ class Socium:
 			person.health.have_food_equal(food_per_man_corrected)
 			# дети до трех лет пищу не добывают
 			# дети добывают вдвое меньше еды
-			if person.is_baby():
+			if person.is_baby:
 				person.health.have_food_equal(0)
 				food_waste += food_per_man_corrected
-			elif not person.is_big():
+			elif not person.is_big:
 				half_food = person.health.have_food/ 2
 				person.health.have_food_equal(half_food)
 				food_waste += food_per_man_corrected - half_food
@@ -235,7 +236,7 @@ class Socium:
 		children_count = 0
 		# считаем, сколько еды потребили все категории населения: мужчины, детные и бездетные женщины, дети
 		for person in self.people_alive:
-			if person.is_big():
+			if person.is_big:
 				if person.gender:
 					men_count += 1
 					men += person.health.have_food

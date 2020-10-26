@@ -9,28 +9,27 @@ class CharName:
 	second_name_female: Tuple
 	second_name_male: Tuple
 
-	def __init__(self, person, father):
+	def __init__(self, person):
 		self.person = person
 		self.gender = self.person.gender
-		
 		if self.gender:
 			self.first = CharName.male_name[random.randrange(len (CharName.male_name))]
-			if father:
-				point = CharName.male_name.index(father.name.first)
+			if person.is_human:
+				point = CharName.male_name.index(person.father.name.first)
 				self.second =  CharName.second_name_male[point]
-				self.family = father.name.family
-			else: 
+				self.family = person.father.name.family
+			else:
 				self.second = CharName.second_name_male[random.randrange(len(CharName.second_name_male))]
 				self.family = CharName.family_name[random.randrange(len(CharName.family_name))]
-			
+
 		else:
 			self.first = CharName.female_name[random.randrange(len (CharName.female_name))]
-			if father:
-				point = CharName.male_name.index(father.name.first)
+			if person.is_human:
+				point = CharName.male_name.index(person.father.name.first)
 				self.second =  CharName.second_name_female[point]
-				
-				self.family = father.name.family
-			else: 
+
+				self.family = person.father.name.family
+			else:
 				self.second = CharName.second_name_female[random.randrange(len(CharName.second_name_female))]
 				self.family = CharName.family_name[random.randrange(len(CharName.family_name))]
 

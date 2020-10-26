@@ -131,7 +131,7 @@ def lust_coef(age):
 	return attraction
 
 
-def generate_genome(genome_len: int)-> List:
+def generate_genome(genome_len: int)-> List[int]:
 	genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
 	genome[0] = 9 # ген наследования
 	return genome
@@ -167,8 +167,9 @@ class Genes:
 				'mutation': 'muta'}
 
 	def __init__(self, person, modifier=0):
-		self.person: 'human.Human' = person
-		self.g: Dict['Gene'] = {i: Gene(i, self.person) for i in self.GENOTYPE}
+		self.person: human.Human = person
+		self.g: Dict[Gene] = {i: Gene(i, self.person) for i in self.GENOTYPE}
+
 	@staticmethod
 	def init_constants():
 		Genes.gene_profile_0 = generate_genome(len(Genes.GENOTYPE))

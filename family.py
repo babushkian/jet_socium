@@ -53,7 +53,7 @@ class Family:
 	def add_parents(self):
 		for i in [self.head.father, self.head.mother]:
 			if i is not None:
-				if i.is_alive():
+				if i.is_alive:
 					self.parents.append(i)
 
 	def add_child(self, person: human.Human):
@@ -64,7 +64,7 @@ class Family:
 
 	def add_dependents(self, family: Family):
 		for i in family.dependents:
-			if not i.is_big():
+			if not i.is_big:
 				i.tribe_name = self.head.tribe_name
 				# меняем имя и фамилию
 				i.name.change_father(self.head)
@@ -333,7 +333,7 @@ class Family:
 		# убираем повзрослевших иждивенцев
 		too_old =[]
 		for i in self.dependents:
-			if i.is_big():
+			if i.is_big:
 				too_old.append(i)
 		if len(too_old) > 0:
 			for i in too_old:
