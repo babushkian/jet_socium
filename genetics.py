@@ -2,14 +2,18 @@
 здесь будут все индивидуальные панраметры человека, влияющие на его поведение
 
 """
+from __future__ import annotations
 import random
-from typing import List, Dict
+from typing import List, Dict, NewType, Union
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
 import human
+import fetus
 import score
+
+Genes_Holder = Union['fetus.Fetus', 'human.Human']
 
 HEDONIC_CONSUME_RATE = 10
 RICH_CONSUME_RATE = 8
@@ -30,7 +34,7 @@ FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.4, -1, -4, -16]
 
 YEAR_HEALTH_AMOUNT = 365.0
 HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / (Date.MONTHS_IN_YEAR * Date.DAYS_IN_MONTH)
-# для 4-х дней в году  HEALTH_PER_DAY = 91.25
+# для 4-х дней в году  HEALTH_PER_DAY = 91.25, каждый прожитый день будет отниматься столько
 
 # print("Дней в месяце ", Date.DAYS_IN_MONTH)
 # print("Месяцев в году ",Date.MONTHS_IN_YEAR)
@@ -46,10 +50,10 @@ class Health:
 		self.have_food_prev = 0
 		# определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
 		presume_life = human.AGE_AGED + Date(prop.gauss_sigma_16())
-		months = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR
-		days = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH
+		months = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
+		days = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
 		presume_life += Date(0, months, days)
-		self.health = presume_life - age
+		self.health = presume_life - age # здоровье - это количество дней до смерти умноженных на коэффициент
 		self.health = HEALTH_PER_DAY * float(self.health.len())  # здоровье это число, а не дата
 
 		self.satiety = 5  # сытость
@@ -166,93 +170,87 @@ class Genes:
 				'fert_satiety': 'fsat',
 				'mutation': 'muta'}
 
-	def __init__(self, person, modifier=0):
-		self.person: human.Human = person
-		self.g: Dict[Gene] = {i: Gene(i, self.person) for i in self.GENOTYPE}
+	def __init__(self, person: Genes_Holder):
+		self.person: Genes_Holder = person
+		self.genome: Dict[Gene] = {i: Gene(i, self) for i in self.GENOTYPE}
 
 	@staticmethod
+	# в начале симуляции случайным образом создает шаблон генома для всей популяции
 	def init_constants():
 		Genes.gene_profile_0 = generate_genome(len(Genes.GENOTYPE))
 
 	def define(self):
-		for i in self.g.values():
+		# определяет геном новорожденного
+		for i in self.genome.values():
 			i.init_gene()
 
 	def define_adult(self):
+		# применяет шаблон генома популяции для странника
 		for i in range(len(self.GENOTYPE)):
 			key = self.GENOTYPE[i]
 			val = self.gene_profile_0[i]
-			self.g[key].value = val
-			self.g[key].pred_value = val
+			self.genome[key].value = val
+			self.genome[key].pred_value = val
 
 
-	def transit(self, person):
-		for i in self.g:
-			person.genes.g[i] = self.g[i]
+	def transit(self, person: human.Human):
+		# копирует геном в целевого человека
+		# это при рождении происходит передача генов от эмбриона  вобъект человека
+		for i in self.genome:
+			person.genes.genome[i] = self.genome[i]
 
 	def get_trait(self, trait):
-		return self.g[trait].value
+		return self.genome[trait].value
 
 
 class Gene:
 	GENE_MIN_VALUE = 0
 	GENE_MAX_VALUE = 11
-	def __init__(self, name, person,  value = 5):
-		self.name = name
-		self.person = person
-		self.value = value
-		self.predecessor = None
+	def __init__(self, name: str, genome: Genes, value: int=5):
+		self.name: str = name
+		self.containing_genone: Genes = genome
+		self.person: Genes_Holder = genome.person
+		self.value: int = value
+		self.predecessor: human.Human
 
 	def init_gene(self):
-		if self.person.mother is None:
-			parents = (None, None)
-		else:
-			parents = self.person.get_gender_parents()
-		if self.name == 'enheritance':
-			self.inherit_gene(parents)
-		else:
+		# если эмбрион имеет живых рподителей, то гаследуем от родителей
+		# если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
+		parents = self.person.parents_in_same_sex_order()
+		if self.name == 'enheritance': #  ген "наследование" наследуется тольлко от родителя ього же пола
+			self.inherit_gene(parents[0])
+		else: # остальные гены с вероятностью, зависящей от "наследование" могут быть унаследованы от любого из родителей
 			self.inherit_any_gene(parents)
-
-		if self.predecessor:
-			self.pred_value = self.predecessor.genes.get_trait(self.name)
-		else:
-			self.pred_value = self.value
+		self.pred_value = self.predecessor.genes.get_trait(self.name)
 		self.gene_score()
 
 
 	def inherit_any_gene(self, parents,  default=5):
+		# выбираем, от кого из родителей будем наследовать ген
 		if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
 			parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-			self.inherit_gene(parents, default)
+			self.inherit_gene(parents[0], default)
 
-	def inherit_gene(self, parents,  default=5):
+	def inherit_gene(self, parent,  default=5):
+		self.predecessor = parent
 		def trait_limit(trait):
 			if trait > Gene.GENE_MAX_VALUE:
 				trait = Gene.GENE_MAX_VALUE
 			if trait < Gene.GENE_MIN_VALUE:
 				trait = Gene.GENE_MIN_VALUE
 			return trait
-		trait = default
-		# parents[0] - родитель одного пола с ребенком
-		# parents[1] - родитель противоположного с ребенком пола
-		for i in  parents:
-			if i is not None:
-				self.predecessor = i
-				trait = self.mutate_gene(i)
-				break
-		trait = trait_limit(trait)
-		self.value = trait
+		self.value = trait_limit(self.mutate_gene())
 
-	def mutate_gene(self, parent):
+	def mutate_gene(self) -> int:
 		shift = 0 # величина мутации
-		mutation_chance = 1 / (parent.genes.get_trait('mutation') + 2) ** 2
+		mutation_chance = 1 / (self.predecessor.genes.get_trait('mutation') + 2) ** 2 # вероятность мутации
 		if mutation_chance > random.random():
-			shift = 0.45 * prop.gauss_sigma_1()
+			shift = 0.45 * prop.gauss_sigma_1() # величина мутации
 			if shift < 0:
-				shift -= 1
-			if shift >= 0:
+				shift -= 1 # если мутация случилась, то ее величина  должна быть больше или меньше единицы,
+			if shift >= 0: # иначе пнри округлении эффект мутации равен нулю
 				shift += 1
-		trait = round(parent.genes.get_trait(self.name) + shift)
+		trait = round(self.predecessor.genes.get_trait(self.name) + shift)
 		return trait
 
 	def gene_score(self):

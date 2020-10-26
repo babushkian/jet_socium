@@ -2,7 +2,8 @@ from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
 from soc_time import Date, Anno
-import family
+#import family
+from family import Family
 from human import Human
 import statistics
 import genetics
@@ -22,9 +23,9 @@ class Socium:
 		genetics.Genes.init_constants()
 		Socium.class_var_init()
 		Human.init_files()
-		family.Family.init_files()
-		self.soc_list = []
-		self.families = []
+		Family.init_files()
+		self.soc_list: List[Human] = list()
+		self.families: List[Family] = list()
 		
 		self.stat = statistics.Soc_stat(self)
 		# текущий год
@@ -39,7 +40,7 @@ class Socium:
 
 	@staticmethod
 	def class_var_init():
-		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 2000 # предполагаемое количество людей
+		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 200 # предполагаемое количество людей
 		# общее клоичестов пищи за ход, которое люди делят между собой
 		Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
 		Socium.feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding="utf16")
@@ -48,7 +49,7 @@ class Socium:
 		self.__class__.class_var_init()
 		self.feeding_log.close()
 		Human.close()
-		family.Family.close()
+		Family.close()
 
 	def add_human(self, human):
 		self.soc_list.append(human)
@@ -310,7 +311,7 @@ class Socium:
 		self.feeding_log.write("%s еда после создания запасов : %7.1f + %7.1f = %7.1f\n" % (self.anno.display(), soc_food_budget, sum_family_resourses, soc_food_budget + sum_family_resourses))
 
 		for i in range(len(group_1)):
-			family.Family.figth_for_food(self.families[group_1[i]], self.families[group_2[i]], abundance)
+			Family.figth_for_food(self.families[group_1[i]], self.families[group_2[i]], abundance)
 		soc_food_budget = 0
 		for fam in self.families:
 			fam.food_dist()

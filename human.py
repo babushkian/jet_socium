@@ -57,18 +57,18 @@ class Human:
 		self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
 		self.socium.stat.people_inc()
-
+		self.gender: int
 		if gender is None:
-			self.gender: int = random.randrange(2)
+			self.gender = random.randrange(2)
 		else:
-			self.gender: int = gender
+			self.gender = gender
 
 		self.father: Human = NoneHuman()
 		self.mother: Human = NoneHuman()
 		self.biological_parents: Tuple[Human, Human]
 		self.social_parents: List[Optional[Human]] = list()
 
-		parents_temp = [self.father, self.mother]
+		parents_temp: List[Human]= [self.father, self.mother]
 		for ind, par in enumerate((father, mother)):
 			if par is not None:
 				parents_temp[ind] = par
@@ -106,13 +106,13 @@ class Human:
 		else:
 			self.family: family.Family = family.Family(self)
 
-		if not self.mother.is_human: # не сгенерированный, а родившийся человек
+		if not self.mother.is_human: #  сгенерированный человек
 			print(type(self.mother))
 			print("Неправильный человек")
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
 			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
-		else: #  сгенерированный человек
+		else:  # не сгенерированный, а родившийся человек
 			print("Правильный человек")
 			self.tribe_name = self.mother.tribe_name
 			tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
@@ -238,7 +238,7 @@ class Human:
 			self.score.update(self.score.MAKE_CHILD)
 			self.spouse.score.update(self.score.MAKE_CHILD)
 
-			fit_bonus = self.genes.g['fitness'].value * 0.2 # меньше родовая травма
+			fit_bonus = self.genes.get_trait('fitness') * 0.2 # меньше родовая травма
 			birth_injury = genetics.HEALTH_PER_DAY * (2 + abs(prop.gauss_sigma_2() - fit_bonus))
 			self.health.reduce(birth_injury)
 
@@ -332,14 +332,14 @@ class Human:
 			g = 'Гены:\n'
 			for i in self.genes.GENOTYPE:
 				g += '\t%s: %2d' %(i[:6], self.genes.get_trait(i))
-				if self.genes.g[i].predecessor is None:
+				if self.genes.genome[i].predecessor is None:
 					sex = 'нет'
-				elif self.genes.g[i].predecessor.gender:
+				elif self.genes.genome[i].predecessor.gender:
 					sex = 'отец'
 				else:
 					sex = 'мать'
-				pv = self.genes.g[i].pred_value
-				delta = self.genes.g[i].value - pv
+				pv = self.genes.genome[i].pred_value
+				delta = self.genes.genome[i].value - pv
 				prog = '+' if delta > 0 else '-'
 				g += ' (%2d)| %s |%s\n' % (pv, sex, prog * abs(delta))
 			return g

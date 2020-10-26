@@ -38,7 +38,7 @@ class Fetus:
 		self.genes.transit(newborn)
 		return newborn
 
-	def get_gender_parents(self) ->Tuple[human.Human, human.Human]:
+	def parents_in_same_sex_order(self) ->Tuple[human.Human, human.Human]:
 		# возвращает пару родителей, сначал  одноименный пол, затем противоположный
 		same_gender = None
 		opposit_gender = None
