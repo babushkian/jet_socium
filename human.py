@@ -7,6 +7,7 @@ from names import CharName
 import genetics
 import prop
 import family
+from family import FE
 import score
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import fetus
@@ -51,33 +52,15 @@ class Human:
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-	def __init__(self, socium, gender: Optional[int]=None, mother: Optional[Human]=None,
-				 father: Optional[Human]=None, age: int=0):
+	def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[int]=None, age: int=0):
 		Human.GLOBAL_HUMAN_NUMBER += 1
 		self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
 		self.socium.stat.people_inc()
-		self.gender: int
 		if gender is None:
 			self.gender = random.randrange(2)
 		else:
 			self.gender = gender
-
-		self.father: Human = NoneHuman()
-		self.mother: Human = NoneHuman()
-		self.biological_parents: Tuple[Human, Human]
-		self.social_parents: List[Optional[Human]] = list()
-
-		parents_temp: List[Human]= [self.father, self.mother]
-		for ind, par in enumerate((father, mother)):
-			if par is not None:
-				parents_temp[ind] = par
-		self.biological_parents = tuple(parents_temp)
-		del parents_temp
-
-		# множество близких родственников для определения, на ком можно жениться
-		self.close_ancestors: Set[Human] = self.define_close_ancestors()
-
 
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
@@ -92,32 +75,48 @@ class Human:
 
 		self.spouse: Optional[Human] = None  # супруга нет
 		# текущий супруг в этот список не входит
-		self.children: List[Optional[Human]] = list()
+
 		self.marry_dates: Dict[Optional[MarryDate]] = dict()  # для каждого супруга своя дата свадьбы, причем на
 		# одном человеке можно жениться несколько раз, бывает и такое
 		# в этих словарях дата указывает на объект бывшего супруга
 		self.divorce_dates: Dict[Optional[DivorseDate]] = dict()
 		self.pregnant: List[Optional[fetus.Fetus]] = list()
+		self.children: List[Optional[Human]] = list()
+
+
+		# родители, которые зачали ребенка
+		self.biological_parents: Tuple[Human, Human] = biol_parents
+
+		if self.biological_parents[0] is not None:
+			# ребенок родиляся естественным путем
+			self.mother: Human = self.biological_parents[0]
+			self.father: Human = self.mother.spouse
+		else:
+			# пришел странник
+			self.father: Human = NoneHuman()
+			self.mother: Human = NoneHuman()
+		self.social_parents: Dict[FE, Human] = {FE.MOTHER: self.mother, FE.FATHER: self.father}
 
 		self.name: CharName = CharName(self)
-		# формирование семьи
+
+		# множество близких родственников для определения, на ком можно жениться
+		self.close_ancestors: Set[Human] = self.define_close_ancestors()
 		if self.mother.is_human:
 			self.mother.family.add_child(self)
-		else:
-			self.family: family.Family = family.Family(self)
-
-		if not self.mother.is_human: #  сгенерированный человек
-			print(type(self.mother))
-			print("Неправильный человек")
-			self.genes.define_adult()
-			self.tribe_name = self.family.id
-			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
-		else:  # не сгенерированный, а родившийся человек
+			self.family: family.Family = self.mother.family
 			print("Правильный человек")
 			self.tribe_name = self.mother.tribe_name
 			tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
 				   self.father.id,	self.father.name.display(), self.father.age.year)
 			Human.write_chronicle(Human.chronicle_born.format(*tup))
+		else:
+			self.family: family.Family = family.Family(self)
+			print(type(self.mother))
+			print("Неправильный человек")
+			self.genes.define_adult()
+			self.tribe_name = self.family.id
+			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
+
 
 	@staticmethod
 	def init_files():
@@ -152,14 +151,31 @@ class Human:
 				# Разводимся
 				# шанс развода: 1 на три семьи, если они живут вместе по 40 лет в серднем (два прохода на обоих супругов)
 
-				if self.is_married:
-					chanse: float = DIVOCE_CHANSE / 4 * (self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
-												  - self.spouse.genes.get_trait('abstinence')) # супруг сопротивляется разводу
-					if random.random() < chanse:
-						self.score.update(self.score.DIVORSE_ACTIVE_SCORE)
-						self.spouse.score.update(self.score.DIVORSE_PASSIVE_SCORE)
-						self.make_divorce()
+				if self.check_divorce():
+					self.divorce()
 
+	def check_divorce(self) -> bool:
+		if self.is_married:
+			chanse: float = DIVOCE_CHANSE / 4 * (
+						self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
+						- self.spouse.genes.get_trait('abstinence'))  # супруг сопротивляется разводу
+			return chanse > random.random()
+		else:
+			return False
+
+	def divorce(self) -> None:
+		def divorce_one_spouse(person: Human) -> None:
+			person.add_divorce_date()
+			person.spouse = None
+
+		spouse = self.spouse
+		self.score.update(self.score.DIVORSE_ACTIVE_SCORE)
+		spouse.score.update(self.score.DIVORSE_PASSIVE_SCORE)
+		tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
+		Human.write_chronicle(Human.chronicle_divorce.format(*tup))
+		divorce_one_spouse(self)
+		divorce_one_spouse(spouse)
+		self.family.divide_families()
 
 	# удалять мертвых людей не надо может быть перемещать в какой-то другой список
 	def die(self) -> None:
@@ -211,18 +227,8 @@ class Human:
 		self.marry_dates[self.socium.anno.create()] = self.spouse
 
 
-	def make_divorce(self) -> None:
-		spouse = self.spouse
-		tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
-		Human.write_chronicle(Human.chronicle_divorce.format(*tup))
 
-		self.divorce()
-		spouse.divorce()
-		self.family.divide_families()
 
-	def	divorce(self) -> None:
-		self.add_divorce_date()
-		self.spouse = None
 
 	def add_divorce_date(self) -> None:
 		self.divorce_dates[self.socium.anno.create()] = self.spouse
@@ -237,9 +243,16 @@ class Human:
 
 			self.score.update(self.score.MAKE_CHILD)
 			self.spouse.score.update(self.score.MAKE_CHILD)
-
-			fit_bonus = self.genes.get_trait('fitness') * 0.2 # меньше родовая травма
-			birth_injury = genetics.HEALTH_PER_DAY * (2 + abs(prop.gauss_sigma_2() - fit_bonus))
+			# на сколько лет сокращается жизнь в результате родов
+			damage = abs(prop.gauss_sigma_2())
+			# урон, вызванный привычкой умеренно птиаться (в годах)
+			# если женщина неумеренная, наоборот, роды пройдут лучше
+			frail_damage =  self.genes.get_trait('strongness') - 5
+			# бонус от физической выносливости
+			recovery = self.genes.get_trait('strongness') # меньше родовая травма
+			total_damage = max(0, damage + frail_damage - recovery)
+			# в среднем должен получаться год-два уронм, поэтому делю на 4
+			birth_injury = genetics.HEALTH_PER_DAY * Date.DAYS_IN_YEAR * total_damage / 4
 			self.health.reduce(birth_injury)
 
 
@@ -400,3 +413,6 @@ class NoneHuman(Human):
 	def is_human(parent: Human) -> bool:
 		#return not isinstance(parent, NoneHuman)
 		return False
+
+	def info(self):
+		return self.name.display()

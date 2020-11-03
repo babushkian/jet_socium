@@ -1,9 +1,13 @@
 ﻿from __future__ import annotations
 import random
 from typing import Optional, List
+from enum  import Enum
 
 import genetics
 import human
+class FE(Enum):
+	MOTHER = 0
+	FATHER = 1
 
 
 ALTRUISM_COEF = .66/12 # при максимальном альтруизме вкадывает в семей. бюдж. 2/3 еды
@@ -204,8 +208,8 @@ class Family:
 		family_fitnes = []
 		for i in (first, second):
 			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому параметры жены малось срезаем
-			ff = i.wife.genes.get_trait('fitness') / 2 if i.wife else 0
-			ff += i.head.genes.get_trait('fitness')
+			ff = i.wife.genes.get_trait('strongness') / 2 if i.wife else 0
+			ff += i.head.genes.get_trait('strongness')
 			family_fitnes.append(ff)
 
 		delta = family_fitnes[0] - family_fitnes[1]
@@ -267,7 +271,7 @@ class Family:
 			s = s + pref + "Для стариков откладываем : %5.1f\n" % food_for_old_ones
 		# кормим жену
 		if self.wife:
-			fitness_addon = 0.02 * self.wife.genes.get_trait('fitness')
+			fitness_addon = 0.02 * self.wife.genes.get_trait('strongness')
 			altruism_addon = 0.02 * (1.1 * self.wife.genes.get_trait('altruism') - self.husband.genes.get_trait('altruism'))
 			wife_food_addon = self.resource * (0.5 + fitness_addon + altruism_addon)
 			self.resource -= wife_food_addon

@@ -38,7 +38,7 @@ class Simulation:
 			gender  = random.randrange(2)
 			age = random.randrange(9, 21)
 			# почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
-			self.soc.add_human(Human(self.soc, gender, None, None, age))
+			self.soc.add_human(Human(self.soc, (None, None), gender,  age))
 
 	def simulate(self):
 		extinct = False
@@ -77,7 +77,7 @@ class Simulation:
 				famil = " %s|" % i.family.id
 				a = i.id
 				sex = "М" if i.gender else "Ж"
-				b = i.genes.get_trait('fitness')
+				b = i.genes.get_trait('strongness')
 				c = i.genes.get_trait('abstinence')
 				d = i.health.satiety
 				e = Date(0, 0, round(i.health.health / genetics.HEALTH_PER_DAY)).display(False)

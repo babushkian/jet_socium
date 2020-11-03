@@ -146,14 +146,14 @@ class Genes:
 					5,  # проспособленность
 					5,  # умеренность
 					5,  # неуживчивость
-					8,  # альтруизм
-					2,  # возраст деторождения
+					6,  # альтруизм
+					5,  # возраст деторождения
 					3,  # сытость, при которой невозможно зачать ребенка
 					3)  # вероятность мутации
 
 	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
 				'fertility',   # плодовитость
-				'fitness',     # приспособленность (лучше добывает пищу)
+				'strongness',     # приспособленность (лучше добывает пищу)
 				'abstinence',  # способность насытится малым
 				'harshness',   # склонность к разводам
 				'altruism',    # склонность отдавать часть еды родным
@@ -162,7 +162,7 @@ class Genes:
 				'mutation') # вероятность мутации, формула: 1/(mutation + 2)**2
 	GEN_PSEUDONYM = {'enheritance':'enhr',
 				'fertility': 'fert',
-				'fitness': 'fitn',
+				'strongness': 'fitn',
 				'abstinence':'abst',
 				'harshness': 'hars',
 				'altruism': 'altr',
@@ -181,6 +181,7 @@ class Genes:
 
 	def define(self):
 		# определяет геном новорожденного
+		print(f'Геном по умолчанию: {self.genome}')
 		for i in self.genome.values():
 			i.init_gene()
 
@@ -198,6 +199,7 @@ class Genes:
 		# это при рождении происходит передача генов от эмбриона  вобъект человека
 		for i in self.genome:
 			person.genes.genome[i] = self.genome[i]
+			#person.genes.genome = self.genome.copy()
 
 	def get_trait(self, trait):
 		return self.genome[trait].value
@@ -208,7 +210,7 @@ class Gene:
 	GENE_MAX_VALUE = 11
 	def __init__(self, name: str, genome: Genes, value: int=5):
 		self.name: str = name
-		self.containing_genone: Genes = genome
+		self.containing_genome: Genes = genome
 		self.person: Genes_Holder = genome.person
 		self.value: int = value
 		self.predecessor: human.Human
@@ -217,21 +219,35 @@ class Gene:
 		# если эмбрион имеет живых рподителей, то гаследуем от родителей
 		# если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
 		parents = self.person.parents_in_same_sex_order()
-		if self.name == 'enheritance': #  ген "наследование" наследуется тольлко от родителя ього же пола
+		print('=============================')
+		print(f'Инициируем ген {self.name}  {self}',  )
+		print('у эмбриончика :', type(self.containing_genome.person), self.containing_genome.person)
+		print('Его одители:')
+		print(self.containing_genome.person.father.is_human, self.containing_genome.person.father)
+		print(self.containing_genome.person.mother.is_human, self.containing_genome.person.mother)
+		print('Геном, в который входит этот ген: ', self.containing_genome)
+		#  ген "наследование" наследуется тольлко от родителя того же пола. От отца к сыну, от матери к дочери.
+		# этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
+		if self.name == 'enheritance':
 			self.inherit_gene(parents[0])
 		else: # остальные гены с вероятностью, зависящей от "наследование" могут быть унаследованы от любого из родителей
 			self.inherit_any_gene(parents)
+
 		self.pred_value = self.predecessor.genes.get_trait(self.name)
 		self.gene_score()
 
 
 	def inherit_any_gene(self, parents,  default=5):
 		# выбираем, от кого из родителей будем наследовать ген
+
 		if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
 			parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-			self.inherit_gene(parents[0], default)
+		print(f'определяем, что ген наследуется от {parents[0]}')
+		self.inherit_gene(parents[0], default)
 
 	def inherit_gene(self, parent,  default=5):
+		print( self. name, 'наследуем от предка')
+		print(type(parent), parent.is_human, parent)
 		self.predecessor = parent
 		def trait_limit(trait):
 			if trait > Gene.GENE_MAX_VALUE:
@@ -255,10 +271,9 @@ class Gene:
 
 	def gene_score(self):
 		# очки за изменение генов. Изменения в любую сторону, лишь бы значительные
-		if self.predecessor is not None:
-			gene_delta = abs(self.value - self.pred_value)
-			if gene_delta > 0:
-				self.person.score.update_gene(gene_delta)
+		gene_delta = abs(self.value - self.pred_value)
+		if gene_delta > 0:
+			self.person.score.update_gene(gene_delta)
 
 
 class Gene_Inheritance(Gene):

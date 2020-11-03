@@ -22,12 +22,8 @@ class Fetus:
 		self.genes.define()
 
 	def born(self, socium):
-		if self.biol_mother.spouse is not None:
-			father = self.biol_mother.spouse
-		else:
-			father = self.biol_father
-		newborn =  human.Human(socium, self.gender,  father, self.biol_mother, age=0 )
-		newborn.genes = self.genes
+		newborn =  human.Human(socium, (self.mother, self.father), gender=self.gender,age=0 )
+		self.genes.transit(newborn)
 		return newborn
 
 class Child(human.Human):

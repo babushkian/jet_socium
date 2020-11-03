@@ -8,6 +8,7 @@
 class Date:
 	MONTHS_IN_YEAR =4
 	DAYS_IN_MONTH = 1
+	DAYS_IN_YEAR = MONTHS_IN_YEAR * DAYS_IN_MONTH
 	def __init__(self, year=0, month=0, day=0):
 		"""
 		месяцы и дни начинаются с нуля. Просьба писать на один меньше
@@ -60,6 +61,7 @@ class Date:
 		в ноавй объект.
 		"""		
 		return Date(self.year, self.month, self.day)
+
 
 	def __hash__(self):
 		return self.len()
@@ -182,3 +184,4 @@ if __name__ == '__main__':
 		print(i, " - ",t.display())
 	print((t+x).display())
 	print((Date(1820, 5,17)).display())
+

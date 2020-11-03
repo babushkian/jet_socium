@@ -331,7 +331,7 @@ class Socium:
 		if self.short_death_count > random.randrange(9):
 			# пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
 			stranger_gender =  random.randrange(2)
-			self.add_human(Human(self, stranger_gender, None, None, random.randrange(18, 35)))
+			self.add_human(Human(self, (None, None), gender=stranger_gender,  age=random.randrange(18, 35)))
 			self.short_death_count = 0
 
 
@@ -379,6 +379,9 @@ class Socium:
 		for person in list_of_dead:
 			# записи про каждого мертвого человека с подробностями его жизни
 			hall.write("\n====================================\n")
-			hall.write(person.necrolog())
+			if person.is_human:
+				hall.write(person.necrolog())
+			else:
+				print('NoneHuman',  person.info())
 		hall.close()
 

@@ -2,39 +2,39 @@ from __future__ import annotations
 from typing import Tuple, Optional
 import random
 
-
 import score
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import genetics
 import human
 #from human import Human
 
-
-
 class Fetus:
 	# при зачатии мать порождает эмбрион (или несколько), они закреплены за матерью и в общий социум не добавляются
 	#  для эмбрионов определены: билолгические родители, пол и гены
 
 	def __init__(self, mother: human.Human, gender: Optional[int]=None):
-		print('Пошло дело')
 		self.score = score.Score()
 		if gender == None:
 			self.gender: int = random.randrange(2)
 		else:
 			self.gender: int = gender
-		self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
 		self.mother: human.Human = mother
+		self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
 		self.age = ZERO_DATE
+		print('Зачался эмбрион', self)
+		print('отец:', self.father.is_human, self.father)
+		print('мать:', self.mother.is_human, self.mother)
+		print('будем определять его гены')
+
 		self.genes = genetics.Genes(self)
+		print(f'Объект генома:{self.genes}')
+		print(self.genes.genome)
+
 		self.genes.define()
 
 	def born(self, socium):
-		print('Я родився')
-		if self.mother.is_married:
-			father = self.mother.spouse
-		else:
-			father = self.father
-		newborn =  human.Human(socium, self.gender, self.mother, father, age=0 )
+		print('Эмбрион родився')
+		newborn =  human.Human(socium, (self.mother, self.father), gender=self.gender,age=0 )
 		self.genes.transit(newborn)
 		return newborn
 
@@ -55,6 +55,6 @@ class Fetus:
 			else:
 				same_gender = self.mother
 				opposit_gender = get_father()
-
-		return (same_gender, opposit_gender)
+		parents_tuple = (same_gender, opposit_gender)
+		return parents_tuple
 
