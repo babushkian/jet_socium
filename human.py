@@ -25,7 +25,7 @@ AGE_ADULT: Date = Date(18)
 AGE_AGED: Date = Date(55)
 AGE_SENILE: Date = Date(70)
 
-DIVOCE_CHANSE = 1/(240*Date.MONTHS_IN_YEAR * Date.DAYS_IN_MONTH)
+DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
 FERTIL_RERIOD = (AGE_AGED - AGE_ADULT).year * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST/FERTIL_RERIOD
@@ -104,15 +104,12 @@ class Human:
 		if self.mother.is_human:
 			self.mother.family.add_child(self)
 			self.family: family.Family = self.mother.family
-			print("Правильный человек")
 			self.tribe_name = self.mother.tribe_name
 			tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
 				   self.father.id,	self.father.name.display(), self.father.age.year)
 			Human.write_chronicle(Human.chronicle_born.format(*tup))
 		else:
 			self.family: family.Family = family.Family(self)
-			print(type(self.mother))
-			print("Неправильный человек")
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
 			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
@@ -139,7 +136,7 @@ class Human:
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
 		self.age += TIK
-		is_dead = self.health.zero_health()
+		is_dead = self.health.is_zero_health
 		if is_dead == True:
 			self.die() # перс умирает
 		if self.is_alive:
@@ -156,9 +153,9 @@ class Human:
 
 	def check_divorce(self) -> bool:
 		if self.is_married:
-			chanse: float = DIVOCE_CHANSE / 4 * (
+			chanse: float = DIVOCE_CHANSE *(1+ (
 						self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
-						- self.spouse.genes.get_trait('abstinence'))  # супруг сопротивляется разводу
+						- self.spouse.genes.get_trait('altruism')/ 4))  # супруг сопротивляется разводу
 			return chanse > random.random()
 		else:
 			return False
@@ -226,10 +223,6 @@ class Human:
 	def add_marry_date(self) -> None:
 		self.marry_dates[self.socium.anno.create()] = self.spouse
 
-
-
-
-
 	def add_divorce_date(self) -> None:
 		self.divorce_dates[self.socium.anno.create()] = self.spouse
 
@@ -258,7 +251,8 @@ class Human:
 
 	def check_pregnant(self) -> None:
 		if len(self.pregnant) == 0:
-			check = PREGNANCY_CHANCE*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
+			check = PREGNANCY_CHANCE*3*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
+			print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
 			if  check > random.random():
 				fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
 				if fetus_amount < 1:

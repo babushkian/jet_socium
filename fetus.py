@@ -28,19 +28,11 @@ class Fetus:
 		else:
 			self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
 		self.age = ZERO_DATE
-		print('Зачался эмбрион', self)
-		print('отец:', self.father.is_human, self.father)
-		print('мать:', self.mother.is_human, self.mother)
-		print('будем определять его гены')
 
 		self.genes = genetics.Genes(self)
-		print(f'Объект генома:{self.genes}')
-		print(self.genes.genome)
-
 		self.genes.define()
 
 	def born(self, socium):
-		print('Эмбрион родився')
 		newborn =  human.Human(socium, (self.mother, self.father), gender=self.gender,age=0 )
 		self.genes.transit(newborn)
 		return newborn

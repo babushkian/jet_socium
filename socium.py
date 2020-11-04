@@ -5,6 +5,7 @@ from soc_time import Date, Anno
 #import family
 from family import Family
 from human import Human
+from fdistrib import FoodDistribution
 import statistics
 import genetics
 import score
@@ -14,7 +15,6 @@ import soc_roles
 TIME_TO_EXCLUDE_DEAD_ANCESTORS = Date(40)
 
 class Socium:
-	feeding_log:IO
 	ESTIMAED_NUMBER_OF_PEOPLE = None
 	FOOD_RESOURCE = None
 
@@ -24,10 +24,12 @@ class Socium:
 		Socium.class_var_init()
 		Human.init_files()
 		Family.init_files()
+		FoodDistribution.init_files()
 		self.soc_list: List[Human] = list()
 		self.families: List[Family] = list()
-		
+
 		self.stat = statistics.Soc_stat(self)
+		self.food_distr = FoodDistribution(self)
 		# текущий год
 		self.anno: Anno = Anno(anno)
 		# локальный счетчик смертей, после появления чужака обнуляется
@@ -43,11 +45,11 @@ class Socium:
 		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 200 # предполагаемое количество людей
 		# общее клоичестов пищи за ход, которое люди делят между собой
 		Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
-		Socium.feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding="utf16")
+
 
 	def close(self):
 		self.__class__.class_var_init()
-		self.feeding_log.close()
+		FoodDistribution.close()
 		Human.close()
 		Family.close()
 
@@ -106,7 +108,8 @@ class Socium:
 			self.forgot_ancestors()
 
 		# первичное распределение еды. Потом еда распределяется внутри семьи, а потом каждый употребляет еду индивидуально
-		self.food_distribution()
+		#self.food_distribution()
+		self.food_distr.distribute()
 
 		# женим холостых людей
 		self.search_spouce()
@@ -132,7 +135,6 @@ class Socium:
 		# добавляем странника именно в это место, потому что список живых людей еще не модифицирован
 		# и участвовать в общественной жизни страннику нельзя
 		if self.anno.year_starts():
-			#pass
 			if self.anno.year < 1200:
 				self.stranger_comes_to_socium()
 
@@ -189,7 +191,7 @@ class Socium:
 	def food_distribution(self):
 		# флаг изобилия. Когда изобилие, люди не отбирают еду у других людей, 
 		# просто берут из природных резервов
-		# сюда склажываются излищки еды, образовавшиеся при первоначальном прспределении, потом наспределятся повторно
+		# сюда складываются излищки еды, образовавшиеся при первоначальном распределении, потом распределятся повторно
 		food_waste = 0
 		# abundance - изобилие, при отором не должна происходить конкуренция между семьями за еду
 		abundance = False
@@ -379,9 +381,6 @@ class Socium:
 		for person in list_of_dead:
 			# записи про каждого мертвого человека с подробностями его жизни
 			hall.write("\n====================================\n")
-			if person.is_human:
-				hall.write(person.necrolog())
-			else:
-				print('NoneHuman',  person.info())
+			hall.write(person.necrolog())
 		hall.close()
 

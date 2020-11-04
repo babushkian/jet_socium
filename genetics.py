@@ -22,7 +22,7 @@ POOR_CONSUME_RATE = 3
 STARVE_CONSUME_RATE = 2
 
 # у меня 12 градаций бонуса от еды
-# переменная FOOD_COEF умножает клдичество еды на 20 лоя того чтобы количество еды более плавно
+# переменная FOOD_COEF умножает количество еды на 20 для того, чтобы количество еды более плавно
 # менялось и были какие-то промежуточные варианты
 
 FOOD_COEF = 20
@@ -33,21 +33,18 @@ FOOD_COEF = 20
 FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.4, -1, -4, -16]
 
 YEAR_HEALTH_AMOUNT = 365.0
-HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / (Date.MONTHS_IN_YEAR * Date.DAYS_IN_MONTH)
+HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / Date.DAYS_IN_YEAR
 # для 4-х дней в году  HEALTH_PER_DAY = 91.25, каждый прожитый день будет отниматься столько
-
-# print("Дней в месяце ", Date.DAYS_IN_MONTH)
-# print("Месяцев в году ",Date.MONTHS_IN_YEAR)
-# print("Нормальной пищи на год ", YEAR_HEALTH_AMOUNT)
-# print("Ежедневный расход здоровья", HEALTH_PER_DAY )
-
 
 class Health:
 	def __init__(self, person, age=ZERO_DATE):
 		self.person = person
-		# склькл еды удалось достать за ход
+		# сколько еды удалось достать за ход
 		self.have_food = 0
+		# сколько еды было ?
 		self.have_food_prev = 0
+		# Определяем запас здоровья человека через его предполагаемый возраст.
+		# Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
 		# определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
 		presume_life = human.AGE_AGED + Date(prop.gauss_sigma_16())
 		months = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
@@ -78,9 +75,9 @@ class Health:
 
 	def modify(self):
 		"""
-		общий метод для изменения здоровья ,в завистмости от множества факторов
+		общий метод для изменения здоровья в завистмости от множества факторов
 		"""
-		# уменьшение зроровья просто от прожитых дней
+		# уменьшение зроровья за прожитый день (фиксированное количество)
 		self.reduce()
 		# голод
 		abstinence_bonus = 0.3 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
@@ -95,24 +92,26 @@ class Health:
 				fertility_bonus = - 0.07 * (self.person.genes.get_trait('fertility') - 5)
 				if self.person.pregnant:
 					pregnancy_bonus = -1
-
+		# на основе количества пищи у человека и дополнительных факторов (в основном отрицательных) вычисляется его сытость
+		# а на основе сытости человека вычисляется урон, наносимый здоровью
+		# мало ест - сильный урон
 		fp = self.person.health.have_food / FOOD_COEF + abstinence_bonus + fertility_bonus + pregnancy_bonus
 		self.satiety = int(fp)
-		if self.satiety < 0:
-			self.satiety = 0
+		self.satiety = self.satiety if self.satiety >= 0 else 0
 		if self.satiety > 11:
 			self.satiety = 11
 			fp = 11
 		main_health_bonus = FOOD_BONUS[self.satiety]  # целая часть еды
 		f_delta = FOOD_BONUS[self.satiety + 1] - FOOD_BONUS[self.satiety]
-		additional_health_bonus = f_delta * (fp - self.satiety)  # дробная часть еды вычисленная по линейной пропорции
+		additional_health_bonus = f_delta * (fp - self.satiety)  # дробная часть бонуса вычисленная по линейной пропорции
 		self.food_sum = - HEALTH_PER_DAY * (main_health_bonus + additional_health_bonus)
 		self.reduce(self.food_sum)
 
 	def reduce(self, amount=HEALTH_PER_DAY):
 		self.health = self.health - amount
 
-	def zero_health(self):
+	@property
+	def is_zero_health(self):
 		die = False
 		if self.health <= 0.0:
 			die = True
@@ -181,7 +180,6 @@ class Genes:
 
 	def define(self):
 		# определяет геном новорожденного
-		print(f'Геном по умолчанию: {self.genome}')
 		for i in self.genome.values():
 			i.init_gene()
 
@@ -219,13 +217,6 @@ class Gene:
 		# если эмбрион имеет живых рподителей, то гаследуем от родителей
 		# если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
 		parents = self.person.parents_in_same_sex_order()
-		print('=============================')
-		print(f'Инициируем ген {self.name}  {self}',  )
-		print('у эмбриончика :', type(self.containing_genome.person), self.containing_genome.person)
-		print('Его одители:')
-		print(self.containing_genome.person.father.is_human, self.containing_genome.person.father)
-		print(self.containing_genome.person.mother.is_human, self.containing_genome.person.mother)
-		print('Геном, в который входит этот ген: ', self.containing_genome)
 		#  ген "наследование" наследуется тольлко от родителя того же пола. От отца к сыну, от матери к дочери.
 		# этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
 		if self.name == 'enheritance':
@@ -242,12 +233,9 @@ class Gene:
 
 		if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
 			parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-		print(f'определяем, что ген наследуется от {parents[0]}')
 		self.inherit_gene(parents[0], default)
 
 	def inherit_gene(self, parent,  default=5):
-		print( self. name, 'наследуем от предка')
-		print(type(parent), parent.is_human, parent)
 		self.predecessor = parent
 		def trait_limit(trait):
 			if trait > Gene.GENE_MAX_VALUE:
