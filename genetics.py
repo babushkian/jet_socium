@@ -4,7 +4,7 @@
 """
 from __future__ import annotations
 import random
-from typing import List, Dict, NewType, Union
+from typing import List, Dict, NewType, Union, Optional
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
@@ -172,7 +172,7 @@ class Genes:
 
 	def __init__(self, person: Genes_Holder):
 		self.person: Genes_Holder = person
-		self.genome: Dict[Gene] = {i: Gene(i, self) for i in self.GENOTYPE}
+		self.genome: Dict[str,Gene] = {i: Gene(i, self) for i in self.GENOTYPE}
 
 	@staticmethod
 	# в начале симуляции случайным образом создает шаблон генома для всей популяции
@@ -213,7 +213,7 @@ class Gene:
 		self.containing_genome: Genes = genome
 		self.person: Genes_Holder = genome.person
 		self.value: int = value
-		self.predecessor: human.Human
+		self.predecessor: Optional[human.Human] = None
 
 	def init_gene(self):
 		# если эмбрион имеет живых рподителей, то гаследуем от родителей
@@ -258,8 +258,8 @@ class Gene:
 		self.value = trait_limit(self.mutate_gene())
 
 	def mutate_gene(self) -> int:
-		shift = 0 # величина мутации
-		mutation_chance = 1 / (self.predecessor.genes.get_trait('mutation') + 2) ** 2 # вероятность мутации
+		shift: float = 0 # величина мутации
+		mutation_chance: float = 1 / (self.predecessor.genes.get_trait('mutation') + 2) ** 2 # вероятность мутации
 		if mutation_chance > random.random():
 			shift = 0.45 * prop.gauss_sigma_1() # величина мутации
 			if shift < 0:

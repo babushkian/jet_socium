@@ -7,6 +7,8 @@ from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import genetics
 import human
 #from human import Human
+class InnocentError(Exception):
+	pass
 
 class Fetus:
 	# при зачатии мать порождает эмбрион (или несколько), они закреплены за матерью и в общий социум не добавляются
@@ -14,12 +16,17 @@ class Fetus:
 
 	def __init__(self, mother: human.Human, gender: Optional[int]=None):
 		self.score = score.Score()
-		if gender == None:
-			self.gender: int = random.randrange(2)
-		else:
-			self.gender: int = gender
+		self.gender: Optional[int] = gender
+		if self.gender is None:
+			self.gender = random.randrange(2)
+
+
 		self.mother: human.Human = mother
-		self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
+
+		if not isinstance(self.mother.spouse, human.Human):
+			raise InnocentError("ПРоизошло непорочное зачатие. Жена без мужа.")
+		else:
+			self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
 		self.age = ZERO_DATE
 		print('Зачался эмбрион', self)
 		print('отец:', self.father.is_human, self.father)
