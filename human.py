@@ -252,7 +252,7 @@ class Human:
 	def check_pregnant(self) -> None:
 		if len(self.pregnant) == 0:
 			check = PREGNANCY_CHANCE*3*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
-			print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
+			#print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
 			if  check > random.random():
 				fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
 				if fetus_amount < 1:

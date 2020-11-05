@@ -247,7 +247,9 @@ class Gene:
 
 	def mutate_gene(self) -> int:
 		shift: float = 0 # величина мутации
-		mutation_chance: float = 1 / (self.predecessor.genes.get_trait('mutation') + 2) ** 2 # вероятность мутации
+		# при mutation  = 11 шанс у гена мутировать: 0.444 (каждый человек мутант гарантированно)
+		# при mutation  = 0 шанс у гена мутировать: 0.02 (мутирует кажлый 0.02*len(GENOME) человек)
+		mutation_chance: float = 4 / (14 - self.predecessor.genes.get_trait('mutation')) ** 2
 		if mutation_chance > random.random():
 			shift = 0.45 * prop.gauss_sigma_1() # величина мутации
 			if shift < 0:
