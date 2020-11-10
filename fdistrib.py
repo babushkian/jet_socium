@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
 import genetics
+from genetics import Stage_of_age
 from family import Family
 
 class FoodDistribution:
@@ -45,9 +46,12 @@ class FoodDistribution:
 
     def family_food_redistibution(self):
         def shuffle_families(number):
-            diap = number // 3  # треть семей
+            # создаем и перемешиваем индексы, по которым потом будем обращаться к семьям
             seq = [x for x in range(number)]
             random.shuffle(seq)
+            # выбираем из перемешанных индексов две трети
+            diap = number // 3  # треть семей
+            # делим индексы пополам ,чтобы потом сталкивать семьи в конкурентной борьбе
             m = seq[:diap]
             n = seq[diap:2 * diap]
             return (m, n)  # две группы семей, которые будут делить еду между собой
@@ -166,10 +170,10 @@ class FoodDistribution:
             person.health.have_food_equal(self.food_per_man)
             # дети до трех лет пищу не добывают
             # дети добывают вдвое меньше еды
-            if person.is_baby:
+            if person.age_stage == Stage_of_age.BABY:
                 person.health.have_food_equal(0)
                 self.food_waste += self.food_per_man
-            elif not person.is_big:
+            elif person.age_stage in  (Stage_of_age.CHILD, Stage_of_age.TEEN):
                 half_food = person.health.have_food / 2
                 person.health.have_food_equal(half_food)
                 self.food_waste += self.food_per_man - half_food

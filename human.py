@@ -3,8 +3,11 @@ import random
 import math
 from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
+
 from names import CharName
 import genetics
+from genetics import Stage_of_age
+
 import prop
 import family
 from family import FE
@@ -18,12 +21,14 @@ import fetus
 #PREGNANCY_CONST = 0.218 # вроде маловата, надо больше, люди мрут
 PREGNANCY_CONST = 0.398
 
+
 AGE_BABY: Date = Date(0)
 AGE_CHILD: Date = Date(3)
 AGE_TEEN: Date = Date(13)
 AGE_ADULT: Date = Date(18)
 AGE_AGED: Date = Date(55)
 AGE_SENILE: Date = Date(70)
+
 
 DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
@@ -47,7 +52,6 @@ class Human:
 	chronicle_widowed_mal = '{0}| {1} овдовел.'
 	chronicle_died_fem = '{0}| {1} умерла в возрасте {2} лет'
 	chronicle_died_mal = '{0}| {1} умер в возрасте {2} лет'
-
 	#DIVORCE_CASES_DICT = {spouse_cause: "по вине супруга", self_cause: "по своей инициативе",
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
@@ -65,6 +69,7 @@ class Human:
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
 		self.age: Date = Date(age)
+		self._stage_age: Stage_of_age = Stage_of_age.BABY
 		self.birth_date: BirthDate = self.socium.anno - self.age
 		self.death_date: Optional[DeathDate] = None
 
@@ -110,6 +115,7 @@ class Human:
 			Human.write_chronicle(Human.chronicle_born.format(*tup))
 		else:
 			self.family: family.Family = family.Family(self)
+			self._stage_age = self.get_stage_by_age()
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
 			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
@@ -292,6 +298,28 @@ class Human:
 	def is_married(self) -> bool:
 		return self.spouse is not None
 
+	def get_stage_by_age(self):
+		if self.is_baby:
+			return Stage_of_age.BABY
+		elif self.is_child:
+			return Stage_of_age.CHILD
+		elif self.is_teen:
+			return Stage_of_age.TEEN
+		elif self.is_adult:
+			return Stage_of_age.ADULT
+		elif self.is_aged:
+			return Stage_of_age.AGED
+		else:
+			return Stage_of_age.SENILE
+
+	@property
+	def age_stage_index(self):
+		return self._stage_age.value
+
+	@property
+	def age_stage(self):
+		return self._stage_age
+
 	@property
 	def is_baby(self) -> bool:
 		return self.age < AGE_CHILD
@@ -299,7 +327,14 @@ class Human:
 	@property
 	def is_child(self) -> bool:
 		condition = False
-		if (not self.age < AGE_CHILD) and self.age < AGE_ADULT:
+		if (not self.age < AGE_CHILD) and self.age < AGE_TEEN:
+			condition = True
+		return condition
+
+	@property
+	def is_teen(self) -> bool:
+		condition = False
+		if (not self.age < AGE_TEEN) and self.age < AGE_ADULT:
 			condition = True
 		return condition
 

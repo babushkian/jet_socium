@@ -5,6 +5,7 @@
 from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
+from enum import Enum
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
@@ -12,6 +13,15 @@ import prop
 import human
 import fetus
 import score
+
+class Stage_of_age(int, Enum):
+	BABY  = 0
+	CHILD  = 1
+	TEEN  = 2
+	ADULT = 3
+	AGED  = 4
+	SENILE = 5
+
 
 Genes_Holder = Union['fetus.Fetus', 'human.Human']
 

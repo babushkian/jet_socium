@@ -2,6 +2,7 @@
 import random
 from typing import Optional, List
 from enum  import Enum
+import math
 
 import genetics
 import human
@@ -10,7 +11,8 @@ class FE(Enum):
 	FATHER = 1
 
 
-ALTRUISM_COEF = .66/12 # при максимальном альтруизме вкадывает в семей. бюдж. 2/3 еды
+# при максимальном альтруизме вкадывает в семейный бюждет всю  еду. При минимальном - нисколько.
+ALTRUISM_COEF = 1/11
 
 class Family:
 	family_log_file = None
@@ -205,17 +207,14 @@ class Family:
 
 	@staticmethod
 	def figth_for_food(first: Family, second: Family, abundance):
-		family_fitnes = []
+		family_strongness = []
 		for i in (first, second):
-			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому параметры жены малось срезаем
-			ff = i.wife.genes.get_trait('strongness') / 2 if i.wife else 0
-			ff += i.head.genes.get_trait('strongness')
-			family_fitnes.append(ff)
+			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
+			ff = i.wife.genes.get_trait('strongness')**2 if i.wife else 0
+			ff += i.head.genes.get_trait('strongness')**2
+			family_strongness.append(math.sqrt(ff))
 
-		delta = family_fitnes[0] - family_fitnes[1]
-		# print("%s| еды: %s | приспособленность: %d" % (first.id, first.resource, family_fitnes[0]))
-		# print("%s| еды: %s | приспособленность: %d" % (second.id, second.resource, family_fitnes[1]))
-		# print("Дельта: %f\n-------" % delta)
+		delta = family_strongness[0] - family_strongness[1]
 		if delta != 0:
 			if delta > 0:
 				res = second.resource
@@ -225,6 +224,7 @@ class Family:
 			food_reqisition = res / 15.5 * delta
 			pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
 			s = ""
+			# delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
 			for sign, fam in zip((1, -1), (first, second)):
 				movement = sign * food_reqisition
 				fam.resource += movement

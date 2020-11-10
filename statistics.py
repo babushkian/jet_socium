@@ -278,7 +278,7 @@ class Soc_stat():
 					self.men += 1     #  количтество мужчин (любого возраста)
 				else:
 					self.women += 1    #  количтество женщин (любого возраста)
-				if pers.is_baby or pers.is_child:
+				if not pers.is_big:
 					self.children +=1  #  количтество детей
 				elif pers.is_adult:
 					self.adult += 1  #  количтество взрослых
