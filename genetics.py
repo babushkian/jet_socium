@@ -5,7 +5,7 @@
 from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
-from enum import Enum
+
 
 from soc_time import Date, ZERO_DATE, TIK
 import prop
@@ -14,13 +14,6 @@ import human
 import fetus
 import score
 
-class Stage_of_age(int, Enum):
-	BABY  = 0
-	CHILD  = 1
-	TEEN  = 2
-	ADULT = 3
-	AGED  = 4
-	SENILE = 5
 
 
 Genes_Holder = Union['fetus.Fetus', 'human.Human']
@@ -83,6 +76,15 @@ class Health:
 		self.have_food = number
 		self.have_food = self.have_food if self.have_food > 0 else 0
 
+	def _count_denominator(self, person):
+		"""
+		Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
+		"""
+		stage = person.gat_stage_by_age()
+		denominator = 4 - stage if stage < Stage_of_age.ADULT else 1
+		return denominator
+
+
 	def modify(self):
 		"""
 		общий метод для изменения здоровья в завистмости от множества факторов
@@ -118,10 +120,16 @@ class Health:
 		self.reduce(self.food_sum)
 
 	def reduce(self, amount=HEALTH_PER_DAY):
+		"""
+		Уменьшает здоровье человека. По умлочанию - на количество здоровья, отнимающееся за один прожитый день.
+		"""
 		self.health = self.health - amount
 
 	@property
 	def is_zero_health(self):
+		"""
+		Проверка на то, умер ли человек. Если здоровье равно или меньше нуля, то умер
+		"""
 		die = False
 		if self.health <= 0.0:
 			die = True
@@ -131,8 +139,7 @@ class Health:
 def lust_coef(age):
 	"""
 	с возрастом желание жениться пропадает
-	ходошо бы описать это гладкой кривой, но я формулы не знаю
-	поэтому будет серия опорных точек
+	хорошо бы описать это гладкой кривой, но я формулы не знаю, поэтому будет серия опорных точек
 	"""
 	lust_checkpoints = [21, 26, 31, 37, 50]  # возраст
 	lust_curve = [0.5, 0.6, 0.4, 0.3, 0.2]  # вероятность пожениться (вероятности пары перемннжаются)
@@ -145,20 +152,29 @@ def lust_coef(age):
 
 
 def generate_genome(genome_len: int)-> List[int]:
+	"""
+	Генерирует базовый геном: список целых чисел по длине генов. Этими числами будут инициироваться гены.
+	Это не геном, а прототип генома.
+	"""
 	genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
 	genome[0] = 9 # ген наследования
 	return genome
 
 class Genes:
-	gene_profile_0 = (9,  # наследование генов
-					5,  # плодовитость
-					5,  # проспособленность
-					5,  # умеренность
-					5,  # неуживчивость
-					6,  # альтруизм
-					5,  # возраст деторождения
-					3,  # сытость, при которой невозможно зачать ребенка
-					3)  # вероятность мутации
+	'''
+	Геном человека. Словарь генов.
+	Содержит методы инициации генома для младенца и для странника (взрослого человека без предков,
+	от которых можно было наследовать гены).
+	'''
+	protogenome_profile = (9,  # наследование генов
+						   5,  # плодовитость
+						   5,  # проспособленность
+						   5,  # умеренность
+						   5,  # неуживчивость
+						   6,  # альтруизм
+						   5,  # возраст деторождения
+						   3,  # сытость, при которой невозможно зачать ребенка
+						   3)  # вероятность мутации
 
 	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
 				'fertility',   # плодовитость
@@ -185,8 +201,8 @@ class Genes:
 
 	@staticmethod
 	# в начале симуляции случайным образом создает шаблон генома для всей популяции
-	def init_constants():
-		Genes.gene_profile_0 = generate_genome(len(Genes.GENOTYPE))
+	def init_protogenome():
+		Genes.protogenome_profile = generate_genome(len(Genes.GENOTYPE))
 
 	def define(self):
 		# определяет геном новорожденного
@@ -194,22 +210,29 @@ class Genes:
 			i.init_gene()
 
 	def define_adult(self):
-		# применяет шаблон генома популяции для странника
+		"""
+		Применяет шаблон генома всей популяции (протогеном) для странника (взрослого человека).
+		Гены не наследуются при этом, а инициализируются числами из протогенома.
+		"""
 		for i in range(len(self.GENOTYPE)):
 			key = self.GENOTYPE[i]
-			val = self.gene_profile_0[i]
+			val = self.protogenome_profile[i]
 			self.genome[key].value = val
 			self.genome[key].pred_value = val
 
 
 	def transit(self, person: human.Human):
-		# копирует геном в целевого человека
-		# это при рождении происходит передача генов от эмбриона  вобъект человека
+		"""
+		копирует геном из эмбриона в целевого человека, когда тот рождается
+		"""
 		for i in self.genome:
 			person.genes.genome[i] = self.genome[i]
 			#person.genes.genome = self.genome.copy()
 
 	def get_trait(self, trait):
+		"""
+		Возвращает значение гена из словаря генома
+		"""
 		return self.genome[trait].value
 
 

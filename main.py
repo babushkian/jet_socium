@@ -110,6 +110,6 @@ if __name__ == '__main__':
 	print('Start.')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
 	result, final_date = town.simulate()
-	print(display_start_genotype(genetics.Genes.gene_profile_0))
+	print(display_start_genotype(genetics.Genes.protogenome_profile))
 	print(f'Последний год: {final_date.display()}')
 

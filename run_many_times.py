@@ -8,7 +8,7 @@ def many_runs(crowd, period):
     best_run = 0
     best_date = ZERO_DATE
     best_population = 0
-    best_genome = Genes.gene_profile_0
+    best_genome = Genes.protogenome_profile
     while True:
         counter += 1
         print(f'Номер симуляции: {counter}')
@@ -16,7 +16,7 @@ def many_runs(crowd, period):
         town = main.Simulation(crowd, Date(period))
         result, final_date = town.simulate()
         print(f'Последний год: {final_date.display()}')
-        current_genome = Genes.gene_profile_0
+        current_genome = Genes.protogenome_profile
         print(f'{"Теущ. геном":13s} :{main.display_start_genotype(current_genome)}')
         if best_date < final_date:
             best_date =  final_date
@@ -40,7 +40,7 @@ def many_sucsessful_runs(crowd, period):
         result, final_date = town.simulate()
         EXPERIMENTS += 1
         if result:
-            print(main.display_start_genotype(Genes.gene_profile_0))
+            print(main.display_start_genotype(Genes.protogenome_profile))
         town.close()
 
 if __name__ == '__main__':

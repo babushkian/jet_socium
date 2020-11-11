@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
 import genetics
-from genetics import Stage_of_age
+from common import Stage_of_age
 from family import Family
 
 class FoodDistribution:

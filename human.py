@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
-from genetics import Stage_of_age
+from common import Stage_of_age
 
 import prop
 import family
@@ -318,7 +318,8 @@ class Human:
 
 	@property
 	def age_stage(self):
-		return self._stage_age
+		#return self._stage_age
+		return self.get_stage_by_age()
 
 	@property
 	def is_baby(self) -> bool:
