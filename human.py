@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
-from common import Stage_of_age, Stage
+from common import Stage_of_age, Stage, STAGE_AGES
 
 import prop
 import family
@@ -32,8 +32,9 @@ AGE_SENILE: Date = Date(70)
 
 DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
-FERTIL_RERIOD = (AGE_AGED - AGE_ADULT).year * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
-PREGNANCY_CHANCE = PREGNANCY_CONST/FERTIL_RERIOD
+FERTIL_RERIOD = (STAGE_AGES[Stage_of_age.AGED] - STAGE_AGES[Stage_of_age.ADULT]).year \
+				* Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
+PREGNANCY_CHANCE = PREGNANCY_CONST / FERTIL_RERIOD
 
 BirthDate = NewType('BirthDate', Date)
 DeathDate = NewType('DeathDate', Date)

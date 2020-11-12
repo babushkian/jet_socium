@@ -103,18 +103,3 @@ class Stage:
         return f'Возрастная стадия {self._stage.name} у человека {self.person}  возрастом {self.person.age}'
 
 
-if __name__ == '__main__':
-    init_sim_dir()
-    f =open(os.path.join(SIM_DIR, 'out_file.txt'), 'w', encoding='UTF8')
-    a = Stage_of_age.BABY
-    timer = ZERO_DATE
-    f.write(str(a) + '\n')
-    for _  in range(4):
-        next_stage = STAGE_LIST[a.value + 1]
-        next_stage_timer = STAGE_AGES[next_stage]
-        while timer !=next_stage_timer:
-            timer += TIK
-            f.write(timer.display()+ '\n')
-        a = next_stage
-        f.write(str(a) + '\n')
-    f.close()

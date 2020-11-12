@@ -6,7 +6,7 @@ from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
 
-from common import Stage_of_age
+from common import Stage_of_age, STAGE_AGES
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
@@ -44,19 +44,20 @@ class Health:
 		self.person = person
 		# сколько еды удалось достать за ход
 		self.have_food = 0
-		# сколько еды было ?
+		# странная перемсенная. Нужна для статистики, чтобы показывватьь, сколько еды было у человека до перераспределения
+		# тго есть предполагается, что будет выводиться сравнение, сколько еды было изначально, и сколько стало по сле перераспределения. Но  перераспределений может быть несколько
 		self.have_food_prev = 0
 		# Определяем запас здоровья человека через его предполагаемый возраст.
 		# Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
 		# определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
-		presume_life = human.AGE_AGED + Date(prop.gauss_sigma_16())
-		months = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
-		days = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
+		presume_life: Date = STAGE_AGES[Stage_of_age.AGED] + Date(prop.gauss_sigma_16())
+		months: int = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
+		days: int = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
 		presume_life += Date(0, months, days)
-		self.health = presume_life - age # здоровье - это количество дней до смерти умноженных на коэффициент
-		self.health = HEALTH_PER_DAY * float(self.health.len())  # здоровье это число, а не дата
+		self.health: Date = presume_life - age # здоровье - это количество дней до смерти умноженных на коэффициент
+		self.health: float = HEALTH_PER_DAY * float(self.health.len())  # здоровье это число, а не дата
 
-		self.satiety = 5  # сытость
+		self.satiety = 5  # сытость. При рождении сытость нормальная.
 		self.food_sum = 0
 
 	def have_food_change(self, number):
@@ -76,12 +77,16 @@ class Health:
 		self.have_food = number
 		self.have_food = self.have_food if self.have_food > 0 else 0
 
-	def _count_denominator(self, person):
+	def _count_age_factor(self):
 		"""
 		Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
+		Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
 		"""
-		stage = person.gat_stage_by_age()
-		denominator = 4 - stage if stage < Stage_of_age.ADULT else 1
+		stage_delta = Stage_of_age.ADULT - self.person.age_stage.value
+		print(f'{Stage_of_age.ADULT} --- {self.person.age_stage.value}( {self.person.age.year} )' )
+		denominator = 4 - stage_delta if stage_delta > 0 else 1
+		if denominator > 1:
+			print(f'*** Ребенок {self.person.id}| {self.person.age.display()} стадия {self.person.age_stage.value}  коэф еды: {denominator}')
 		return denominator
 
 
@@ -107,7 +112,9 @@ class Health:
 		# на основе количества пищи у человека и дополнительных факторов (в основном отрицательных) вычисляется его сытость
 		# а на основе сытости человека вычисляется урон, наносимый здоровью
 		# мало ест - сильный урон
-		fp = self.person.health.have_food / FOOD_COEF + abstinence_bonus + fertility_bonus + pregnancy_bonus
+		# также умножаем еду на возрастной коэффициент
+		fp = self.person.health.have_food / FOOD_COEF * self._count_age_factor() \
+			 + abstinence_bonus + fertility_bonus + pregnancy_bonus
 		self.satiety = int(fp)
 		self.satiety = self.satiety if self.satiety >= 0 else 0
 		if self.satiety > 11:
