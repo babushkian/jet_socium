@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
+import common
 from soc_time import Date, Anno
 #import family
 from family import Family
@@ -20,6 +21,7 @@ class Socium:
 
 	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
+		common.init_sim_dir()
 		genetics.Genes.init_protogenome()
 		Socium.class_var_init()
 		Human.init_files()
@@ -239,7 +241,7 @@ class Socium:
 
 
 	def hall_of_fame(self, list_of_dead):
-		hall= open("./xoutput/hall_of_fame.txt", "a", encoding = "UTF16")
+		hall= open("./hall_of_fame.txt", "a", encoding = "UTF16")
 		list_of_dead.sort(key=lambda x: x.id)
 		for person in list_of_dead:
 			# записи про каждого мертвого человека с подробностями его жизни

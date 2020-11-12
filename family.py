@@ -46,9 +46,9 @@ class Family:
 
 	@staticmethod
 	def init_files():
-		Family.family_log_file = open("./xoutput/families.log", "w", encoding="utf16")
-		Family.family_food_file = open("./xoutput/family_food_distrib.log", "w", encoding="utf16")
-		Family.family_feeding = open("./xoutput/family_feeding.log", "w", encoding="utf16")
+		Family.family_log_file = open("./families.log", "w", encoding="utf16")
+		Family.family_food_file = open("./family_food_distrib.log", "w", encoding="utf16")
+		Family.family_feeding = open("./family_feeding.log", "w", encoding="utf16")
 
 	@staticmethod
 	def close():
@@ -70,11 +70,11 @@ class Family:
 
 	def add_dependents(self, family: Family):
 		for i in family.dependents:
-			if not i.is_big:
+			if not i.age_stage.is_big:
 				i.tribe_name = self.head.tribe_name
 				# меняем имя и фамилию
 				i.name.change_father(self.head)
-				i.name.change_family(self.head)
+				i.name.change_family_name(self.head)
 				self.add_child(i)
 
 
@@ -337,7 +337,7 @@ class Family:
 		# убираем повзрослевших иждивенцев
 		too_old =[]
 		for i in self.dependents:
-			if i.is_big:
+			if i.age_stage.is_big:
 				too_old.append(i)
 		if len(too_old) > 0:
 			for i in too_old:

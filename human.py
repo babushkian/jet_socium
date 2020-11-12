@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
-from common import Stage_of_age
+from common import Stage_of_age, Stage
 
 import prop
 import family
@@ -69,7 +69,8 @@ class Human:
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
 		self.age: Date = Date(age)
-		self._stage_age: Stage_of_age = Stage_of_age.BABY
+		self.age_stage: Stage = Stage(self)
+
 		self.birth_date: BirthDate = self.socium.anno - self.age
 		self.death_date: Optional[DeathDate] = None
 
@@ -115,7 +116,6 @@ class Human:
 			Human.write_chronicle(Human.chronicle_born.format(*tup))
 		else:
 			self.family: family.Family = family.Family(self)
-			self._stage_age = self.get_stage_by_age()
 			self.genes.define_adult()
 			self.tribe_name = self.family.id
 			Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
@@ -123,7 +123,8 @@ class Human:
 
 	@staticmethod
 	def init_files():
-		Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf16')
+		#Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf16')
+		Human.chronicle = open('./chronicle.txt', 'w', encoding='utf16')
 
 	@staticmethod
 	def close():
@@ -142,12 +143,13 @@ class Human:
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
 		self.age += TIK
+		self.age_stage.check_stage()
 		is_dead = self.health.is_zero_health
 		if is_dead == True:
 			self.die() # перс умирает
 		if self.is_alive:
 			self.score.update(self.score.LIVE_SCORE)
-			if self.is_adult:
+			if self.age_stage.value is Stage_of_age.ADULT:
 				# Рожаем детей
 				if self.is_married and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
 					self.check_pregnant()
@@ -224,7 +226,7 @@ class Human:
 		self.spouse = spouse
 		self.add_marry_date()
 		if self.gender == False:
-			self.name.change_family(spouse)
+			self.name.change_family_name(spouse)
 
 	def add_marry_date(self) -> None:
 		self.marry_dates[self.socium.anno.create()] = self.spouse
@@ -292,77 +294,15 @@ class Human:
 
 	@property
 	def adult_and_free(self) -> bool:
-		return self.is_alive and self.is_adult and  not self.is_married
+		return self.age_stage.value is Stage_of_age.ADULT and  not self.is_married
 
 	@property
 	def is_married(self) -> bool:
 		return self.spouse is not None
 
-	def get_stage_by_age(self):
-		if self.is_baby:
-			return Stage_of_age.BABY
-		elif self.is_child:
-			return Stage_of_age.CHILD
-		elif self.is_teen:
-			return Stage_of_age.TEEN
-		elif self.is_adult:
-			return Stage_of_age.ADULT
-		elif self.is_aged:
-			return Stage_of_age.AGED
-		else:
-			return Stage_of_age.SENILE
-
-	@property
-	def age_stage_index(self):
-		return self._stage_age.value
-
-	@property
-	def age_stage(self):
-		#return self._stage_age
-		return self.get_stage_by_age()
-
-	@property
-	def is_baby(self) -> bool:
-		return self.age < AGE_CHILD
-
-	@property
-	def is_child(self) -> bool:
-		condition = False
-		if (not self.age < AGE_CHILD) and self.age < AGE_TEEN:
-			condition = True
-		return condition
-
-	@property
-	def is_teen(self) -> bool:
-		condition = False
-		if (not self.age < AGE_TEEN) and self.age < AGE_ADULT:
-			condition = True
-		return condition
-
-	@property
-	def is_big(self) -> bool:
-		return not self.age < AGE_ADULT
-
-	@property
-	def is_adult(self) -> bool:
-		condition = False
-		if (not self.age < AGE_ADULT) and self.age < AGE_AGED:
-			condition = True
-		return condition
-
-	@property
-	def is_aged(self) -> bool:
-		return not self.age < AGE_AGED
-
-	@property
-	def is_senile(self) -> bool:
-		return not self.age < AGE_SENILE
-
-
 	@property
 	def is_alive(self) -> bool:
 		return self.state
-
 
 	def necrolog(self) -> str:
 		nec  = "%s| %s | %s \n" % (self.id, self.name.display(), self.family.id)

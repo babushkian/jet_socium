@@ -15,11 +15,11 @@ TIMELINE = Date(300)  # кличество лет симуляции
 
 class Simulation:
 	def __init__(self, first_popul, timeline):
-		self.lohfile = open("./xoutput/population.txt", "w", encoding="UTF16")
-		self.every_man_state_log = open("./xoutput/human_state.txt", "w", encoding="UTF16")
-		self.tribes_verbose = open("./xoutput/tribes_verbose.txt", "w", encoding="UTF16")
+		self.lohfile = open("./population.txt", "w", encoding="UTF16")
+		self.every_man_state_log = open("./human_state.txt", "w", encoding="UTF16")
+		self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="UTF16")
 		# инициализируем файл, по мере накопления покойников будем в него дописывать
-		hall= open("./xoutput/hall_of_fame.txt", "w", encoding="UTF16")
+		hall= open("./hall_of_fame.txt", "w", encoding="UTF16")
 		hall.close()
 
 		self.soc = Socium()  # создется социум

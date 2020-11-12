@@ -8,6 +8,7 @@ import socium
 import human
 import genetics
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
+from common import Stage_of_age
 
 MEASURMENT_PERIOD = 40
 CHILDREN_COUNT_TRESHOLD = 9
@@ -25,7 +26,7 @@ class Soc_stat():
 
 		# список, содержащий все гены человека для подсчета их средних значений
 
-		self.genes_average = open("./xoutput/genes_average.csv", "w", encoding="UTF16")
+		self.genes_average = open("./genes_average.csv", "w", encoding="UTF16")
 		header = "year\t"
 		sex = ["women_", "men_"]
 		for g in range(len(sex)):
@@ -34,20 +35,20 @@ class Soc_stat():
 		header = header[:-1] +"\n"
 		self.genes_average.write(header)
 
-		self.ss = open("./xoutput/statistics.csv", "w", encoding="UTF16")
+		self.ss = open("./statistics.csv", "w", encoding="UTF16")
 		# для вычисления среднего возраста смерти содержатся люди умершие за последние 5 дет
 
-		self.death_dist = open("./xoutput/death_distribution.csv", "w", encoding="UTF16")
+		self.death_dist = open("./death_distribution.csv", "w", encoding="UTF16")
 		dead_head = "год\t"
 		for i in range(11):
 			dead_head += ">%s\t" % str(i * 10)
 		dead_head += "муж смерть\tжен смерть\n"
 		self.death_dist.write(dead_head)
 
-		self.childern_average = open("./xoutput/children_average.csv", "w", encoding="UTF16")
+		self.childern_average = open("./children_average.csv", "w", encoding="UTF16")
 		self.childern_average.write("год\tсредн детей у мужчин\tсредн детей у женщин\n")
-		self.children_m = open("./xoutput/children_distribution_men.csv", "w", encoding="UTF16")
-		self.children_f = open("./xoutput/children_distribution_fem.csv", "w", encoding="UTF16")
+		self.children_m = open("./children_distribution_men.csv", "w", encoding="UTF16")
+		self.children_f = open("./children_distribution_fem.csv", "w", encoding="UTF16")
 
 		head = "год\t"
 		for i in range(CHILDREN_COUNT_TRESHOLD):
@@ -152,7 +153,7 @@ class Soc_stat():
 		no_male = 0
 		no_female = 0
 		for person in self.socium.soc_list:
-			if person.is_adult and \
+			if person.age_stage.value is Stage_of_age.ADULT and \
 					(person.death_date is None or self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD))):
 				# считаем количество детей у мужчин и у женщин по отдельности
 				ch = len(person.children)
@@ -278,9 +279,9 @@ class Soc_stat():
 					self.men += 1     #  количтество мужчин (любого возраста)
 				else:
 					self.women += 1    #  количтество женщин (любого возраста)
-				if not pers.is_big:
+				if not pers.age_stage.is_big:
 					self.children +=1  #  количтество детей
-				elif pers.is_adult:
+				elif pers.age_stage.value is Stage_of_age.ADULT:
 					self.adult += 1  #  количтество взрослых
 				else:
 					self.aged +=1    #  количтество стариков
@@ -331,11 +332,11 @@ class Soc_stat():
 			else:
 				if person.gender:
 					self.unmarried_men.append(person)
-					if person.is_big:
+					if person.age_stage.is_big:
 						self.unmarried_adult_men.append(person)
 				else:
 					self.unmarried_women.append(person)
-					if person.is_big:
+					if person.age_stage.is_big:
 						self.unmarried_adult_women.append(person)
 
 		self.married_people_number = len(self.married_people)

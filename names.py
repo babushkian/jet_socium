@@ -35,18 +35,15 @@ class CharName:
 
 	def display(self):
 		'''
-		Выводит Имя Отчество Фамилию
+		Возвращает Имя Отчество Фамилию
 		'''
 		return f'{self.first} {self.second} {self.family[self.gender]}'
 
 
-	def change_family(self, head):
+	def change_family_name(self, head):
 		'''
 		При замужестве изменяет фамилию жены и ее детей от предыдущих браков на фамилию мужа.
 		'''
-		# если это жена, а не ребенок, который тоже меняет фамилию
-		#if self.person.is_big:
-		#	print("%s сменила фмаилию на %s"%(self.family[0], head.name.family[0]))
 		self.family = head.name.family
 
 	def change_father(self, stepfather):

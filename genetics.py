@@ -6,7 +6,7 @@ from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
 
-
+from common import Stage_of_age
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
@@ -95,7 +95,7 @@ class Health:
 		abstinence_bonus = 0.3 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
 		pregnancy_bonus = 0
 		fertility_bonus = 0
-		if self.person.is_big:
+		if self.person.age_stage.is_big:
 			# за свою половую энергию человек расплачивается жизнью
 			# для мужчин трата энергии более выражена
 			if self.person.gender:

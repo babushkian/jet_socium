@@ -13,7 +13,7 @@ class FoodDistribution:
 
     @staticmethod
     def init_files():
-        FoodDistribution.feeding_log = open("./xoutput/global_food_distribution.log", "w", encoding="utf16")
+        FoodDistribution.feeding_log = open("./global_food_distribution.log", "w", encoding="utf16")
 
     @staticmethod
     def close():
@@ -111,7 +111,7 @@ class FoodDistribution:
         children_count = 0
         # считаем, сколько еды потребили все категории населения: мужчины, детные и бездетные женщины, дети
         for person in self.socium.people_alive:
-            if person.is_big:
+            if person.age_stage.is_big:
                 # взрослые
                 if person.gender:
                     # мужчины
@@ -170,10 +170,10 @@ class FoodDistribution:
             person.health.have_food_equal(self.food_per_man)
             # дети до трех лет пищу не добывают
             # дети добывают вдвое меньше еды
-            if person.age_stage == Stage_of_age.BABY:
+            if person.age_stage.value is Stage_of_age.BABY:
                 person.health.have_food_equal(0)
                 self.food_waste += self.food_per_man
-            elif person.age_stage in  (Stage_of_age.CHILD, Stage_of_age.TEEN):
+            elif person.age_stage.value in  (Stage_of_age.CHILD, Stage_of_age.TEEN):
                 half_food = person.health.have_food / 2
                 person.health.have_food_equal(half_food)
                 self.food_waste += self.food_per_man - half_food
