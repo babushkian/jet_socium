@@ -40,281 +40,279 @@ HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / Date.DAYS_IN_YEAR
 # для 4-х дней в году  HEALTH_PER_DAY = 91.25, каждый прожитый день будет отниматься столько
 
 class Health:
-	def __init__(self, person, age=ZERO_DATE):
-		self.person = person
-		# сколько еды удалось достать за ход
-		self.have_food = 0
-		# странная перемсенная. Нужна для статистики, чтобы показывватьь, сколько еды было у человека до перераспределения
-		# тго есть предполагается, что будет выводиться сравнение, сколько еды было изначально, и сколько стало по сле перераспределения. Но  перераспределений может быть несколько
-		self.have_food_prev = 0
-		# Определяем запас здоровья человека через его предполагаемый возраст.
-		# Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
-		# определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
-		presume_life: Date = STAGE_AGES[Stage_of_age.AGED] + Date(prop.gauss_sigma_16())
-		months: int = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
-		days: int = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
-		presume_life += Date(0, months, days)
-		self.health: Date = presume_life - age # здоровье - это количество дней до смерти умноженных на коэффициент
-		self.health: float = HEALTH_PER_DAY * float(self.health.len())  # здоровье это число, а не дата
+    def __init__(self, person, age=ZERO_DATE):
+        self.person = person
+        # сколько еды удалось достать за ход
+        self.have_food = 0
+        # странная перемсенная. Нужна для статистики, чтобы показывватьь, сколько еды было у человека до перераспределения
+        # тго есть предполагается, что будет выводиться сравнение, сколько еды было изначально, и сколько стало по сле перераспределения. Но  перераспределений может быть несколько
+        self.have_food_prev = 0
+        # Определяем запас здоровья человека через его предполагаемый возраст.
+        # Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
+        # определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
+        presume_life: Date = STAGE_AGES[Stage_of_age.AGED] + Date(prop.gauss_sigma_16())
+        months: int = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
+        days: int = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
+        presume_life += Date(0, months, days)
+        self.health: Date = presume_life - age # здоровье - это количество дней до смерти умноженных на коэффициент
+        self.health: float = HEALTH_PER_DAY * float(self.health.len())  # здоровье это число, а не дата
 
-		self.satiety = 5  # сытость. При рождении сытость нормальная.
-		self.food_sum = 0
+        self.satiety = 5  # сытость. При рождении сытость нормальная.
+        self.food_sum = 0
 
-	def have_food_change(self, number):
-		"""
-		Изменяет количество добытой человектом еды на пареметр number
-		:param number: количество еды, на которе нужно изменить переменную  have_food
-		"""
-		self.have_food_prev = self.have_food
-		self.have_food += number
-		self.have_food = self.have_food if self.have_food > 0 else 0
+    def have_food_change(self, number):
+        """
+        Изменяет количество добытой человектом еды на пареметр number
+        :param number: количество еды, на которе нужно изменить переменную  have_food
+        """
+        self.have_food_prev = self.have_food
+        self.have_food += number
+        self.have_food = self.have_food if self.have_food > 0 else 0
 
-	def have_food_equal(self, number):
-		"""
-		Присваивает человеку количество добытой еды =  number
-		"""
-		self.have_food_prev = self.have_food
-		self.have_food = number
-		self.have_food = self.have_food if self.have_food > 0 else 0
+    def have_food_equal(self, number):
+        """
+        Присваивает человеку количество добытой еды =  number
+        """
+        self.have_food_prev = self.have_food
+        self.have_food = number
+        self.have_food = self.have_food if self.have_food > 0 else 0
 
-	def _count_age_factor(self):
-		"""
-		Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
-		Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
-		"""
-		stage_delta = Stage_of_age.ADULT - self.person.age_stage.value
-		denominator = 4 - stage_delta if stage_delta > 0 else 1
-		#if denominator > 1:
-		#    print(f'*** Ребенок {self.person.id}| {self.person.age.display()} стадия {self.person.age_stage.name}  коэф еды: {denominator}')
-		return denominator
+    def _count_age_factor(self):
+        """
+        Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
+        Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
+        """
+        stage_delta = Stage_of_age.ADULT - self.person.age_stage.value + 1
+        denominator = stage_delta if stage_delta > 0 else 1
+        return denominator
 
 
-	def modify(self):
-		"""
-		общий метод для изменения здоровья в завистмости от множества факторов
-		"""
-		# уменьшение зроровья за прожитый день (фиксированное количество)
-		self.reduce()
-		# голод
-		abstinence_bonus = 0.3 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
-		pregnancy_bonus = 0
-		fertility_bonus = 0
-		if self.person.age_stage.is_big:
-			# за свою половую энергию человек расплачивается жизнью
-			# для мужчин трата энергии более выражена
-			if self.person.gender:
-				fertility_bonus = - 0.2 * (self.person.genes.get_trait('fertility') - 5)
-			else:
-				fertility_bonus = - 0.07 * (self.person.genes.get_trait('fertility') - 5)
-				if self.person.pregnant:
-					pregnancy_bonus = -1
-		# на основе количества пищи у человека и дополнительных факторов (в основном отрицательных) вычисляется его сытость
-		# а на основе сытости человека вычисляется урон, наносимый здоровью
-		# мало ест - сильный урон
-		# также умножаем еду на возрастной коэффициент
-		fp = self.person.health.have_food / FOOD_COEF * self._count_age_factor() \
-			 + abstinence_bonus + fertility_bonus + pregnancy_bonus
-		self.satiety = int(fp)
-		self.satiety = self.satiety if self.satiety >= 0 else 0
-		if self.satiety > 11:
-			self.satiety = 11
-			fp = 11
-		main_health_bonus = FOOD_BONUS[self.satiety]  # целая часть еды
-		f_delta = FOOD_BONUS[self.satiety + 1] - FOOD_BONUS[self.satiety]
-		additional_health_bonus = f_delta * (fp - self.satiety)  # дробная часть бонуса вычисленная по линейной пропорции
-		self.food_sum = - HEALTH_PER_DAY * (main_health_bonus + additional_health_bonus)
-		self.reduce(self.food_sum)
+    def modify(self):
+        """
+        общий метод для изменения здоровья в завистмости от множества факторов
+        """
+        # уменьшение зроровья за прожитый день (фиксированное количество)
+        self.reduce()
+        # голод
+        abstinence_bonus = 0.3 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
+        pregnancy_bonus = 0
+        fertility_bonus = 0
+        if self.person.age_stage.is_big:
+            # за свою половую энергию человек расплачивается жизнью
+            # для мужчин трата энергии более выражена
+            if self.person.gender:
+                fertility_bonus = - 0.2 * (self.person.genes.get_trait('fertility') - 5)
+            else:
+                fertility_bonus = - 0.07 * (self.person.genes.get_trait('fertility') - 5)
+                if self.person.pregnant:
+                    pregnancy_bonus = -1
+        # на основе количества пищи у человека и дополнительных факторов (в основном отрицательных) вычисляется его сытость
+        # а на основе сытости человека вычисляется урон, наносимый здоровью
+        # мало ест - сильный урон
+        # также умножаем еду на возрастной коэффициент
+        fp = self.person.health.have_food / FOOD_COEF * self._count_age_factor() \
+             + abstinence_bonus + fertility_bonus + pregnancy_bonus
+        self.satiety = int(fp)
+        self.satiety = self.satiety if self.satiety >= 0 else 0
+        if self.satiety > 11:
+            self.satiety = 11
+            fp = 11
+        main_health_bonus = FOOD_BONUS[self.satiety]  # целая часть еды
+        f_delta = FOOD_BONUS[self.satiety + 1] - FOOD_BONUS[self.satiety]
+        additional_health_bonus = f_delta * (fp - self.satiety)  # дробная часть бонуса вычисленная по линейной пропорции
+        self.food_sum = - HEALTH_PER_DAY * (main_health_bonus + additional_health_bonus)
+        self.reduce(self.food_sum)
 
-	def reduce(self, amount=HEALTH_PER_DAY):
-		"""
-		Уменьшает здоровье человека. По умлочанию - на количество здоровья, отнимающееся за один прожитый день.
-		"""
-		self.health = self.health - amount
+    def reduce(self, amount=HEALTH_PER_DAY):
+        """
+        Уменьшает здоровье человека. По умлочанию - на количество здоровья, отнимающееся за один прожитый день.
+        """
+        self.health = self.health - amount
 
-	@property
-	def is_zero_health(self):
-		"""
-		Проверка на то, умер ли человек. Если здоровье равно или меньше нуля, то умер
-		"""
-		die = False
-		if self.health <= 0.0:
-			die = True
-		return die
+    @property
+    def is_zero_health(self):
+        """
+        Проверка на то, умер ли человек. Если здоровье равно или меньше нуля, то умер
+        """
+        die = False
+        if self.health <= 0.0:
+            die = True
+        return die
 
 
 def lust_coef(age):
-	"""
-	с возрастом желание жениться пропадает
-	хорошо бы описать это гладкой кривой, но я формулы не знаю, поэтому будет серия опорных точек
-	"""
-	lust_checkpoints = [21, 26, 31, 37, 50]  # возраст
-	lust_curve = [0.5, 0.6, 0.4, 0.3, 0.2]  # вероятность пожениться (вероятности пары перемннжаются)
-	attraction = 0.1
-	for i in range(len(lust_checkpoints)):
-		if age < lust_checkpoints[i]:
-			attraction = lust_curve[i]
-			break
-	return attraction
+    """
+    с возрастом желание жениться пропадает
+    хорошо бы описать это гладкой кривой, но я формулы не знаю, поэтому будет серия опорных точек
+    """
+    lust_checkpoints = [21, 26, 31, 37, 50]  # возраст
+    lust_curve = [0.5, 0.6, 0.4, 0.3, 0.2]  # вероятность пожениться (вероятности пары перемннжаются)
+    attraction = 0.1
+    for i in range(len(lust_checkpoints)):
+        if age < lust_checkpoints[i]:
+            attraction = lust_curve[i]
+            break
+    return attraction
 
 
 def generate_genome(genome_len: int)-> List[int]:
-	"""
-	Генерирует базовый геном: список целых чисел по длине генов. Этими числами будут инициироваться гены.
-	Это не геном, а прототип генома.
-	"""
-	genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
-	genome[0] = 9 # ген наследования
-	return genome
+    """
+    Генерирует базовый геном: список целых чисел по длине генов. Этими числами будут инициироваться гены.
+    Это не геном, а прототип генома.
+    """
+    genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
+    genome[0] = 9 # ген наследования
+    return genome
 
 class Genes:
-	'''
-	Геном человека. Словарь генов.
-	Содержит методы инициации генома для младенца и для странника (взрослого человека без предков,
-	от которых можно было наследовать гены).
-	'''
-	protogenome_profile = (9,  # наследование генов
-						   5,  # плодовитость
-						   5,  # проспособленность
-						   5,  # умеренность
-						   5,  # неуживчивость
-						   6,  # альтруизм
-						   5,  # возраст деторождения
-						   3,  # сытость, при которой невозможно зачать ребенка
-						   3)  # вероятность мутации
+    '''
+    Геном человека. Словарь генов.
+    Содержит методы инициации генома для младенца и для странника (взрослого человека без предков,
+    от которых можно было наследовать гены).
+    '''
+    protogenome_profile = (9,  # наследование генов
+                           5,  # плодовитость
+                           5,  # проспособленность
+                           5,  # умеренность
+                           5,  # неуживчивость
+                           6,  # альтруизм
+                           5,  # возраст деторождения
+                           3,  # сытость, при которой невозможно зачать ребенка
+                           3)  # вероятность мутации
 
-	GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
-				'fertility',   # плодовитость
-				'strongness',     # приспособленность (лучше добывает пищу)
-				'abstinence',  # способность насытится малым
-				'harshness',   # склонность к разводам
-				'altruism',    # склонность отдавать часть еды родным
-				'fert_age',    #  возраст деторождения
-				'fert_satiety', # сытость, при которой невозможно зачать ребенка
-				'mutation') # вероятность мутации, формула: 1/(mutation + 2)**2
-	GEN_PSEUDONYM = {'enheritance':'enhr',
-				'fertility': 'fert',
-				'strongness': 'fitn',
-				'abstinence':'abst',
-				'harshness': 'hars',
-				'altruism': 'altr',
-				'fert_age': 'fage',
-				'fert_satiety': 'fsat',
-				'mutation': 'muta'}
+    GENOTYPE = ('enheritance',  # вероятность наследовать ген от предка своего пола
+                'fertility',   # плодовитость
+                'strongness',     # приспособленность (лучше добывает пищу)
+                'abstinence',  # способность насытится малым
+                'harshness',   # склонность к разводам
+                'altruism',    # склонность отдавать часть еды родным
+                'fert_age',    #  возраст деторождения
+                'fert_satiety', # сытость, при которой невозможно зачать ребенка
+                'mutation') # вероятность мутации, формула: 1/(mutation + 2)**2
+    GEN_PSEUDONYM = {'enheritance':'enhr',
+                     'fertility': 'fert',
+                     'strongness': 'fitn',
+                     'abstinence':'abst',
+                     'harshness': 'hars',
+                     'altruism': 'altr',
+                     'fert_age': 'fage',
+                     'fert_satiety': 'fsat',
+                     'mutation': 'muta'}
 
-	def __init__(self, person: Genes_Holder):
-		self.person: Genes_Holder = person
-		self.genome: Dict[str,Gene] = {i: Gene(i, self) for i in self.GENOTYPE}
+    def __init__(self, person: Genes_Holder):
+        self.person: Genes_Holder = person
+        self.genome: Dict[str,Gene] = {i: Gene(i, self) for i in self.GENOTYPE}
 
-	@staticmethod
-	# в начале симуляции случайным образом создает шаблон генома для всей популяции
-	def init_protogenome():
-		Genes.protogenome_profile = generate_genome(len(Genes.GENOTYPE))
+    @staticmethod
+    # в начале симуляции случайным образом создает шаблон генома для всей популяции
+    def init_protogenome():
+        Genes.protogenome_profile = generate_genome(len(Genes.GENOTYPE))
 
-	def define(self):
-		# определяет геном новорожденного
-		for i in self.genome.values():
-			i.init_gene()
+    def define(self):
+        # определяет геном новорожденного
+        for i in self.genome.values():
+            i.init_gene()
 
-	def define_adult(self):
-		"""
-		Применяет шаблон генома всей популяции (протогеном) для странника (взрослого человека).
-		Гены не наследуются при этом, а инициализируются числами из протогенома.
-		"""
-		for i in range(len(self.GENOTYPE)):
-			key = self.GENOTYPE[i]
-			val = self.protogenome_profile[i]
-			self.genome[key].value = val
-			self.genome[key].pred_value = val
+    def define_adult(self):
+        """
+        Применяет шаблон генома всей популяции (протогеном) для странника (взрослого человека).
+        Гены не наследуются при этом, а инициализируются числами из протогенома.
+        """
+        for i in range(len(self.GENOTYPE)):
+            key = self.GENOTYPE[i]
+            val = self.protogenome_profile[i]
+            self.genome[key].value = val
+            self.genome[key].pred_value = val
 
 
-	def transit(self, person: human.Human):
-		"""
-		копирует геном из эмбриона в целевого человека, когда тот рождается
-		"""
-		for i in self.genome:
-			person.genes.genome[i] = self.genome[i]
-			#person.genes.genome = self.genome.copy()
+    def transit(self, person: human.Human):
+        """
+        копирует геном из эмбриона в целевого человека, когда тот рождается
+        """
+        for i in self.genome:
+            person.genes.genome[i] = self.genome[i]
+        #person.genes.genome = self.genome.copy()
 
-	def get_trait(self, trait):
-		"""
-		Возвращает значение гена из словаря генома
-		"""
-		return self.genome[trait].value
+    def get_trait(self, trait):
+        """
+        Возвращает значение гена из словаря генома
+        """
+        return self.genome[trait].value
 
 
 class Gene:
-	GENE_MIN_VALUE = 0
-	GENE_MAX_VALUE = 11
-	def __init__(self, name: str, genome: Genes, value: int=5):
-		self.name: str = name
-		self.containing_genome: Genes = genome
-		self.person: Genes_Holder = genome.person
-		self.value: int = value
-		self.predecessor: Optional[human.Human] = None
+    GENE_MIN_VALUE = 0
+    GENE_MAX_VALUE = 11
+    def __init__(self, name: str, genome: Genes, value: int=5):
+        self.name: str = name
+        self.containing_genome: Genes = genome
+        self.person: Genes_Holder = genome.person
+        self.value: int = value
+        self.predecessor: Optional[human.Human] = None
 
-	def init_gene(self):
-		# если эмбрион имеет живых рподителей, то гаследуем от родителей
-		# если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
-		parents = self.person.parents_in_same_sex_order()
-		#  ген "наследование" наследуется тольлко от родителя того же пола. От отца к сыну, от матери к дочери.
-		# этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
-		if self.name == 'enheritance':
-			self.inherit_gene(parents[0])
-		else: # остальные гены с вероятностью, зависящей от "наследование" могут быть унаследованы от любого из родителей
-			self.inherit_any_gene(parents)
+    def init_gene(self):
+        # если эмбрион имеет живых рподителей, то гаследуем от родителей
+        # если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
+        parents = self.person.parents_in_same_sex_order()
+        #  ген "наследование" наследуется тольлко от родителя того же пола. От отца к сыну, от матери к дочери.
+        # этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
+        if self.name == 'enheritance':
+            self.inherit_gene(parents[0])
+        else: # остальные гены с вероятностью, зависящей от "наследование" могут быть унаследованы от любого из родителей
+            self.inherit_any_gene(parents)
 
-		self.pred_value = self.predecessor.genes.get_trait(self.name)
-		self.gene_score()
+        self.pred_value = self.predecessor.genes.get_trait(self.name)
+        self.gene_score()
 
 
-	def inherit_any_gene(self, parents,  default=5):
-		# выбираем, от кого из родителей будем наследовать ген
+    def inherit_any_gene(self, parents,  default=5):
+        # выбираем, от кого из родителей будем наследовать ген
 
-		if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
-			parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-		self.inherit_gene(parents[0], default)
+        if random.random() < 1 / (self.person.genes.get_trait('enheritance') + 1) and parents[1] is not None:
+            parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
+        self.inherit_gene(parents[0], default)
 
-	def inherit_gene(self, parent,  default=5):
-		self.predecessor = parent
-		def trait_limit(trait):
-			if trait > Gene.GENE_MAX_VALUE:
-				trait = Gene.GENE_MAX_VALUE
-			if trait < Gene.GENE_MIN_VALUE:
-				trait = Gene.GENE_MIN_VALUE
-			return trait
-		self.value = trait_limit(self.mutate_gene())
+    def inherit_gene(self, parent,  default=5):
+        self.predecessor = parent
+        def trait_limit(trait):
+            if trait > Gene.GENE_MAX_VALUE:
+                trait = Gene.GENE_MAX_VALUE
+            if trait < Gene.GENE_MIN_VALUE:
+                trait = Gene.GENE_MIN_VALUE
+            return trait
+        self.value = trait_limit(self.mutate_gene())
 
-	def mutate_gene(self) -> int:
-		shift: float = 0 # величина мутации
-		# при mutation  = 11 шанс у гена мутировать: 0.444 (каждый человек мутант гарантированно)
-		# при mutation  = 0 шанс у гена мутировать: 0.02 (мутирует кажлый 0.02*len(GENOME) человек)
-		mutation_chance: float = 4 / (14 - self.predecessor.genes.get_trait('mutation')) ** 2
-		if mutation_chance > random.random():
-			shift = 0.45 * prop.gauss_sigma_1() # величина мутации
-			if shift < 0:
-				shift -= 1 # если мутация случилась, то ее величина  должна быть больше или меньше единицы,
-			if shift >= 0: # иначе пнри округлении эффект мутации равен нулю
-				shift += 1
-		trait = round(self.predecessor.genes.get_trait(self.name) + shift)
-		return trait
+    def mutate_gene(self) -> int:
+        shift: float = 0 # величина мутации
+        # при mutation  = 11 шанс у гена мутировать: 0.444 (каждый человек мутант гарантированно)
+        # при mutation  = 0 шанс у гена мутировать: 0.02 (мутирует кажлый 0.02*len(GENOME) человек)
+        mutation_chance: float = 4 / (14 - self.predecessor.genes.get_trait('mutation')) ** 2
+        if mutation_chance > random.random():
+            shift = 0.45 * prop.gauss_sigma_1() # величина мутации
+            if shift < 0:
+                shift -= 1 # если мутация случилась, то ее величина  должна быть больше или меньше единицы,
+            if shift >= 0: # иначе пнри округлении эффект мутации равен нулю
+                shift += 1
+        trait = round(self.predecessor.genes.get_trait(self.name) + shift)
+        return trait
 
-	def gene_score(self):
-		# очки за изменение генов. Изменения в любую сторону, лишь бы значительные
-		gene_delta = abs(self.value - self.pred_value)
-		if gene_delta > 0:
-			self.person.score.update_gene(gene_delta)
+    def gene_score(self):
+        # очки за изменение генов. Изменения в любую сторону, лишь бы значительные
+        gene_delta = abs(self.value - self.pred_value)
+        if gene_delta > 0:
+            self.person.score.update_gene(gene_delta)
 
 
 class Gene_Inheritance(Gene):
-	def inherit_gene(self, parents, default=5):
-		# надо будет переписать особое поведение гена наслеоования
-		# и удалить из суперкласса inherit_enheritance
-		pass
+    def inherit_gene(self, parents, default=5):
+        # надо будет переписать особое поведение гена наслеоования
+        # и удалить из суперкласса inherit_enheritance
+        pass
 
 
 if __name__ == '__main__':
-	# тестирование коэффициента привлекательности (который зависит от возраста)
-	for i in range(20):
-		x = random.randrange(15, 60)
-		attract = lust_coef(x)
-		print("%d - %4f" % (x, attract))
+    # тестирование коэффициента привлекательности (который зависит от возраста)
+    for i in range(20):
+        x = random.randrange(15, 60)
+        attract = lust_coef(x)
+        print("%d - %4f" % (x, attract))

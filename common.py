@@ -43,7 +43,6 @@ class Stage_of_age(int, Enum):
     UNDEAD = 6
 
 STAGE_LIST = [i for i in Stage_of_age]
-print(STAGE_LIST)
 
 STAGE_AGES = {Stage_of_age.BABY: Date(0),
               Stage_of_age.CHILD: Date(3),
@@ -69,7 +68,7 @@ class Stage:
         self._stage: Stage_of_age
         self._timer: Date
         if self.person.age == self._timer:
-            self._stage, self._timer  = self.get_next_stage()
+            self._stage, self._timer = self.get_next_stage()
 
 
     def get_next_stage(self) ->Tuple[Stage_of_age, Date]:
@@ -106,7 +105,7 @@ class Stage:
 
     @property
     def is_big(self):
-        return self.index in (Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
+        return self._stage in (Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
 
 
     def __str__(self):
