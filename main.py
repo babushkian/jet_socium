@@ -9,7 +9,7 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 random.seed(666)
 # количество людей в начальной популяции
-FIRST_POPULATION = 30
+FIRST_POPULATION = 60
 TIMELINE = Date(300)  # кличество лет симуляции
 
 
@@ -19,8 +19,8 @@ class Simulation:
 		self.every_man_state_log = open("./human_state.txt", "w", encoding="UTF16")
 		self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="UTF16")
 		# инициализируем файл, по мере накопления покойников будем в него дописывать
-		hall= open("./hall_of_fame.txt", "w", encoding="UTF16")
-		hall.close()
+		#hall= open("./hall_of_fame.txt", "w", encoding="UTF16")
+		#hall.close()
 
 		self.soc = Socium()  # создется социум
 		self.timeline = timeline
@@ -36,7 +36,7 @@ class Simulation:
 	def populate(self, first_popul):
 		for p in range(first_popul):
 			gender  = random.randrange(2)
-			age = random.randrange(9, 21)
+			age = random.randint(9, 20)
 			# почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
 			self.soc.add_human(Human(self.soc, (None, None), gender,  age))
 
@@ -69,12 +69,14 @@ class Simulation:
 
 		def write_human_state(town):
 			town.every_man_state_log.write("================================================\n")
-			town.every_man_state_log.write("%s\n" % town.soc.anno.display())
-			town.every_man_state_log.write("население: %d\n" % town.soc.stat.people_alive_number)
+			town.every_man_state_log.write(f'{town.soc.anno.display()}\n')
+			town.every_man_state_log.write(f'население: {town.soc.stat.people_alive_number}\n')
 			for i in town.soc.people_alive:
-				anno_date = "%d:%d|" % (town.soc.anno.year, town.soc.anno.month)
-				famil = " %s|" % i.family.id
+				anno_date = f'{town.soc.anno.year}:{ town.soc.anno.month}'
+				famil = f' {i.family.id}'
 				a = i.id
+				satge_name = i.age_stage.name
+
 				sex = "М" if i.gender else "Ж"
 				b = i.genes.get_trait('strongness')
 				c = i.genes.get_trait('abstinence')
@@ -83,8 +85,10 @@ class Simulation:
 				fb = - i.health.food_sum
 				hf = i.health.have_food
 				z = anno_date + famil
-				z += " %s| %s|%14s| fit= %2d| abs = %2d| sat = %2d| fd = %5.1f| bonus = %6.1f | heal = %s\n" \
-					 % (a, sex, i.age.display(False), b, c, d, hf, fb, e)
+				#z += " %s| %s|%14s| str = %2d| abs = %2d| sat = %2d| fd = %5.1f| bonus = %6.1f | heal = %s\n" \
+				#	 % (a, sex, i.age.display(False), b, c, d, hf, fb, e)
+				z += f' {a}| {sex}|{i.age.display(False):14s}| {satge_name:7s}| str = {b:2d}| abs = {c:2d}| sat = {d:2d}| ' \
+					 f'fd = {hf:5.1f}| bonus = {fb:6.1f}| heal = {e}\n'
 				town.every_man_state_log.write(z)
 
 		write_lohfile(self)
@@ -109,6 +113,7 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
 	print('Start.')
 	town = Simulation(FIRST_POPULATION, TIMELINE)
+
 	result, final_date = town.simulate()
 	print(display_start_genotype(genetics.Genes.protogenome_profile))
 	print(f'Последний год: {final_date.display()}')

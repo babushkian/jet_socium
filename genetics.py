@@ -83,10 +83,9 @@ class Health:
 		Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
 		"""
 		stage_delta = Stage_of_age.ADULT - self.person.age_stage.value
-		print(f'{Stage_of_age.ADULT} --- {self.person.age_stage.value}( {self.person.age.year} )' )
 		denominator = 4 - stage_delta if stage_delta > 0 else 1
-		if denominator > 1:
-			print(f'*** Ребенок {self.person.id}| {self.person.age.display()} стадия {self.person.age_stage.value}  коэф еды: {denominator}')
+		#if denominator > 1:
+		#    print(f'*** Ребенок {self.person.id}| {self.person.age.display()} стадия {self.person.age_stage.name}  коэф еды: {denominator}')
 		return denominator
 
 

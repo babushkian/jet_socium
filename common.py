@@ -1,6 +1,6 @@
 from __future__ import annotations
 import random
-from typing import List, Dict, NewType, Union, Optional
+from typing import List, Dict, NewType, Union, Optional, Tuple
 from enum import Enum, auto
 import os
 import time
@@ -43,6 +43,7 @@ class Stage_of_age(int, Enum):
     UNDEAD = 6
 
 STAGE_LIST = [i for i in Stage_of_age]
+print(STAGE_LIST)
 
 STAGE_AGES = {Stage_of_age.BABY: Date(0),
               Stage_of_age.CHILD: Date(3),
@@ -65,24 +66,29 @@ class Stage:
 
 
     def check_stage(self):
+        self._stage: Stage_of_age
+        self._timer: Date
         if self.person.age == self._timer:
-            self._stage, self._timer = self.get_next_stage()
+            self._stage, self._timer  = self.get_next_stage()
 
 
-    def get_next_stage(self):
-        next_stage = STAGE_LIST[self._stage.value + 1]
-        next_stage_timer = STAGE_AGES[next_stage]
+    def get_next_stage(self) ->Tuple[Stage_of_age, Date]:
+        next_stage: Stage_of_age = STAGE_LIST[self._stage.value + 1]
+        next_stage_timer: Date = STAGE_AGES[next_stage]
         return next_stage, next_stage_timer
 
 
-    def get_stage_by_age(self, age):
-        s, t = None, None
+    def get_stage_by_age(self, age: Date) ->Tuple[Stage_of_age, Date]:
+        s = Stage_of_age.BABY
+        t = ZERO_DATE
         for stage in STAGE_AGES:
-            if age == STAGE_AGES[stage] or age < STAGE_AGES[stage]:
+            # возраст наступления следующей стадии
+            age_of_next_stage = STAGE_AGES[STAGE_LIST[stage.value+1]]
+            if age < age_of_next_stage:
                 s = stage
-                t = STAGE_AGES[STAGE_LIST[stage.value+1]]
+                t = age_of_next_stage
                 break
-        if s is None:
+        if t == ZERO_DATE:
             raise Exception(f'Ошибка определения фазы возраста у человека {self.person.id} {self.person}')
         return s, t
 
@@ -91,15 +97,19 @@ class Stage:
         return self._stage
 
     @property
+    def name(self):
+        return self._stage.name
+
+    @property
     def index(self):
         return self._stage.value
 
     @property
     def is_big(self):
-        return self._stage in (Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
+        return self.index in (Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
 
 
     def __str__(self):
-        return f'Возрастная стадия {self._stage.name} у человека {self.person}  возрастом {self.person.age}'
+        return f'Возрастная стадия {self._stage.name} у человека {self.person.id}  возрастом {self.person.age.display(False)}'
 
 
