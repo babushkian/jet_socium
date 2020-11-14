@@ -34,6 +34,7 @@ FOOD_COEF = 20
 # (в качестве индекса должно выптупать количество потребленной еды satiety)
 #              0     1   2   3     4    5   6    7    8    9    10  11  12 - на должен достигаться
 FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.4, -1, -4, -16]
+#FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.2, -0.4, -1, -3]
 
 YEAR_HEALTH_AMOUNT = 365.0
 HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / Date.DAYS_IN_YEAR
@@ -87,6 +88,9 @@ class Health:
         return denominator
 
 
+    def ideal_food_amount(self):
+        return NORMAL_CONSUME_RATE * FOOD_COEF / self._count_age_factor()
+
     def modify(self):
         """
         общий метод для изменения здоровья в завистмости от множества факторов
@@ -94,7 +98,7 @@ class Health:
         # уменьшение зроровья за прожитый день (фиксированное количество)
         self.reduce()
         # голод
-        abstinence_bonus = 0.3 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
+        abstinence_bonus = 0.2 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
         pregnancy_bonus = 0
         fertility_bonus = 0
         if self.person.age_stage.is_big:

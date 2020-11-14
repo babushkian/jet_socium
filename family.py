@@ -241,21 +241,22 @@ class Family:
 		if len(self.dependents) > 0:
 			dependents_budget = self.resource / 2
 			self.resource /= 2
-			ideal_food = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF
+
 			# кормим иждивенцев поровну
 			food_addon_per_child = dependents_budget / len(self.dependents)
 			s = s + pref + "Кромим %d детей\n" % len(self.dependents)
 			s = s + pref + "Каждому выдаем по %5.1f еды\n" % food_addon_per_child
-			for i in self.dependents:
-				temp = i.health.have_food + food_addon_per_child
-
+			for child in self.dependents:
+				temp = child.health.have_food + food_addon_per_child
+				ideal_food = child.health.ideal_food_amount()
 				fd = temp - ideal_food
 				if fd > 0: # если для ребенка слишком много еды, излишки возвращаются в запас
-					i.health.have_food_equal(ideal_food)
+					child.health.have_food_equal(ideal_food)
 					self.resource += fd
+					s = s + pref + f'ребенок не голоден и возвращает {fd:5.1f} еды в общий котел\n'
 				else:
-					i.health.have_food_equal(temp)
-				s = s + pref + "ребенок %s| съедает %5.1f\n" % (i.id, i.health.have_food)
+					child.health.have_food_equal(temp)
+				s = s + pref + "ребенок %s| съедает %5.1f\n" % (child.id, child.health.have_food)
 
 			s = s + pref + "Запасы: %6.1f\n" % self.resource
 		food_for_old_ones = 0

@@ -40,17 +40,15 @@ class Stage_of_age(int, Enum):
     ADULT = 3
     AGED = 4
     SENILE = 5
-    UNDEAD = 6
 
 STAGE_LIST = [i for i in Stage_of_age]
 
-STAGE_AGES = {Stage_of_age.BABY: Date(0),
-              Stage_of_age.CHILD: Date(3),
-              Stage_of_age.TEEN: Date(13),
-              Stage_of_age.ADULT: Date(18),
-              Stage_of_age.AGED: Date(55),
-              Stage_of_age.SENILE: Date(70),
-              Stage_of_age.UNDEAD: Date(100_000) # технический таймер до конца жизни. Надеюсь, человек никогда такого возраста не достигнет
+STAGE_AGES = {Stage_of_age.BABY: Date(3),
+              Stage_of_age.CHILD: Date(13),
+              Stage_of_age.TEEN: Date(18),
+              Stage_of_age.ADULT: Date(55),
+              Stage_of_age.AGED: Date(70),
+              Stage_of_age.SENILE: Date(100_000)
 }
 
 class Stage:
@@ -73,7 +71,8 @@ class Stage:
 
     def get_next_stage(self) ->Tuple[Stage_of_age, Date]:
         next_stage: Stage_of_age = STAGE_LIST[self._stage.value + 1]
-        next_stage_timer: Date = STAGE_AGES[next_stage]
+        # таймер должен перескочить на вле стадии
+        next_stage_timer: Date = STAGE_AGES[next_stage.value]
         return next_stage, next_stage_timer
 
 
@@ -82,7 +81,7 @@ class Stage:
         t = ZERO_DATE
         for stage in STAGE_AGES:
             # возраст наступления следующей стадии
-            age_of_next_stage = STAGE_AGES[STAGE_LIST[stage.value+1]]
+            age_of_next_stage = STAGE_AGES[stage.value]
             if age < age_of_next_stage:
                 s = stage
                 t = age_of_next_stage
