@@ -44,5 +44,5 @@ def many_sucsessful_runs(crowd, period):
         town.close()
 
 if __name__ == '__main__':
-    many_runs(1000, 1200)
-    #many_sucsessful_runs(1000, 1200)
+    #many_runs(1000, 1800)
+    many_sucsessful_runs(1000, 2000)

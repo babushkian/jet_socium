@@ -21,7 +21,6 @@ class Socium:
 
 	def __init__(self, anno=1000):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
-		common.init_sim_dir()
 		genetics.Genes.init_protogenome()
 		Socium.class_var_init()
 		Human.init_files()

@@ -6,8 +6,7 @@ import os
 import time
 
 from soc_time import ZERO_DATE, Date, TIK
-HOME_DIR = os.getcwd()
-SIM_DIR = os.path.join(HOME_DIR, 'xoutput')
+
 
 def init_sim_dir():
     global SIM_DIR

@@ -1,37 +1,42 @@
-﻿from soc_time import Date
+﻿import random
+import os
+
+from soc_time import Date
 from human import Human
 from socium import Socium
-import random
+
 import soc_time
+import common
 import genetics
 
 
 # хочется повторяемости картины, фиксируем сид
-random.seed(666)
+#random.seed(666)
 # количество людей в начальной популяции
 FIRST_POPULATION = 60
-TIMELINE = Date(300)  # кличество лет симуляции
-
+TIMELINE = Date(200)  # кличество лет симуляции
+HOME_DIR = os.getcwd()
 
 class Simulation:
 	def __init__(self, first_popul, timeline):
-		self.lohfile = open("./population.txt", "w", encoding="UTF16")
-		self.every_man_state_log = open("./human_state.txt", "w", encoding="UTF16")
-		self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="UTF16")
-		# инициализируем файл, по мере накопления покойников будем в него дописывать
-		#hall= open("./hall_of_fame.txt", "w", encoding="UTF16")
-		#hall.close()
-
+		self.init_logs()
 		self.soc = Socium()  # создется социум
 		self.timeline = timeline
 		self.populate(first_popul)
 		self.soc.stat.count_soc_state()
+
+	def init_logs(self):
+		common.init_sim_dir()
+		self.lohfile = open("./population.txt", "w", encoding="UTF16")
+		self.every_man_state_log = open("./human_state.txt", "w", encoding="UTF16")
+		self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="UTF16")
 
 	def close(self):
 		self.lohfile.close()
 		self.every_man_state_log.close()
 		self.tribes_verbose.close()
 		self.soc.close()
+		os.chdir(HOME_DIR)
 
 	def populate(self, first_popul):
 		for p in range(first_popul):
@@ -110,9 +115,11 @@ def display_start_genotype(genome) -> str:
 
 if __name__ == '__main__':
 	print('Start.')
+
 	town = Simulation(FIRST_POPULATION, TIMELINE)
 
 	result, final_date = town.simulate()
+	town.close()
 	print(display_start_genotype(genetics.Genes.protogenome_profile))
 	print(f'Последний год: {final_date.display()}')
 
