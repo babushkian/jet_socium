@@ -41,6 +41,7 @@ DeathDate = NewType('DeathDate', Date)
 MarryDate = NewType('MarryDate', Date)
 DivorseDate = NewType('DivorseDate', Date)
 
+
 class Human:
 	GLOBAL_HUMAN_NUMBER: int = 0
 	chronicle: IO

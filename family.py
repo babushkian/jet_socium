@@ -207,30 +207,31 @@ class Family:
 
 	@staticmethod
 	def figth_for_food(first: Family, second: Family, abundance):
-		family_strongness = []
-		for i in (first, second):
-			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
-			ff = i.wife.genes.get_trait('strongness')**2 if i.wife else 0
-			ff += i.head.genes.get_trait('strongness')**2
-			family_strongness.append(math.sqrt(ff))
+		if not abundance:
+			family_strongness = []
+			for i in (first, second):
+				# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
+				ff = i.wife.genes.get_trait('strongness')**2 if i.wife else 0
+				ff += i.head.genes.get_trait('strongness')**2
+				family_strongness.append(math.sqrt(ff))
 
-		delta = family_strongness[0] - family_strongness[1]
-		if delta != 0:
-			if delta > 0:
-				res = second.resource
-			else:
-				res = first.resource
-			# ОПАСНО, нет проверки на отрицательный общак у терпил
-			food_reqisition = res / 15.5 * delta
-			pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
-			s = ""
-			# delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
-			for sign, fam in zip((1, -1), (first, second)):
-				movement = sign * food_reqisition
-				fam.resource += movement
-				direct = "семья нашла " if movement > 0 else "семья потеряла "
-				s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
-			Family.family_feeding.write(s)
+			delta = family_strongness[0] - family_strongness[1]
+			if delta != 0:
+				if delta > 0:
+					res = second.resource
+				else:
+					res = first.resource
+				# ОПАСНО, нет проверки на отрицательный общак у терпил
+				food_reqisition = res / 15.5 * delta
+				pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
+				s = ""
+				# delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
+				for sign, fam in zip((1, -1), (first, second)):
+					movement = sign * food_reqisition
+					fam.resource += movement
+					direct = "семья нашла " if movement > 0 else "семья потеряла "
+					s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
+				Family.family_feeding.write(s)
 
 	def food_dist(self):
 		# префикс для описания описания питания семей, создающийся каждый цикл

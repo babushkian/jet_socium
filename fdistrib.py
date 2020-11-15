@@ -5,10 +5,16 @@ import genetics
 from common import Stage_of_age
 from family import Family
 
+
 class FoodDistribution:
     feeding_log: IO
+    CHILD_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0, Stage_of_age.CHILD: 0.33, Stage_of_age.TEEN: 0.5}
     def __init__(self, soc):
-        self.socium =soc
+
+        self.food_waste: float = 0
+        self.food_per_man: float = 0
+        self.abundance: bool = False
+        self.socium = soc
         self.report: str = ''
 
     @staticmethod
@@ -18,7 +24,6 @@ class FoodDistribution:
     @staticmethod
     def close():
         FoodDistribution.feeding_log.close()
-
 
     def distribute(self):
         # сюда складываются излищки еды, образовавшиеся при первоначальном распределении, потом распределятся повторно
@@ -44,10 +49,8 @@ class FoodDistribution:
 
     def count_food_per_man(self) -> float:
         food_per_man = self.socium.FOOD_RESOURCE / self.socium.stat.people_alive_number
-        if food_per_man > genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF:
-            self.abundance = True
-            food_per_man = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF  # это ограничение надо будет потом убрать
-        return food_per_man
+        optimal = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF
+        return food_per_man if food_per_man < optimal else optimal
 
     def check_abundabce(self):
         return self.food_per_man < self.socium.FOOD_RESOURCE / self.socium.stat.people_alive_number
@@ -64,22 +67,26 @@ class FoodDistribution:
             person.health.have_food_equal(self.food_per_man)
             # дети до трех лет пищу не добывают
             # дети добывают вдвое меньше еды
-            if person.age_stage.value is Stage_of_age.BABY:
-                person.health.have_food_equal(0)
-                self.food_waste += self.food_per_man
-            elif person.age_stage.value in (Stage_of_age.CHILD, Stage_of_age.TEEN):
-                half_food = person.health.have_food / 2
-                person.health.have_food_equal(half_food)
-                self.food_waste += self.food_per_man - half_food
+            if not person.age_stage.is_big:
+                mult = FoodDistribution.CHILD_FOOD_MULTIPLIER[person.age_stage.value]
+                food = self.food_per_man *mult
+                person.health.have_food_equal(food)
+                self.food_waste += self.food_per_man - food
             # женщины с детьми добывают меньше (минус за каждого иждивенца в семье)
             # по идее эту дельту надо передавать в детский бюджет, а не выкидывать в пустоту
             elif person.gender == 0:
-                # штраф к еде за каждого ребенка
-                woman_with_children_food_penalty = len(person.family.dependents) * genetics.FOOD_COEF / 2
+                # первый ребенок уменьшает добываемый матерью паек на четверть
+                # каждый последующий ребенок уменьшает траф к добываемой матерью пище в два раза
+                # после шестого ребенка штраф не рассчитывается, потому что его вклад ничтожен
+                # 1/4 + 1/8 + 1/16 + 1/32...
+                dep_sum = 64 - 2**(6 - min(len(person.family.dependents), 6))
+                woman_with_children_food_penalty  = self.food_per_man * dep_sum / 128.0
                 person.health.have_food_change(-woman_with_children_food_penalty)
                 self.food_waste += woman_with_children_food_penalty
+                #woman_with_children_food_penalty = len(person.family.dependents) * genetics.FOOD_COEF / 2
+                #person.health.have_food_change(-woman_with_children_food_penalty)
+                #self.food_waste += woman_with_children_food_penalty
         return s
-
 
     def count_wasted_food(self):
         # ================================
@@ -140,7 +147,8 @@ class FoodDistribution:
                 children_count += 1
         teor_men = men_count * self.food_per_man
         teor_women_childless = women_childless_count * self.food_per_man
-        teor_women_with_children = women_with_children_count * self.food_per_man - women_dependents * genetics.FOOD_COEF / 2
+        teor_women_with_children = women_with_children_count * self.food_per_man \
+                                    - women_dependents * genetics.FOOD_COEF / 2
         teor_children = children_count * self.food_per_man / 2
         s = "=======================================\n"
         s += "Мужчины %d| потребили фактически %8.2f| теоретически %8.2f|\n" % (men_count, men_food_sum, teor_men)
@@ -148,7 +156,7 @@ class FoodDistribution:
             women_childless_count, women_childless_food_sum, teor_women_childless)
         s += "Детные женщины %d| потребили фактически %8.2f| теоретически %8.2f| из-за %d иждивенцев\n" % (
             women_with_children_count, women_with_children_food_sum, teor_women_with_children, women_dependents)
-        s += "Дети %d| потребили фактически %8.2f| теоретически %8.2f|\n" % (children_count, children_food_sum, teor_children)
+        s += f'Дети {children_count}| потребили фактич {children_food_sum:8.2f}| теоретич {teor_children:8.2f}|\n'
         real_f = men_food_sum + women_childless_food_sum + women_with_children_food_sum + children_food_sum
         teor_f = teor_men + teor_women_childless + teor_women_with_children + teor_children
         s += f'Остатки пищи: {self.food_waste}\n'
@@ -165,7 +173,7 @@ class FoodDistribution:
             # делим индексы пополам ,чтобы потом сталкивать семьи в конкурентной борьбе
             m = seq[:diap]
             n = seq[diap:2 * diap]
-            return (m, n)  # две группы семей, которые будут делить еду между собой
+            return m, n  # две группы семей, которые будут делить еду между собой
 
         sum_family_resourses = 0
         soc_food_budget = 0
@@ -184,3 +192,7 @@ class FoodDistribution:
             fam.food_display("FINAL")
             soc_food_budget += fam.budget
         self.feeding_log.write(f'{self.socium.anno.display()} Потребленная еда: {soc_food_budget:7.1f}\n')
+
+
+class FoodControl:
+    pass
