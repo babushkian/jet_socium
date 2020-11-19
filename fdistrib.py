@@ -8,7 +8,7 @@ from family import Family
 
 class FoodDistribution:
     feeding_log: IO
-    CHILD_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0, Stage_of_age.CHILD: 0.33, Stage_of_age.TEEN: 0.5}
+    FOOD_MULTIPLIER = {Stage_of_age.BABY: 0, Stage_of_age.CHILD: 0.33, Stage_of_age.TEEN: 0.5}
     def __init__(self, soc):
 
         self.food_waste: float = 0
@@ -67,8 +67,8 @@ class FoodDistribution:
             person.health.have_food_equal(self.food_per_man)
             # дети до трех лет пищу не добывают
             # дети добывают вдвое меньше еды
-            if not person.age_stage.is_big:
-                mult = FoodDistribution.CHILD_FOOD_MULTIPLIER[person.age_stage.value]
+            if not person.age.is_big:
+                mult = FoodDistribution.FOOD_MULTIPLIER[person.age.stage]
                 food = self.food_per_man *mult
                 person.health.have_food_equal(food)
                 self.food_waste += self.food_per_man - food
@@ -125,7 +125,7 @@ class FoodDistribution:
         children_count = 0
         # считаем, сколько еды потребили все категории населения: мужчины, детные и бездетные женщины, дети
         for person in self.socium.people_alive:
-            if person.age_stage.is_big:
+            if person.age.is_big:
                 # взрослые
                 if person.gender:
                     # мужчины

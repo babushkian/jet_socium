@@ -1,8 +1,6 @@
-﻿
-"""
+﻿"""
 Модуль, определяющий формат даты а так же параметры времени по которому живет социум живет.
 А так же всякие сложение-вычитание дат, вычисление периодов времени
-
 """
 
 class Date:
@@ -19,31 +17,27 @@ class Date:
         self.year  = year
         self.nornalize()
 
-    def display(self, date=True):
-        if date:
-            d = "Год: %d" % self.year
-            if self.MONTHS_IN_YEAR>1:
-                d += "  мес: %d" % self.month
-            if self.DAYS_IN_MONTH>1:
-                d += "  день: %d" % self.day
+    def display(self, calendar_date = True):
+        if calendar_date:
+            d = f'Год: {self.year:5d}'
+            if self.MONTHS_IN_YEAR > 1:
+                d += f'  мес: {self.month:2d}'
+            if self.DAYS_IN_MONTH > 1:
+                d += f' день: {self.day:2d}'
+
         else:
-            d = "%d лет" % self.year
-            if self.MONTHS_IN_YEAR>1:
-                d += ", %d мес" % self.month
-            if self.DAYS_IN_MONTH>1:
-                d += ", %d дней" % self.day
+            d = f'{self.year:5d} лет'
+            if self.MONTHS_IN_YEAR > 1:
+                d += f', {self.month:2d} мес'
+            if self.DAYS_IN_MONTH > 1:
+                d += f', {self.day:2d} дней'
         return d
 
-
     def	years_float(self):
-        return self.len() / self.MONTHS_IN_YEAR / self.DAYS_IN_MONTH
-
+        return self.len() / self.DAYS_IN_YEAR
 
     def len(self):
-        years_score = self.year * self.MONTHS_IN_YEAR * self.DAYS_IN_MONTH
-        months_score = self.month * self.DAYS_IN_MONTH
-        return self.day + months_score + years_score
-
+        return self.day + self.month * self.DAYS_IN_MONTH + self.year * self.DAYS_IN_YEAR
 
     def nornalize(self):
         day = self.day
@@ -53,7 +47,6 @@ class Date:
         self.month = day // self.DAYS_IN_MONTH + month
         self.year  = self.month // self.MONTHS_IN_YEAR + year
         self.month %= self.MONTHS_IN_YEAR
-
 
     def create(self):
         """
@@ -81,7 +74,6 @@ class Date:
         z = self.year + other.year
         return Date(z, y, x)
 
-
     def __sub__(self, other):
         x = self.day - other.day
         y = self.month - other.month
@@ -94,17 +86,22 @@ class Date:
         else:
             return False
 
-class Anno(Date):
-    def time_pass(self):
-        self.day +=1
-        self.nornalize()
-
-
-
 ZERO_DATE = Date()
 YEAR = Date(1,0,0)
 TIK = Date(0,0,1)
-FAR_FUTURE = Date(100000,0,0)
+FAR_FUTURE = Date(1_000_000,0,0)
+
+
+class Anno(Date):
+
+    def increase(self):
+        self.day +=1
+
+    def display(self):
+        self.nornalize()
+        return super().display(calendar_date=True)
+
+
 
 if __name__ == '__main__':
     Date.MONTHS_IN_YEAR =1
@@ -176,12 +173,22 @@ if __name__ == '__main__':
     for i in range(Date.DAYS_IN_MONTH+1):
         t+=Date(0,0,1)
         print(i, " - ",t.display())
-
     print("========")
-
     for i in range(Date.DAYS_IN_MONTH+1):
         t-=Date(0,0,1)
         print(i, " - ",t.display())
     print((t+x).display())
     print((Date(1820, 5,17)).display())
-
+    print('Тестирование класса Anno')
+    Date.MONTHS_IN_YEAR = 4
+    Date.DAYS_IN_MONTH = 1
+    a = Anno(1, 0, 2)
+    print("a.MONTHS_IN_YEAR", a.MONTHS_IN_YEAR, 'a.DAYS_IN_MONTH', a.DAYS_IN_MONTH)
+    print(a.display())
+    a.increase()
+    print(a.year, a.month, a.day)
+    a.increase()
+    print("Вызываю метод из класса", Anno.display(a))
+    a.increase()
+    print(a.year, a.month, a.day)
+    print(a.display())

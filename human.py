@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
-from common import Stage_of_age, Stage, STAGE_AGES
+from common import Stage_of_age, Age, STAGE_DICT
 
 import prop
 import family
@@ -32,7 +32,7 @@ AGE_SENILE: Date = Date(70)
 
 DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
-FERTIL_RERIOD = (STAGE_AGES[Stage_of_age.AGED] - STAGE_AGES[Stage_of_age.ADULT]).year \
+FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT]).year \
 				* Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST / FERTIL_RERIOD
 
@@ -58,7 +58,7 @@ class Human:
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-	def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[int]=None, age: int=0):
+	def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[int]=None, age_int: int=0):
 		Human.GLOBAL_HUMAN_NUMBER += 1
 		self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
@@ -70,8 +70,7 @@ class Human:
 
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
-		self.age: Date = Date(age)
-		self.age_stage: Stage = Stage(self)
+		self.age: Age = Age(self, age_int)
 
 		self.birth_date: BirthDate = self.socium.anno - self.age
 		self.death_date: Optional[DeathDate] = None
@@ -84,10 +83,10 @@ class Human:
 		self.spouse: Optional[Human] = None  # супруга нет
 		# текущий супруг в этот список не входит
 
-		self.marry_dates: Dict[Optional[MarryDate]] = dict()  # для каждого супруга своя дата свадьбы, причем на
+		self.marry_dates: Dict[Human, MarryDate] = dict()  # для каждого супруга своя дата свадьбы, причем на
 		# одном человеке можно жениться несколько раз, бывает и такое
 		# в этих словарях дата указывает на объект бывшего супруга
-		self.divorce_dates: Dict[Optional[DivorseDate]] = dict()
+		self.divorce_dates: Dict[Human, DivorseDate] = dict()
 		self.pregnant: List[Optional[fetus.Fetus]] = list()
 		self.children: List[Optional[Human]] = list()
 
@@ -144,14 +143,13 @@ class Human:
 
 	def live(self) -> None:
 		self.health.modify() # уменьшается счетчик жизней
-		self.age += TIK
-		self.age_stage.check_stage()
+		self.age.increase()
 		is_dead = self.health.is_zero_health
 		if is_dead == True:
 			self.die() # перс умирает
 		if self.is_alive:
 			self.score.update(self.score.LIVE_SCORE)
-			if self.age_stage.value is Stage_of_age.ADULT:
+			if self.age.stage is Stage_of_age.ADULT:
 				# Рожаем детей
 				if self.is_married and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
 					self.check_pregnant()
@@ -296,7 +294,7 @@ class Human:
 
 	@property
 	def adult_and_free(self) -> bool:
-		return self.age_stage.value is Stage_of_age.ADULT and  not self.is_married
+		return self.age.stage is Stage_of_age.ADULT and  not self.is_married
 
 	@property
 	def is_married(self) -> bool:

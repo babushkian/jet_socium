@@ -98,7 +98,7 @@ class Socium:
 					temp.append(fam)
 			self.families = temp
 
-		self.anno.time_pass()
+		self.anno.increase()
 		# уменьшаем количество пищи
 		if self.anno.year_starts() and self.anno.year % 4 == 0:
 			pass
@@ -197,7 +197,7 @@ class Socium:
 		if self.short_death_count > random.randrange(9):
 			# пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
 			stranger_gender =  random.randrange(2)
-			self.add_human(Human(self, (None, None), gender=stranger_gender,  age=random.randrange(18, 35)))
+			self.add_human(Human(self, (None, None), gender=stranger_gender,  age_int=random.randrange(18, 35)))
 			self.short_death_count = 0
 
 

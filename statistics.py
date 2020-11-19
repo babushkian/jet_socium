@@ -153,7 +153,7 @@ class Soc_stat():
 		no_male = 0
 		no_female = 0
 		for person in self.socium.soc_list:
-			if person.age_stage.value is Stage_of_age.ADULT and \
+			if person.age.stage is Stage_of_age.ADULT and \
 					(person.death_date is None or self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD))):
 				# считаем количество детей у мужчин и у женщин по отдельности
 				ch = len(person.children)
@@ -279,9 +279,9 @@ class Soc_stat():
 					self.men += 1     #  количтество мужчин (любого возраста)
 				else:
 					self.women += 1    #  количтество женщин (любого возраста)
-				if not pers.age_stage.is_big:
+				if not pers.age.is_big:
 					self.children +=1  #  количтество детей
-				elif pers.age_stage.value is Stage_of_age.ADULT:
+				elif pers.age.stage is Stage_of_age.ADULT:
 					self.adult += 1  #  количтество взрослых
 				else:
 					self.aged +=1    #  количтество стариков
@@ -332,11 +332,11 @@ class Soc_stat():
 			else:
 				if person.gender:
 					self.unmarried_men.append(person)
-					if person.age_stage.is_big:
+					if person.age.is_big:
 						self.unmarried_adult_men.append(person)
 				else:
 					self.unmarried_women.append(person)
-					if person.age_stage.is_big:
+					if person.age.is_big:
 						self.unmarried_adult_women.append(person)
 
 		self.married_people_number = len(self.married_people)

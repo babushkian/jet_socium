@@ -70,7 +70,7 @@ class Family:
 
 	def add_dependents(self, family: Family):
 		for i in family.dependents:
-			if not i.age_stage.is_big:
+			if not i.age.is_big:
 				i.tribe_name = self.head.tribe_name
 				# меняем имя и фамилию
 				i.name.change_father(self.head)
@@ -339,7 +339,7 @@ class Family:
 		# убираем повзрослевших иждивенцев
 		too_old =[]
 		for i in self.dependents:
-			if i.age_stage.is_big:
+			if i.age.is_big:
 				too_old.append(i)
 		if len(too_old) > 0:
 			for i in too_old:

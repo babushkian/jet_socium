@@ -6,7 +6,7 @@ from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
 
-from common import Stage_of_age, STAGE_AGES
+from common import Stage_of_age, STAGE_DICT
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
@@ -51,7 +51,7 @@ class Health:
         # Определяем запас здоровья человека через его предполагаемый возраст.
         # Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
         # определяем возраст смерти персоны (минимум: 55 - 48; максимум: 55 + 48)
-        presume_life: Date = STAGE_AGES[Stage_of_age.AGED] + Date(prop.gauss_sigma_16())
+        presume_life: Date = STAGE_DICT[Stage_of_age.AGED] + Date(prop.gauss_sigma_16())
         months: int = random.randrange(2 * Date.MONTHS_IN_YEAR) - Date.MONTHS_IN_YEAR #+- меяцев к жизни
         days: int = random.randrange(2 * Date.DAYS_IN_MONTH) - Date.DAYS_IN_MONTH #+- дней к жизни
         presume_life += Date(0, months, days)
@@ -83,7 +83,7 @@ class Health:
         Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
         Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
         """
-        stage_delta = Stage_of_age.ADULT - self.person.age_stage.value + 1
+        stage_delta = Stage_of_age.ADULT - self.person.age.stage + 1
         denominator = stage_delta if stage_delta > 0 else 1
         return denominator
 
@@ -101,7 +101,7 @@ class Health:
         abstinence_bonus = 0.2 * (self.person.genes.get_trait('abstinence') - 5)  # чем меньше, тем хуже усваивается еда
         pregnancy_bonus = 0
         fertility_bonus = 0
-        if self.person.age_stage.is_big:
+        if self.person.age.is_big:
             # за свою половую энергию человек расплачивается жизнью
             # для мужчин трата энергии более выражена
             if self.person.gender:

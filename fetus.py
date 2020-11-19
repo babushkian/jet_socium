@@ -33,7 +33,7 @@ class Fetus:
 		self.genes.define()
 
 	def born(self, socium):
-		newborn =  human.Human(socium, (self.mother, self.father), gender=self.gender,age=0 )
+		newborn =  human.Human(socium, (self.mother, self.father), gender=self.gender, age_int=0 )
 		self.genes.transit(newborn)
 		return newborn
 

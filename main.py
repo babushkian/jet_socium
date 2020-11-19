@@ -80,7 +80,7 @@ class Simulation:
 				anno_date = f'{town.soc.anno.year}:{ town.soc.anno.month}'
 				famil = f' {i.family.id}'
 				a = i.id
-				satge_name = i.age_stage.name
+				satge_name = i.age.stage.name
 
 				sex = "М" if i.gender else "Ж"
 				b = i.genes.get_trait('strongness')
@@ -90,7 +90,7 @@ class Simulation:
 				fb = - i.health.food_sum
 				hf = i.health.have_food
 				z = anno_date + famil
-				z += f' {a}| {sex}|{i.age.display(False):14s}| {satge_name:7s}| str = {b:2d}| abs = {c:2d}| sat = {d:2d}| ' \
+				z += f' {a}| {sex}|{i.age.display():14s}| {satge_name:7s}| str = {b:2d}| abs = {c:2d}| sat = {d:2d}| ' \
 					 f'fd = {hf:5.1f}| bonus = {fb:6.1f}| heal = {e}\n'
 				town.every_man_state_log.write(z)
 
