@@ -61,6 +61,9 @@ class Health:
         self.satiety = 5  # сытость. При рождении сытость нормальная.
         self.food_sum = 0
 
+    def set_health(self, years):
+        self.health: float = HEALTH_PER_DAY * float(Date(years).len())
+
     def have_food_change(self, number):
         """
         Изменяет количество добытой человектом еды на пареметр number
