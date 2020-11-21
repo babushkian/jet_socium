@@ -2,6 +2,8 @@
 Модуль, определяющий формат даты а так же параметры времени по которому живет социум живет.
 А так же всякие сложение-вычитание дат, вычисление периодов времени
 """
+from __future__ import annotations
+from typing import Union
 
 class Date:
     MONTHS_IN_YEAR =4
@@ -48,7 +50,7 @@ class Date:
         self.year  = self.month // self.MONTHS_IN_YEAR + year
         self.month %= self.MONTHS_IN_YEAR
 
-    def create(self):
+    def create(self) -> Date:
         """
         Создает новый объект даты с теми же числами. Это просто копирование даты
         в ноавй объект.
@@ -59,26 +61,31 @@ class Date:
     def __hash__(self):
         return self.len()
 
-    def __eq__(self, other):
+    def __eq__(self, other: Date) -> bool:
         return self.len() == other.len()
 
-    def __gt__(self, other):
+    def __gt__(self, other: Date) -> bool:
         return self.len()> other.len()
 
-    def __lt__(self, other):
+    def __lt__(self, other: Date) -> bool:
         return self.len() < other.len()
 
-    def __add__(self, other):
+    def __add__(self, other: Date) -> Date:
         x = self.day + other.day
         y = self.month + other.month
         z = self.year + other.year
         return Date(z, y, x)
 
-    def __sub__(self, other):
+    def __sub__(self, other: Date) -> Date:
         x = self.day - other.day
         y = self.month - other.month
         z = self.year - other.year
         return Date(z, y, x)
+
+    def __mul__(self, other: Union[int, float]) -> Date:
+        result = int(self.len()*other )
+        return Date(0, 0, result)
+
 
     def year_starts(self):
         if self.month % self.MONTHS_IN_YEAR == 0 and self.day % self.DAYS_IN_MONTH ==0 :
@@ -192,3 +199,17 @@ if __name__ == '__main__':
     a.increase()
     print(a.year, a.month, a.day)
     print(a.display())
+    print("========")
+    print('проверка умножения даты на целое число')
+    g = Date(0, 0, 1)
+    print(g.display(False))
+    x = g * 2
+    print(f'{g.display(False)} * 2 = {x.display(False)}')
+    x = g * 6
+    print(f'{g.display(False)} * 6 = {x.display(False)}')
+    x = g * 23
+    print(f'{g.display(False)} * 23 = {x.display(False)}')
+    g = Date(2)
+    print(g.display(False))
+    x = g * 2.5
+    print(f'{g.display(False)} * 2.5 = {x.display(False)}')

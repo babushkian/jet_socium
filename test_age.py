@@ -10,7 +10,7 @@ h.health.set_health(1000)
 s.add_human(h)
 h = human.Human(s, (None, None), 1,  5)
 s.add_human(h)
-h = human.Human(s, (None, None), 1,  17)
+h = human.Human(s, (None, None), 1,  16)
 s.add_human(h)
 
 
@@ -21,5 +21,6 @@ for i in range(80):
     print('--', s.anno.display() )
     s.tictac()
     for h in s.soc_list:
-        print(h.age.display(), h.age.stage)
+        #print(h.age.display(), h.age.stage)
+        print(h.age.tech_display())
 

@@ -149,10 +149,11 @@ class Human:
 			self.die() # перс умирает
 		if self.is_alive:
 			self.score.update(self.score.LIVE_SCORE)
-			if self.age.stage is Stage_of_age.ADULT:
-				# Рожаем детей
-				if self.is_married and self.gender == False and self.check_fertil_age() and self.check_fertil_satiety():
-					self.check_pregnant()
+			if self.age.is_big:
+				# Зачинаем детей
+				if self.is_married and self.gender == False and self.age.is_fertile_age:
+					if self.check_fertil_age() and self.check_fertil_satiety():
+						self.check_pregnant()
 				# Разводимся
 				# шанс развода: 1 на три семьи, если они живут вместе по 40 лет в серднем (два прохода на обоих супругов)
 
@@ -260,7 +261,8 @@ class Human:
 	def check_pregnant(self) -> None:
 		if len(self.pregnant) == 0:
 			check = PREGNANCY_CHANCE*3*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
-			#print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
+			# print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} '
+			# 	  f'пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
 			if  check > random.random():
 				fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
 				if fetus_amount < 1:
@@ -276,25 +278,24 @@ class Human:
 				self.give_birth()
 
 	def check_fertil_age(self) -> bool:
-		def count_fertil_age(trait: int) -> Date:
-			return Date(0, 0, trait*6) + Date(17, 0, 0)
-		fert = False
-		if self.age > count_fertil_age(self.genes.get_trait('fert_age')):
-			if self.spouse.age > count_fertil_age(self.spouse.genes.get_trait('fert_age')):
-				fert = True
+		def _count_fertil_age(trait: int) -> Date:
+			add_date = genetics.FERTILE_DELTA * (trait/genetics.Gene.MAX_VALUE)
+			date = STAGE_DICT[Stage_of_age.CHILD] + add_date
+			return date
+		fert = True
+		for person in (self, self.spouse):
+			if person.age < _count_fertil_age(person.genes.get_trait('fert_age')):
+				fert = False
+				break
 		return fert
 
 	def check_fertil_satiety(self) -> bool:
-		fert = False
-		if self.health.satiety > self.genes.get_trait('fert_satiety') and \
-						self.spouse.health.satiety > self.spouse.genes.get_trait('fert_satiety'):
-			fert = True
+		fert = True
+		for person in (self, self.spouse):
+			if person.health.satiety < person.genes.get_trait('fert_satiety'):
+				fert = False
+				break
 		return fert
-
-
-	@property
-	def adult_and_free(self) -> bool:
-		return self.age.stage is Stage_of_age.ADULT and  not self.is_married
 
 	@property
 	def is_married(self) -> bool:

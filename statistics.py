@@ -281,7 +281,7 @@ class Soc_stat():
 					self.women += 1    #  количтество женщин (любого возраста)
 				if not pers.age.is_big:
 					self.children +=1  #  количтество детей
-				elif pers.age.stage is Stage_of_age.ADULT:
+				elif pers.age.stage < Stage_of_age.AGED:
 					self.adult += 1  #  количтество взрослых
 				else:
 					self.aged +=1    #  количтество стариков

@@ -129,10 +129,15 @@ class Stage:
 
     @property
     def is_big(self):
-        return self._stage in (Stage_of_age.YOUNG, Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
+        return self._stage > Stage_of_age.TEEN
+
+    @property
+    def is_fertile_age(self):
+        return self._stage in (Stage_of_age.YOUNG, Stage_of_age.ADULT)
+
 
     def __str__(self):
-        return f'Возрастная стадия {self._stage.name} у человека {self.age.person.id}  возрастом {self.age.display()}'
+        return f'Возрастная стадия {self._stage.name} у человека {self.age.person.id}  возрастом {self.age.display() }|{self.age.len()} '
 
 
 class Age(Date):
@@ -154,6 +159,9 @@ class Age(Date):
             d += f', {self.day:2d} дней'
         return d
 
+    def tech_display(self):
+        return self._stage.__str__() + f' next stage time:{self._stage._timer.display()}|{self._stage._timer.len()}'
+
     @property
     def stage(self) -> Stage_of_age:
         return self._stage.value
@@ -163,6 +171,9 @@ class Age(Date):
     def is_big(self):
         return self._stage.is_big
 
+    @property
+    def is_fertile_age(self):
+        return self._stage.is_fertile_age
 
 
 if __name__ == '__main__':

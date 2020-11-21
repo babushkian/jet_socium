@@ -32,13 +32,15 @@ FOOD_COEF = 20
 
 # Какой урон или пользу добавляет еда человеку 
 # (в качестве индекса должно выптупать количество потребленной еды satiety)
-#              0     1   2   3     4    5   6    7    8    9    10  11  12 - на должен достигаться
-FOOD_BONUS = [-256, -56, -8, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.3, -.8, -3, -16]
+#               0     1   2   3     4    5   6    7    8    9     10  11   12 - на должен достигаться
+FOOD_BONUS = [-256, -56, -8, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.3, -0.8, -3, -16]
 #FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.2, -0.4, -1, -3]
 
 YEAR_HEALTH_AMOUNT = 365.0
 HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / Date.DAYS_IN_YEAR
 # для 4-х дней в году  HEALTH_PER_DAY = 91.25, каждый прожитый день будет отниматься столько
+
+FERTILE_DELTA = STAGE_DICT[Stage_of_age.YOUNG] - STAGE_DICT[Stage_of_age.CHILD]
 
 class Health:
     def __init__(self, person, age=ZERO_DATE):
@@ -158,7 +160,7 @@ def generate_genome(genome_len: int)-> List[int]:
     Генерирует базовый геном: список целых чисел по длине генов. Этими числами будут инициироваться гены.
     Это не геном, а прототип генома.
     """
-    genome = [random.randint(Gene.GENE_MIN_VALUE+2, Gene.GENE_MAX_VALUE-2) for _ in range(genome_len)]
+    genome = [random.randint(Gene.MIN_VALUE + 2, Gene.MAX_VALUE - 2) for _ in range(genome_len)]
     genome[0] = 9 # ген наследования
     return genome
 
@@ -239,8 +241,8 @@ class Genes:
 
 
 class Gene:
-    GENE_MIN_VALUE = 0
-    GENE_MAX_VALUE = 11
+    MIN_VALUE = 0
+    MAX_VALUE = 11
     def __init__(self, name: str, genome: Genes, value: int=5):
         self.name: str = name
         self.containing_genome: Genes = genome
@@ -273,10 +275,10 @@ class Gene:
     def inherit_gene(self, parent,  default=5):
         self.predecessor = parent
         def trait_limit(trait):
-            if trait > Gene.GENE_MAX_VALUE:
-                trait = Gene.GENE_MAX_VALUE
-            if trait < Gene.GENE_MIN_VALUE:
-                trait = Gene.GENE_MIN_VALUE
+            if trait > Gene.MAX_VALUE:
+                trait = Gene.MAX_VALUE
+            if trait < Gene.MIN_VALUE:
+                trait = Gene.MIN_VALUE
             return trait
         self.value = trait_limit(self.mutate_gene())
 
@@ -308,9 +310,21 @@ class Gene_Inheritance(Gene):
         pass
 
 
+
+
+
+
 if __name__ == '__main__':
     # тестирование коэффициента привлекательности (который зависит от возраста)
     for i in range(20):
         x = random.randrange(15, 60)
         attract = lust_coef(x)
         print("%d - %4f" % (x, attract))
+
+    print('================================')
+    print('Считаем фертильный возраст:')
+    print(f'промежуток в годах:{FERTILE_DELTA.display(False)}')
+    print(f'между {STAGE_DICT[Stage_of_age.CHILD].display(False)} и {STAGE_DICT[Stage_of_age.YOUNG].display(False)}')
+    for i in range(Gene.MAX_VALUE):
+        fage = STAGE_DICT[Stage_of_age.CHILD] + FERTILE_DELTA * (i/Gene.MAX_VALUE)
+        print(f'ген: {i}, возраст: {fage.display(False)}')

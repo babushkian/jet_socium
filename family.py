@@ -3,7 +3,7 @@ import random
 from typing import Optional, List
 from enum  import Enum
 import math
-
+from common import GET_FOOD_MULTIPLIER
 import genetics
 import human
 class FE(Enum):
@@ -29,18 +29,14 @@ class Family:
 		self.parents: List[human.Human] = list()
 		self.add_parents()
 		self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
-		# список детей до 18 лет (не обязательно родных)
+		# список детей (не обязательно родных)
 		self.dependents: List[Optional[human.Human]] = list()
 		if depend:
-			# как обычно, массив детей присвоил, а дперписать детей в другую семью забыл
-			#self.dependents = depend
 			for i in depend:
 				self.add_child(i)
-
 		# пищевой ресурс семьи
 		self.resource = 0
-		s = "Новая семья: %s| %s | %s| возраст - %d лет.\n" % (self.id, self.head.name.display(),
-															   self.head.id, self.head.age.year)
+		s = f'Новая семья: {self.id}| {self.head.name.display()}| {self.head.id}| возраст - {self.head.age.year} лет.\n'
 		self.family_log_file.write(s)
 
 
@@ -211,8 +207,8 @@ class Family:
 			family_strongness = []
 			for i in (first, second):
 				# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
-				ff = i.wife.genes.get_trait('strongness')**2 if i.wife else 0
-				ff += i.head.genes.get_trait('strongness')**2
+				ff = (i.wife.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.wife.age.stage])**2 if i.wife else 0
+				ff += (i.head.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.head.age.stage])**2
 				family_strongness.append(math.sqrt(ff))
 
 			delta = family_strongness[0] - family_strongness[1]
