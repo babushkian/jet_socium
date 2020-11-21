@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
+from common import GET_FOOD_MULTIPLIER
 import genetics
 from common import Stage_of_age
 from family import Family
@@ -64,28 +65,21 @@ class FoodDistribution:
         s += f'Количество еды на человека: {self.food_per_man:7.2f}\n'
         for person in self.socium.people_alive:
             # присваивает каждому человеку первоначальное количество пищи
-            person.health.have_food_equal(self.food_per_man)
-            # дети до трех лет пищу не добывают
-            # дети добывают вдвое меньше еды
-            if not person.age.is_big:
-                mult = FoodDistribution.FOOD_MULTIPLIER[person.age.stage]
-                food = self.food_per_man *mult
-                person.health.have_food_equal(food)
-                self.food_waste += self.food_per_man - food
+            mult = GET_FOOD_MULTIPLIER[person.age.stage]
+            food = mult * self.food_per_man
+            self.food_waste += self.food_per_man - food
+            person.health.have_food_equal(food)
             # женщины с детьми добывают меньше (минус за каждого иждивенца в семье)
             # по идее эту дельту надо передавать в детский бюджет, а не выкидывать в пустоту
-            elif person.gender == 0:
+            if person.gender == 0 and len(person.family.dependents) > 0:
                 # первый ребенок уменьшает добываемый матерью паек на четверть
                 # каждый последующий ребенок уменьшает траф к добываемой матерью пище в два раза
                 # после шестого ребенка штраф не рассчитывается, потому что его вклад ничтожен
                 # 1/4 + 1/8 + 1/16 + 1/32...
                 dep_sum = 64 - 2**(6 - min(len(person.family.dependents), 6))
-                woman_with_children_food_penalty  = self.food_per_man * dep_sum / 128.0
+                woman_with_children_food_penalty  = person.health.have_food * dep_sum / 128.0
                 person.health.have_food_change(-woman_with_children_food_penalty)
                 self.food_waste += woman_with_children_food_penalty
-                #woman_with_children_food_penalty = len(person.family.dependents) * genetics.FOOD_COEF / 2
-                #person.health.have_food_change(-woman_with_children_food_penalty)
-                #self.food_waste += woman_with_children_food_penalty
         return s
 
     def count_wasted_food(self):

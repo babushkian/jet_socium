@@ -6,7 +6,7 @@ from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
 
-from common import Stage_of_age, STAGE_DICT
+from common import Stage_of_age, STAGE_DICT, DIGEST_FOOD_MULTIPLIER
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
@@ -33,7 +33,7 @@ FOOD_COEF = 20
 # Какой урон или пользу добавляет еда человеку 
 # (в качестве индекса должно выптупать количество потребленной еды satiety)
 #              0     1   2   3     4    5   6    7    8    9    10  11  12 - на должен достигаться
-FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.4, -1, -4, -16]
+FOOD_BONUS = [-256, -56, -8, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.3, -.8, -3, -16]
 #FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.2, -0.4, -1, -3]
 
 YEAR_HEALTH_AMOUNT = 365.0
@@ -81,18 +81,9 @@ class Health:
         self.have_food = number
         self.have_food = self.have_food if self.have_food > 0 else 0
 
-    def _count_age_factor(self):
-        """
-        Вычисляет, во сколько раз меньшей доле пищи будет насыщаться человек, если о не взрослый
-        Чем ниже возрастная стадия человека, тем меньше ему еды нужно для насыщения
-        """
-        stage_delta = Stage_of_age.ADULT - self.person.age.stage + 1
-        denominator = stage_delta if stage_delta > 0 else 1
-        return denominator
-
 
     def ideal_food_amount(self):
-        return NORMAL_CONSUME_RATE * FOOD_COEF / self._count_age_factor()
+        return NORMAL_CONSUME_RATE * FOOD_COEF * DIGEST_FOOD_MULTIPLIER[self.person.age.stage]
 
     def modify(self):
         """
@@ -116,8 +107,8 @@ class Health:
         # на основе количества пищи у человека и дополнительных факторов (в основном отрицательных) вычисляется его сытость
         # а на основе сытости человека вычисляется урон, наносимый здоровью
         # мало ест - сильный урон
-        # также умножаем еду на возрастной коэффициент
-        fp = self.person.health.have_food / FOOD_COEF * self._count_age_factor() \
+        # также делим еду на возрастной коэффициент(пока маленьктй, легко питаться)
+        fp = self.person.health.have_food / FOOD_COEF / DIGEST_FOOD_MULTIPLIER[self.person.age.stage] \
              + abstinence_bonus + fertility_bonus + pregnancy_bonus
         self.satiety = int(fp)
         self.satiety = self.satiety if self.satiety >= 0 else 0

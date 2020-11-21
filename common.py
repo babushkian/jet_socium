@@ -23,7 +23,13 @@ def init_sim_dir():
 class Gender(str, Enum):
     MALE = 'male'
     FEMALE = 'female'
+
+
+class InitGender(str, Enum):
     UNKNOWN = 'unknown'
+    MALE = 'male'
+    FEMALE = 'female'
+
 
 class Consume_rate(int, Enum):
     HEDONIC = 10
@@ -32,22 +38,44 @@ class Consume_rate(int, Enum):
     POOR = 3
     STARVE = 2
 
+
 class Stage_of_age(int, Enum):
     BABY = 0
     CHILD = 1
     TEEN = 2
-    ADULT = 3
-    AGED = 4
-    SENILE = 5
+    YOUNG = 3
+    ADULT = 4
+    AGED = 5
+    SENILE = 6
 
 STAGE_LIST = [i for i in Stage_of_age]
 
 STAGE_DICT = {Stage_of_age.BABY: Date(6),
-              Stage_of_age.CHILD: Date(13),
-              Stage_of_age.TEEN: Date(18),
+              Stage_of_age.CHILD: Date(12),
+              Stage_of_age.TEEN: Date(17),
+              Stage_of_age.YOUNG: Date(28),
               Stage_of_age.ADULT: Date(55),
               Stage_of_age.AGED: Date(70),
               Stage_of_age.SENILE: Date(100_000)
+              }
+
+
+DIGEST_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0.3,
+              Stage_of_age.CHILD: 0.5,
+              Stage_of_age.TEEN: 0.7,
+              Stage_of_age.YOUNG: 1.0,
+              Stage_of_age.ADULT: 1.2,
+              Stage_of_age.AGED: 1.45,
+              Stage_of_age.SENILE: 1.8
+              }
+
+GET_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0,
+              Stage_of_age.CHILD: 0.3,
+              Stage_of_age.TEEN: 0.5,
+              Stage_of_age.YOUNG: 1.0,
+              Stage_of_age.ADULT: 0.9,
+              Stage_of_age.AGED: 0.7,
+              Stage_of_age.SENILE: 0.5
               }
 
 
@@ -101,7 +129,7 @@ class Stage:
 
     @property
     def is_big(self):
-        return self._stage in (Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
+        return self._stage in (Stage_of_age.YOUNG, Stage_of_age.ADULT, Stage_of_age.AGED, Stage_of_age.SENILE)
 
     def __str__(self):
         return f'Возрастная стадия {self._stage.name} у человека {self.age.person.id}  возрастом {self.age.display()}'
