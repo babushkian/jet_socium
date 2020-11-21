@@ -18,9 +18,10 @@ TIMELINE = Date(200)  # кличество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:
-	def __init__(self, first_popul, timeline):
+	def __init__(self, first_popul, timeline, estimate_people):
+		self.estimate_people = estimate_people
 		self.init_logs()
-		self.soc = Socium()  # создется социум
+		self.soc = Socium(1000, self.estimate_people)  # создется социум
 		self.timeline = timeline
 		self.populate(first_popul)
 		self.soc.stat.count_soc_state()
@@ -35,7 +36,7 @@ class Simulation:
 		self.lohfile.close()
 		self.every_man_state_log.close()
 		self.tribes_verbose.close()
-		self.soc.close()
+		self.soc.close(self.estimate_people)
 		os.chdir(HOME_DIR)
 
 	def populate(self, first_popul):
@@ -116,7 +117,7 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
 	print('Start.')
 
-	town = Simulation(FIRST_POPULATION, TIMELINE)
+	town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
 
 	result, final_date = town.simulate()
 	town.close()

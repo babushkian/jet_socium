@@ -19,10 +19,10 @@ class Socium:
 	ESTIMAED_NUMBER_OF_PEOPLE = None
 	FOOD_RESOURCE = None
 
-	def __init__(self, anno=1000):
+	def __init__(self, anno=1000, estimate_people=100):
 		# список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
 		genetics.Genes.init_protogenome()
-		Socium.class_var_init()
+		Socium.class_var_init(estimate_people)
 		Human.init_files()
 		Family.init_files()
 		FoodDistribution.init_files()
@@ -42,14 +42,14 @@ class Socium:
 		self.people_alive: List = []
 
 	@staticmethod
-	def class_var_init():
-		Socium.ESTIMAED_NUMBER_OF_PEOPLE = 200 # предполагаемое количество людей
+	def class_var_init(estimate_people):
+		Socium.ESTIMAED_NUMBER_OF_PEOPLE = estimate_people # предполагаемое количество людей
 		# общее клоичестов пищи за ход, которое люди делят между собой
 		Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
 
 
-	def close(self):
-		self.__class__.class_var_init()
+	def close(self, estimate_people):
+		self.__class__.class_var_init(estimate_people)
 		FoodDistribution.close()
 		Human.close()
 		Family.close()
@@ -76,18 +76,6 @@ class Socium:
 				temp.append(person)
 		self.soc_list = temp
 		self.hall_of_fame(self.forgotten)
-
-	def reduce_food_resource(self):
-		if self.anno.year > 2400 and self.anno.year < 2700:
-			#Socium.ESTIMAED_NUMBER_OF_PEOPLE -=1
-			#Socium.FOOD_RESOURCE =Socium.FOOD_RESOURCE - (0.03*genetics.NORMAL_CONSUME_RATE* Socium.ESTIMAED_NUMBER_OF_PEOPLE)
-			#Socium.FOOD_RESOURCE = int(0.995 * Socium.FOOD_RESOURCE )
-			pass
-		if self.anno.year > 3000 and self.anno.year <3300:
-			#Socium.ESTIMAED_NUMBER_OF_PEOPLE -=1
-			#Socium.FOOD_RESOURCE =Socium.FOOD_RESOURCE - (0.03*genetics.NORMAL_CONSUME_RATE* Socium.ESTIMAED_NUMBER_OF_PEOPLE)
-			#Socium.FOOD_RESOURCE = int(1.002 * Socium.FOOD_RESOURCE )
-			pass
 
 
 	def tictac(self):

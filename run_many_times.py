@@ -29,14 +29,14 @@ def many_runs(crowd, period):
             town.close()
 
 
-def many_sucsessful_runs(crowd, period):
+def many_sucsessful_runs(crowd, period, estimated_people):
     global EXPERIMENTS
     while True:
         t = datetime.datetime.now()
         st = t.strftime("%H:%M:%S %d.%m.%Y")
 
         print(f'симуляция № {EXPERIMENTS} {st}')
-        town = main.Simulation(crowd, Date(period))
+        town = main.Simulation(crowd, Date(period), estimated_people)
         result, final_date = town.simulate()
         EXPERIMENTS += 1
         if result:
@@ -45,4 +45,4 @@ def many_sucsessful_runs(crowd, period):
 
 if __name__ == '__main__':
     #many_runs(1000, 1800)
-    many_sucsessful_runs(1000, 2000)
+    many_sucsessful_runs(1000, 2000, 400)
