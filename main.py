@@ -41,10 +41,9 @@ class Simulation:
 
 	def populate(self, first_popul):
 		for p in range(first_popul):
-			gender  = random.randrange(2)
 			age = random.randint(9, 20)
 			# почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
-			self.soc.add_human(Human(self.soc, (None, None), gender,  age))
+			self.soc.add_human(Human(self.soc, (None, None), None,  age))
 
 	def simulate(self):
 		extinct = False
@@ -83,7 +82,7 @@ class Simulation:
 				a = i.id
 				satge_name = i.age.stage.name
 
-				sex = "М" if i.gender else "Ж"
+				sex = "М" if i.gender is common.Gender.MALE else "Ж"
 				b = i.genes.get_trait('strongness')
 				c = i.genes.get_trait('abstinence')
 				d = i.health.satiety

@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
-from common import Stage_of_age, Age, STAGE_DICT
+from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender
 
 import prop
 import family
@@ -58,15 +58,12 @@ class Human:
 	# spouse_death: "из-за сметри супруга", death: "по причине смерти"}
 	# такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-	def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[int]=None, age_int: int=0):
+	def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[Gender]=None, age_int: int=0):
 		Human.GLOBAL_HUMAN_NUMBER += 1
 		self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
 		self.socium = socium
 		self.socium.stat.people_inc()
-		if gender is None:
-			self.gender = random.randrange(2)
-		else:
-			self.gender = gender
+		self.gender = apply_gender(gender)
 
 		self.state: bool = True
 		# начальный возраст человека, будет увеличиваться каждый тик
@@ -151,7 +148,7 @@ class Human:
 			self.score.update(self.score.LIVE_SCORE)
 			if self.age.is_big:
 				# Зачинаем детей
-				if self.is_married and self.gender == False and self.age.is_fertile_age:
+				if self.is_married and self.gender is Gender.FEMALE and self.age.is_fertile_age:
 					if self.check_fertil_age() and self.check_fertil_satiety():
 						self.check_pregnant()
 				# Разводимся
@@ -190,14 +187,14 @@ class Human:
 		self.socium.stat.people_dec()  # уменьшаем количество живущих людей
 		self.state = False
 		self.death_date = self.socium.anno.create()
-		if self.gender:
+		if self.gender is Gender.MALE:
 			form = Human.chronicle_died_mal
 		else:
 			form = Human.chronicle_died_fem
 		Human.write_chronicle(form.format(self.id, self.name.display(), self.age.year))
 		self.socium.stat.add_to_deadpool(self)
 		if self.spouse:
-			if self.gender:
+			if self.gender is Gender.MALE:
 				form = Human.chronicle_widowed_fem
 			else:
 				form = Human.chronicle_widowed_mal
@@ -226,7 +223,7 @@ class Human:
 	def get_marry(self, spouse: Optional['Human']) -> None:
 		self.spouse = spouse
 		self.add_marry_date()
-		if self.gender == False:
+		if self.gender is Gender.FEMALE:
 			self.name.change_family_name(spouse)
 
 	def add_marry_date(self) -> None:
@@ -318,7 +315,7 @@ class Human:
 				g += '\t%s: %2d' %(i[:6], self.genes.get_trait(i))
 				if self.genes.genome[i].predecessor is None:
 					sex = 'нет'
-				elif self.genes.genome[i].predecessor.gender:
+				elif self.genes.genome[i].predecessor.gender is Gender.MALE:
 					sex = 'отец'
 				else:
 					sex = 'мать'
@@ -376,7 +373,7 @@ class NoneHuman(Human):
 
 	def __init__(self):
 		self.id: str = 'NoneHuman_id'
-		self.gender: int = 1
+		self.gender: Gender = Gender.MALE
 		self.state: bool = False
 		self.name: CharName = CharName(self)
 

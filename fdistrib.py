@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import random
-from common import GET_FOOD_MULTIPLIER
+from common import GET_FOOD_MULTIPLIER, Gender
 import genetics
 from common import Stage_of_age
 from family import Family
@@ -71,7 +71,7 @@ class FoodDistribution:
             person.health.have_food_equal(food)
             # женщины с детьми добывают меньше (минус за каждого иждивенца в семье)
             # по идее эту дельту надо передавать в детский бюджет, а не выкидывать в пустоту
-            if person.gender == 0 and len(person.family.dependents) > 0:
+            if person.gender is Gender.FEMALE and len(person.family.dependents) > 0:
                 # первый ребенок уменьшает добываемый матерью паек на четверть
                 # каждый последующий ребенок уменьшает траф к добываемой матерью пище в два раза
                 # после шестого ребенка штраф не рассчитывается, потому что его вклад ничтожен
@@ -121,7 +121,7 @@ class FoodDistribution:
         for person in self.socium.people_alive:
             if person.age.is_big:
                 # взрослые
-                if person.gender:
+                if person.gender is Gender.MALE:
                     # мужчины
                     men_count += 1
                     men_food_sum += person.health.have_food

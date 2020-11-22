@@ -24,12 +24,14 @@ class Gender(str, Enum):
     MALE = 'male'
     FEMALE = 'female'
 
+GENDER_LIST = list(Gender)
 
-class InitGender(str, Enum):
-    UNKNOWN = 'unknown'
-    MALE = 'male'
-    FEMALE = 'female'
-
+def apply_gender(gen: Optional[Gender]) -> Gender:
+    if gen is None:
+        g = random.choice(GENDER_LIST)
+    else:
+        g = gen
+    return g
 
 class Consume_rate(int, Enum):
     HEDONIC = 10

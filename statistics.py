@@ -4,11 +4,15 @@
 ===============================
 Статистические данные по социуму
 '''
+from __future__ import annotations
+from typing import  Dict, List
+from soc_time import Date
+from common import Stage_of_age, Gender, GENDER_LIST
+
 import socium
 import human
 import genetics
-from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
-from common import Stage_of_age
+
 
 MEASURMENT_PERIOD = 40
 CHILDREN_COUNT_TRESHOLD = 9
@@ -122,7 +126,7 @@ class Soc_stat():
 			nonlocal nomb_women
 			nonlocal men_death_sum
 			nonlocal women_death_sum
-			if person.gender:
+			if person.gender is Gender.MALE:
 				nomb_men += 1
 				men_death_sum += (person.death_date - person.birth_date).years_float()
 			else:
@@ -159,7 +163,7 @@ class Soc_stat():
 				ch = len(person.children)
 				if ch >= CHILDREN_COUNT_TRESHOLD:
 					ch = CHILDREN_COUNT_TRESHOLD - 1
-				if person.gender:
+				if person.gender is Gender.MALE:
 					no_male += 1
 					children_male[ch] += 1
 				else:
@@ -206,17 +210,17 @@ class Soc_stat():
 		"""
 		рассчет средних значений генов у всей популяции
 		"""
-		g_m = {i:0 for i in genetics.Genes.GENOTYPE} # мужчины отдельно
-		g_f = g_m.copy() # женщины отдельно
-		g = [g_m, g_f]
-		col = [self.women, self.men]
+		g_m: Dict[str, int] = {i:0 for i in genetics.Genes.GENOTYPE} # мужчины отдельно
+		g_f: Dict[str, int] = g_m.copy() # женщины отдельно
+		g: Dict[Gender, Dict[str, int]] = {Gender.FEMALE: g_f, Gender.MALE: g_m}
+		col: Dict[Gender, int] = {Gender.FEMALE: self.women, Gender.MALE: self.men}
 		for person in self.socium.people_alive:
 			for trait in genetics.Genes.GENOTYPE:
 				g[person.gender][trait] += person.genes.get_trait(trait)
 
 		genome_record = "%s\t" % self.socium.anno.year
 
-		for gen in range(2):
+		for gen in GENDER_LIST:
 			for i in g[gen]:
 				if col[gen] > 0:
 					avg = str(g[gen][i]/col[gen])
@@ -275,7 +279,7 @@ class Soc_stat():
 				alive_age_sum += pers.age.year  # суммируем возраст всех живых людей,
 				# чтобы потом разделить на количество людей (с точностью до года)
 				
-				if pers.gender:
+				if pers.gender is Gender.MALE:
 					self.men += 1     #  количтество мужчин (любого возраста)
 				else:
 					self.women += 1    #  количтество женщин (любого возраста)
@@ -330,7 +334,7 @@ class Soc_stat():
 				self.married_people.append(person)
 			# считаем незамужних (всех и отдельно взрослых)
 			else:
-				if person.gender:
+				if person.gender is Gender.MALE:
 					self.unmarried_men.append(person)
 					if person.age.is_big:
 						self.unmarried_adult_men.append(person)

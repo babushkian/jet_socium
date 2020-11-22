@@ -1,6 +1,10 @@
-﻿import getnames
+﻿from typing import List, Tuple
 import random
-from typing import List, Tuple
+import getnames
+from common import Gender
+
+
+
 
 class CharName:
 	family_name: Tuple
@@ -12,15 +16,15 @@ class CharName:
 	def __init__(self, person):
 		self.person = person
 		self.gender = self.person.gender
-		if self.gender:
+		if self.gender is Gender.MALE:
 			self.first = CharName.male_name[random.randrange(len (CharName.male_name))]
 			if person.is_human:
 				point = CharName.male_name.index(person.father.name.first)
 				self.second =  CharName.second_name_male[point]
-				self.family = person.father.name.family
+				self.family_name = person.father.name.family_name
 			else:
 				self.second = CharName.second_name_male[random.randrange(len(CharName.second_name_male))]
-				self.family = CharName.family_name[random.randrange(len(CharName.family_name))]
+				self.family_name = CharName.family_name[random.randrange(len(CharName.family_name))]
 
 		else:
 			self.first = CharName.female_name[random.randrange(len (CharName.female_name))]
@@ -28,27 +32,28 @@ class CharName:
 				point = CharName.male_name.index(person.father.name.first)
 				self.second =  CharName.second_name_female[point]
 
-				self.family = person.father.name.family
+				self.family_name = person.father.name.family_name
 			else:
 				self.second = CharName.second_name_female[random.randrange(len(CharName.second_name_female))]
-				self.family = CharName.family_name[random.randrange(len(CharName.family_name))]
+				self.family_name = CharName.family_name[random.randrange(len(CharName.family_name))]
 
 	def display(self):
 		'''
 		Возвращает Имя Отчество Фамилию
 		'''
-		return f'{self.first} {self.second} {self.family[self.gender]}'
+		gend_index = 1 if self.gender is Gender.MALE else 0
+		return f'{self.first} {self.second} {self.family_name[gend_index]}'
 
 
 	def change_family_name(self, head):
 		'''
 		При замужестве изменяет фамилию жены и ее детей от предыдущих браков на фамилию мужа.
 		'''
-		self.family = head.name.family
+		self.family_name = head.name.family_name
 
 	def change_father(self, stepfather):
 		point = CharName.male_name.index(stepfather.name.first)
-		if self.gender:
+		if self.gender is Gender.MALE:
 			self.second = CharName.second_name_male[point]
 		else:
 			self.second = CharName.second_name_female[point]

@@ -42,3 +42,7 @@ def load_fem_names():
 	conn.close()
 	fem_name = tuple(nl)
 	return fem_name
+
+if __name__ == '__main__':
+	x = load_family_names()
+	print(x)

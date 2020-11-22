@@ -9,8 +9,6 @@ from human import Human
 from fdistrib import FoodDistribution
 import statistics
 import genetics
-import score
-import soc_roles
 
 
 TIME_TO_EXCLUDE_DEAD_ANCESTORS = Date(40)
@@ -169,7 +167,7 @@ class Socium:
 						b[-1].get_marry(person)
 						person.score.update(person.score.MARRY_SCORE)
 						b[-1].score.update(b[-1].score.MARRY_SCORE)
-						if person.gender:
+						if person.gender is common.Gender.MALE:
 							person.family.unite_families(b[-1].family)
 						else:
 							b[-1].family.unite_families(person.family)
@@ -184,8 +182,7 @@ class Socium:
 		'''
 		if self.short_death_count > random.randrange(9):
 			# пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
-			stranger_gender =  random.randrange(2)
-			self.add_human(Human(self, (None, None), gender=stranger_gender,  age_int=random.randrange(18, 35)))
+			self.add_human(Human(self, (None, None), gender=None, age_int=random.randrange(18, 35)))
 			self.short_death_count = 0
 
 
@@ -194,12 +191,12 @@ class Socium:
 		Краткая сводка по племенам, когда выводятся их айдишники, количество членов и средние значения генов в племени
 		'''
 		st = ''
-		for tri in self.stat.tribes_in_socium:
-			elder_of_tribe = self.stat.tribes_in_socium[tri][0]
-			tribe_family_name = elder_of_tribe.name.family[1]
+		for tribe in self.stat.tribes_in_socium:
+			elder_of_tribe = self.stat.tribes_in_socium[tribe][0]
+			tribe_family_name = elder_of_tribe.name.family_name[1]
 			st += '%d:%d| '% (self.anno.year, self.anno.month)
-			st += '%12s| %7s: %4d | ' % (tribe_family_name, tri, self.stat.families_in_tribe_count[tri])
-			st += '%4d | %s\n' %(self.stat.tribes_in_socium_count[tri], self.stat.count_tribe_genes_average(tri))
+			st += '%12s| %7s: %4d | ' % (tribe_family_name, tribe, self.stat.families_in_tribe_count[tribe])
+			st += '%4d | %s\n' %(self.stat.tribes_in_socium_count[tribe], self.stat.count_tribe_genes_average(tribe))
 		return st
 
 
@@ -211,7 +208,6 @@ class Socium:
 		st = ''
 		for tri in self.stat.tribes_in_socium:
 			elder_of_tribe = self.stat.tribes_in_socium[tri][0]
-			tribe_family_name = elder_of_tribe.name.family[1]
 			for fam in self.stat.families_in_tribe[tri]:
 				st += ("-------------\n")
 				date_fam = "%d:%d| %s| %s| " % (self.anno.year, self.anno.month, tri, fam.id)

@@ -6,7 +6,7 @@ from __future__ import annotations
 import random
 from typing import List, Dict, NewType, Union, Optional
 
-from common import Stage_of_age, STAGE_DICT, DIGEST_FOOD_MULTIPLIER
+from common import Stage_of_age, STAGE_DICT, DIGEST_FOOD_MULTIPLIER, Gender
 from soc_time import Date, ZERO_DATE, TIK
 import prop
 
@@ -100,7 +100,7 @@ class Health:
         if self.person.age.is_big:
             # за свою половую энергию человек расплачивается жизнью
             # для мужчин трата энергии более выражена
-            if self.person.gender:
+            if self.person.gender is Gender.MALE:
                 fertility_bonus = - 0.2 * (self.person.genes.get_trait('fertility') - 5)
             else:
                 fertility_bonus = - 0.07 * (self.person.genes.get_trait('fertility') - 5)

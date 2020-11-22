@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Tuple, Optional
 import random
 
+from common import Gender, apply_gender
 import score
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import genetics
@@ -14,11 +15,9 @@ class Fetus:
 	# при зачатии мать порождает эмбрион (или несколько), они закреплены за матерью и в общий социум не добавляются
 	#  для эмбрионов определены: билолгические родители, пол и гены
 
-	def __init__(self, mother: human.Human, gender: Optional[int]=None):
+	def __init__(self, mother: human.Human, gender: Optional[Gender]=None):
 		self.score = score.Score()
-		self.gender: Optional[int] = gender
-		if self.gender is None:
-			self.gender = random.randrange(2)
+		self.gender: Gender = apply_gender(gender)
 
 
 		self.mother: human.Human = mother
@@ -48,7 +47,7 @@ class Fetus:
 				father = sorted(self.mother.divorce_dates.keys(), key = lambda x: x.len())[-1]
 			return father
 		if self.mother:
-			if self.gender:
+			if self.gender is Gender.MALE:
 				same_gender = get_father()
 				opposit_gender = self.mother
 			else:
