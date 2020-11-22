@@ -44,7 +44,7 @@ class FoodDistribution:
         self.feeding_log.write(self.report)
         # откладываем часть еды в семейный бюджет
         for fam in self.socium.families:
-            fam.make_food_supplies()
+            fam.make_food_supplies_new()
 
         self.family_food_redistibution()
 
@@ -178,8 +178,10 @@ class FoodDistribution:
             sum_family_resourses += fam.resource
         self.feeding_log.write(f'{self.socium.anno.display()} еда после создания запасов: {soc_food_budget:7.1f} + \
                                {sum_family_resourses:7.1f} = {soc_food_budget + sum_family_resourses:7.1f}\n')
-        for i in range(len(group_1)):
-            Family.figth_for_food(self.socium.families[group_1[i]], self.socium.families[group_2[i]], self.abundance)
+        # Семьи борятся за еду только если на всех не хватает
+        if self.abundance is False:
+            for i in range(len(group_1)):
+                Family.figth_for_food(self.socium.families[group_1[i]], self.socium.families[group_2[i]])
         soc_food_budget = 0
         for fam in self.socium.families:
             fam.food_dist()
@@ -189,4 +191,8 @@ class FoodDistribution:
 
 
 class FoodControl:
+    '''
+    Класс содержащий информацию для вывода статистики по питанию. Важных для симуляции переменных не содержит
+    '''
+
     pass

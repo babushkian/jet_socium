@@ -12,7 +12,7 @@ class FE(Enum):
 
 
 # при максимальном альтруизме вкадывает в семейный бюждет всю  еду. При минимальном - нисколько.
-ALTRUISM_COEF = 1/11
+ALTRUISM_COEF = 1/genetics.Gene.MAX_VALUE
 
 class Family:
 	family_log_file = None
@@ -194,40 +194,69 @@ class Family:
 		# дети участвуют в создании запасов
 		if len(self.dependents) > 0:
 			for i in self.dependents:
-				give = i.health.have_food * ALTRUISM_COEF * 0.75 * i.genes.get_trait('altruism') # ребенок пусть поменьше кладет
+				give = i.health.have_food * ALTRUISM_COEF *  i.genes.get_trait('altruism')
 				s = s + pref + "ребенок %s| имеет %5.1f| вкладывает %5.1f\n" % (i.id, i.health.have_food, give)
 				i.health.have_food_change(-give)
 				self.resource += give
 		s = s + pref + " Всего запас: %6.1f\n" %  self.resource
 		self.family_feeding.write(s)
 
-	@staticmethod
-	def figth_for_food(first: Family, second: Family, abundance):
-		if not abundance:
-			family_strongness = []
-			for i in (first, second):
-				# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
-				ff = (i.wife.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.wife.age.stage])**2 if i.wife else 0
-				ff += (i.head.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.head.age.stage])**2
-				family_strongness.append(math.sqrt(ff))
+	def make_food_supplies_new(self):
+		"""
+		Каждый член семьи откладывает часть добытой еды в общий семейный запас self.resource.
+		Доля пищи, переданнойи из личного в семейный бюджет, зависит от  альтруизма человека.
+		"""
+		def get_family_role_sting(person: human.Human) -> str:
+			if person is self.head:
+				s = ' Глава'
+			elif person is self.wife:
+				s = ' Жена'
+			elif person in self.dependents:
+				s = ' ребенок'
+			else:
+				raise Exception('Определение роли человека в семье: неизвестная роль.')
+			return s
 
-			delta = family_strongness[0] - family_strongness[1]
-			if delta != 0:
-				if delta > 0:
-					res = second.resource
-				else:
-					res = first.resource
-				# ОПАСНО, нет проверки на отрицательный общак у терпил
-				food_reqisition = res / 15.5 * delta
-				pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
-				s = ""
-				# delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
-				for sign, fam in zip((1, -1), (first, second)):
-					movement = sign * food_reqisition
-					fam.resource += movement
-					direct = "семья нашла " if movement > 0 else "семья потеряла "
-					s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
-				Family.family_feeding.write(s)
+		pref = f'{self.head.socium.anno.year}:{self.head.socium.anno.month}| {self.id}|'
+		s = pref +"-------------\n"
+		self.resource = 0
+		for member in self.all:
+			give = member.health.have_food * ALTRUISM_COEF * member.genes.get_trait('altruism')
+			member.health.have_food_change(-give)
+			self.resource += give
+			s = s + pref + f'{get_family_role_sting(member):6s}| {member.id}|'
+			s += f' alt={self.head.genes.get_trait("altruism"):2d}| имеет {self.head.health.have_food_prev:5.1f}| ' \
+				 f'вкладывает {give:5.1f}| остается {self.head.health.have_food:5.1f}\n'
+		s = s + pref + " Всего запас: %6.1f\n" %  self.resource
+		self.family_feeding.write(s)
+
+
+	@staticmethod
+	def figth_for_food(first: Family, second: Family):
+		family_strongness = []
+		for i in (first, second):
+			# нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
+			ff = (i.wife.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.wife.age.stage])**2 if i.wife else 0
+			ff += (i.head.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.head.age.stage])**2
+			family_strongness.append(math.sqrt(ff))
+
+		delta = family_strongness[0] - family_strongness[1]
+		if delta != 0:
+			if delta > 0:
+				res = second.resource
+			else:
+				res = first.resource
+			# ОПАСНО, нет проверки на отрицательный общак у терпил
+			food_reqisition = res / 15.5 * delta
+			pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
+			s = ""
+			# delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
+			for sign, fam in zip((1, -1), (first, second)):
+				movement = sign * food_reqisition
+				fam.resource += movement
+				direct = "семья нашла " if movement > 0 else "семья потеряла "
+				s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
+			Family.family_feeding.write(s)
 
 	def food_dist(self):
 		# префикс для описания описания питания семей, создающийся каждый цикл

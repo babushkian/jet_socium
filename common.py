@@ -67,8 +67,8 @@ DIGEST_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0.3,
               Stage_of_age.TEEN: 0.7,
               Stage_of_age.YOUNG: 1.0,
               Stage_of_age.ADULT: 1.2,
-              Stage_of_age.AGED: 1.45,
-              Stage_of_age.SENILE: 1.8
+              Stage_of_age.AGED: 1.4,
+              Stage_of_age.SENILE: 1.7
               }
 
 GET_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0,

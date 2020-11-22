@@ -28,7 +28,7 @@ class Socium:
 		self.families: List[Family] = list()
 
 		self.stat = statistics.Soc_stat(self)
-		self.food_distr = FoodDistribution(self)
+		self.food = FoodDistribution(self)
 		# текущий год
 		self.anno: Anno = Anno(anno)
 		# локальный счетчик смертей, после появления чужака обнуляется
@@ -94,9 +94,10 @@ class Socium:
 		if self.anno.year_starts() and self.anno.year % 40 == 0: # раз в 40 лет
 			self.forgot_ancestors()
 
-		# первичное распределение еды. Потом еда распределяется внутри семьи, а потом каждый употребляет еду индивидуально
+		#  Распределение еды.Общий ресурс веды делится на всех жителей.
+		#  Потом еда распределяется внутри семьи, а потом каждый употребляет еду индивидуально
 		#self.food_distribution()
-		self.food_distr.distribute()
+		self.food.distribute()
 
 		# женим холостых людей
 		self.search_spouce()
