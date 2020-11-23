@@ -12,6 +12,7 @@ class FoodDistribution:
     FOOD_MULTIPLIER = {Stage_of_age.BABY: 0, Stage_of_age.CHILD: 0.33, Stage_of_age.TEEN: 0.5}
     def __init__(self, soc):
 
+        # сюда складываются излищки еды, образовавшиеся при первоначальном распределении, потом распределятся повторно
         self.food_waste: float = 0
         self.food_per_man: float = 0
         self.abundance: bool = False
@@ -27,8 +28,6 @@ class FoodDistribution:
         FoodDistribution.feeding_log.close()
 
     def distribute(self):
-        # сюда складываются излищки еды, образовавшиеся при первоначальном распределении, потом распределятся повторно
-        self.food_waste = 0
         # флаг изобилия. Когда изобилие, люди не отбирают еду у других людей,
         # просто берут из природных резервов
         self.abundance = False
@@ -44,12 +43,16 @@ class FoodDistribution:
         self.feeding_log.write(self.report)
         # откладываем часть еды в семейный бюджет
         for fam in self.socium.families:
-            fam.make_food_supplies_new()
+            fam.make_food_supplies()
 
         self.family_food_redistibution()
 
     def count_food_per_man(self) -> float:
-        food_per_man = self.socium.FOOD_RESOURCE / self.socium.stat.people_alive_number
+        ''' Добавляем нераспределенную еду с проршлого хода'''
+        # food_per_man = (self.socium.FOOD_RESOURCE + self.food_waste)/ self.socium.stat.people_alive_number
+        # вариант без передачи остатков с прошлого хода - он более предсказуемый
+        food_per_man = self.socium.FOOD_RESOURCE  / self.socium.stat.people_alive_number
+        self.food_waste = 0
         optimal = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF
         return food_per_man if food_per_man < optimal else optimal
 
@@ -77,7 +80,7 @@ class FoodDistribution:
                 # после шестого ребенка штраф не рассчитывается, потому что его вклад ничтожен
                 # 1/4 + 1/8 + 1/16 + 1/32...
                 dep_sum = 64 - 2**(6 - min(len(person.family.dependents), 6))
-                woman_with_children_food_penalty  = person.health.have_food * dep_sum / 128.0
+                woman_with_children_food_penalty = person.health.have_food * dep_sum / 128.0
                 person.health.have_food_change(-woman_with_children_food_penalty)
                 self.food_waste += woman_with_children_food_penalty
         return s
