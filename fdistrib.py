@@ -199,3 +199,28 @@ class FoodControl:
     '''
 
     pass
+
+
+class FamilySupplies:
+    '''
+    Формирует и распределяет семейный бюждет
+    '''
+    def __init__(self, family:Family):
+        self.family = family
+        self.supplies = 0
+
+    def add(self, food):
+        '''полняем семейный бюджет'''
+        self.supplies += food
+        pass
+    def calculate(self):
+        '''
+        Считаем расределение еды на всех членов семьи
+        '''
+        pass
+
+    def distribute(self):
+        '''
+        кормим семью
+        '''
+        pass
