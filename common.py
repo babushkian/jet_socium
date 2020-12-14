@@ -61,7 +61,7 @@ STAGE_DICT = {Stage_of_age.BABY: Date(6),
               Stage_of_age.SENILE: Date(100_000)
               }
 
-
+# множитель еды для насыщения в зависимости от возраста
 DIGEST_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0.3,
               Stage_of_age.CHILD: 0.5,
               Stage_of_age.TEEN: 0.7,
@@ -70,7 +70,7 @@ DIGEST_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0.3,
               Stage_of_age.AGED: 1.4,
               Stage_of_age.SENILE: 1.7
               }
-
+# множитель, сколько еды может добыть человек в зависимости от возраста
 GET_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0,
               Stage_of_age.CHILD: 0.3,
               Stage_of_age.TEEN: 0.5,
