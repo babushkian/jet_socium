@@ -4,9 +4,8 @@ import random
 import math
 from common import GET_FOOD_MULTIPLIER, DIGEST_FOOD_MULTIPLIER, Gender
 import genetics
-from common import Stage_of_age
 from family import Family
-
+from common import Stage_of_age
 
 class FoodDistribution:
     feeding_log: IO
@@ -56,7 +55,7 @@ class FoodDistribution:
         food_per_man = self.socium.FOOD_RESOURCE  / self.socium.stat.people_alive_number
         self.food_waste = 0
         optimal = genetics.RICH_CONSUME_RATE * genetics.FOOD_COEF
-        return food_per_man if food_per_man < optimal else optimal
+        return min(food_per_man,optimal)
 
     def check_abundabce(self):
         return self.food_per_man < self.socium.FOOD_RESOURCE / self.socium.stat.people_alive_number
@@ -99,9 +98,9 @@ class FoodDistribution:
         delta = family_strongness[0] - family_strongness[1]
         if delta != 0:
             if delta > 0:
-                res = second.resource
+                res = second.food.suppplies
             else:
-                res = first.resource
+                res = first.food.suppplies
             # ОПАСНО, нет проверки на отрицательный общак у терпил
             food_reqisition = res / 15.5 * delta
             pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
@@ -109,7 +108,7 @@ class FoodDistribution:
             # delta может быть положительной и оприцптельной, поэтому расределение вдет в правильную сторону без доп проверок
             for sign, fam in zip((1, -1), (first, second)):
                 movement = sign * food_reqisition
-                fam.resource += movement
+                fam.food.change_supplies(movement)
                 direct = "семья нашла " if movement > 0 else "семья потеряла "
                 s = s + pref + " %s|" % fam.id + direct + "%5.1f\n" % movement
             Family.family_feeding.write(s)
@@ -130,19 +129,18 @@ class FoodDistribution:
         soc_food_budget = 0
         group_1, group_2 = shuffle_families(len(self.socium.families))
         for fam in self.socium.families:
-            fam.food.food_display('После создания запасов')
+            fam.food.family_food_display('После создания запасов')
             soc_food_budget += fam.food.budget
-            sum_family_resourses += fam.resource
-        self.feeding_log.write(f'{self.socium.anno.display()} еда после создания запасов: {soc_food_budget:7.1f} + \
-                               {sum_family_resourses:7.1f} = {soc_food_budget + sum_family_resourses:7.1f}\n')
+            sum_family_resourses += fam.food.suppplies
+        self.feeding_log.write(f'{self.socium.anno.display()} еда после создания запасов: {soc_food_budget:7.1f} + {sum_family_resourses:7.1f} = {soc_food_budget + sum_family_resourses:7.1f}\n')
         # Семьи борятся за еду только если на всех не хватает
         if self.abundance is False:
             for i in range(len(group_1)):
                 self.figth_for_food(self.socium.families[group_1[i]], self.socium.families[group_2[i]])
         soc_food_budget = 0
         for fam in self.socium.families:
-            fam.food_dist()
-            fam.food.food_display("FINAL")
+            fam.food.distribute()
+            fam.food.family_food_display("FINAL")
             soc_food_budget += fam.food.budget
         self.feeding_log.write(f'{self.socium.anno.display()} Потребленная еда: {soc_food_budget:7.1f}\n')
 
@@ -153,144 +151,3 @@ class FoodControl:
     '''
 
     pass
-
-
-class FamilySupplies:
-    '''
-    Формирует и распределяет семейный бюждет
-    '''
-    def __init__(self, family:Family):
-        self.family = family
-        self._supplies = 0
-        '''
-        # сумма личной пищи людей в семье
-        self.budget = 0
-        '''
-
-    def make(self, food):
-        '''полняем семейный бюджет'''
-        # возможность переносить запасы на следующий ход пока не делаю
-        self._supplies = 0
-        for member in self.family.all:
-            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
-            member.health.have_food_change(-give)
-            self._supplies += give
-
-
-
-    def make_food_supplies(self):
-        """
-        Каждый член семьи откладывает часть добытой еды в общий семейный запас self.resource.
-        Доля пищи, переданной из личного в семейный бюджет, зависит от  альтруизма человека.
-        """
-        def get_family_role_sting(person) -> str:
-            if person is self.family.head:
-                s = ' Глава'
-            elif person is self.family.wife:
-                s = ' Жена'
-            elif person in self.family.dependents:
-                s = ' ребенок'
-            else:
-                raise Exception('Определение роли человека в семье: неизвестная роль.')
-            return s
-
-        def form_text_body() ->str:
-            s = f'{get_family_role_sting(member):6s}| {member.id}|'
-            s += f' alt={self.family.head.genes.get_trait("altruism"):2d}| имеет {member.health.have_food_prev:5.1f}| ' \
-                 f'вкладывает {give:5.1f}| остается {member.health.have_food:5.1f}\n'
-            return s
-
-        pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'
-        s = pref +"-------------\n"
-        self.resource = 0
-        for member in self.family.all:
-            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
-            member.health.have_food_change(-give)
-            self.resource += give
-            s+= pref + form_text_body()
-        s = s + pref + " Всего запас: %6.1f\n" %  self.resource
-        Family.family_feeding.write(s)
-
-
-    def _calculate_portions(self, fam_list):
-        '''
-        Считаем расределение еды на всех членов семьи (пропорции)
-        '''
-        portions = dict()
-        denominator = 0
-        for member in fam_list:
-            # здесь не учитываем, что старики плохо уствивают пищу и для насыщения им нужно больше, они будут получать, как взрослые
-            age_proportion = min(DIGEST_FOOD_MULTIPLIER[member.age.stage], 1)
-            egoism_proportion = member.genes.get_trait('harshness') / genetics.Gene.MAX_VALUE
-            part = age_proportion + egoism_proportion
-            portions[member] = part
-            denominator += part
-        for member in fam_list:
-            portions[member] = portions[member] / denominator
-        return portions
-
-
-    def distribute(self):
-        '''
-        Расрелеоение пищи между членами семьи
-        Если для одного еды слишком много, оставшаяся от него еда перераспределяется между оставшимися членами семьи
-        Если посое всех членов семьи остается еда ...
-        '''
-        members_list = self.family.all.copy()
-        portions = self._calculate_portions()
-        # пища, уже отданная из общих запасов кому-то из семьи
-        aside = 0
-        food = dict()
-        while len(members_list)>0:
-            member = members_list.pop()
-            temp_food = member.health.have_food + self._supplies * portions[member]
-            ideal_food = member.health.ideal_food_amount()
-            sufficient_food = min(temp_food, ideal_food)
-            member.health.have_food_change(sufficient_food)
-            aside +=sufficient_food
-            if temp_food > ideal_food and members_list > 0:
-                # если кто-то не съел своб порцию, обновляем значение запасов и считаем ноаве пропорции исходя из изменившихся запасов
-                self._supplies -= aside
-                aside = 0
-                portions = self._calculate_portions(members_list)
-        # если после распределения еды что-то осталось
-        if self._supplies>0:
-            # если есть живые старики, кормим стариков
-            if len(self.family.parents) > 0:
-                food_per_parent = self._supplies / len(self.family.parents)
-                for i in self.family.parents:
-                    i.health.have_food_change(food_per_parent)
-                self._supplies = 0
-            else:
-                # если нет, перераспределяем остатки между членами семьи, не пропадать же еде
-                portions = self._calculate_portions(self.family.all)
-                for member in self.family.all:
-                    member.health.have_food_change(self._supplies * portions[member])
-
-
-    @property
-    def suppplies(self):
-        return self._supplies
-
-
-    def family_food_display(self, message: str=''):
-        pref = "%s|=================%s\n" % (self.family.id, message)
-        Family.family_food_file.write(pref)
-        pref = "%d:%d| %s|" % (self.family.head.socium.anno.year, self.family.head.socium.anno.month, self.family.id)
-        self.budget = 0
-        budget_prev = 0
-        for i in self.family.all:
-            self.budget += i.health.have_food
-            budget_prev += i.health.have_food_prev
-            if i is self.family.head:
-                role = "гла"
-            elif i is self.family.wife:
-                role = "жен"
-            else:
-                role = "реб"
-            s = pref + " %s| %5.1f| %5.1f| %2d\n" % (role, i.health.have_food, i.health.have_food_prev,
-                                                     int(i.health.have_food/genetics.FOOD_COEF) )
-            Family.family_food_file.write(s)
-        b = "Бюждет до %6.1f  после %6.1f \n" % (budget_prev, self.budget)
-        Family.family_food_file.write(pref + b)
-

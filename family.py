@@ -2,9 +2,7 @@
 import random
 from typing import Optional, List
 from enum  import Enum
-import math
-from common import GET_FOOD_MULTIPLIER
-from fdistrib  import FamilySupplies
+from common import GET_FOOD_MULTIPLIER, DIGEST_FOOD_MULTIPLIER
 import genetics
 import human
 class FE(Enum):
@@ -21,7 +19,7 @@ class Family:
 
     def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
         self.obsolete: bool = False
-        self.id: str = generate_family_id()
+        self.id: str = self.generate_family_id()
         self.head: human.Human = head
         self.head.socium.families.append(self) # добавляет семью в список семей
         self.husband: Optional[human.Human] = None
@@ -50,6 +48,16 @@ class Family:
         Family.family_log_file.close()
         Family.family_food_file.close()
         Family.family_feeding.close()
+
+    @staticmethod
+    def generate_family_id() -> str:
+        ALFABET = ('BBCCDDFFGHJKLKLMMNPQRSTPQRRSSTVWXZ', 'AEIAEEIOOUY')
+        id = ''
+        while len(id) < 7:
+            for l in range(2):
+                for sec in range(round(random.random() * .75) + 1):
+                    id += ALFABET[l][random.randrange(len(ALFABET[l]))]
+        return id[:7]
 
     def add_parents(self):
         for i in [self.head.father, self.head.mother]:
@@ -169,110 +177,6 @@ class Family:
         self.all.remove(person)
 
 
-
-    def food_dist(self):
-        # префикс для описания описания питания семей, создающийся каждый цикл
-        pref = f'{self.head.socium.anno.year}:{self.head.socium.anno.month}| {self.id}|'
-        s = pref +"---- питание ---------\n"
-        s = s+ pref +"Запасы: %6.1f\n" % self.resource
-        # кормим детей
-        if len(self.dependents) > 0:
-            dependents_budget = self.resource / 2
-            self.resource /= 2
-
-            # кормим иждивенцев поровну
-            food_addon_per_child = dependents_budget / len(self.dependents)
-            s = s + pref + "Кромим %d детей\n" % len(self.dependents)
-            s = s + pref + "Каждому выдаем по %5.1f еды\n" % food_addon_per_child
-            for child in self.dependents:
-                temp = child.health.have_food + food_addon_per_child
-                ideal_food = child.health.ideal_food_amount()
-                fd = temp - ideal_food
-                if fd > 0: # если для ребенка слишком много еды, излишки возвращаются в запас
-                    child.health.have_food_equal(ideal_food)
-                    self.resource += fd
-                    s = s + pref + f'ребенок не голоден и возвращает {fd:5.1f} еды в общий котел\n'
-                else:
-                    child.health.have_food_equal(temp)
-                s = s + pref + "ребенок %s| съедает %5.1f\n" % (child.id, child.health.have_food)
-
-            s = s + pref + "Запасы: %6.1f\n" % self.resource
-        food_for_old_ones = 0
-        # откладываем часть еды для стариков
-        if len(self.parents) > 0:
-            if self.wife:
-                alt_to_old = 1.5 * (self.head.genes.get_trait('altruism') + self.wife.genes.get_trait('altruism'))
-            else:
-                alt_to_old = 2* self.head.genes.get_trait('altruism')
-            food_for_old_ones = self.resource * (alt_to_old - 4)/100
-            food_for_old_ones = food_for_old_ones if food_for_old_ones > 0 else 0
-            self.resource -= food_for_old_ones
-            s = s + pref + "Для стариков откладываем : %5.1f\n" % food_for_old_ones
-        # кормим жену
-        if self.wife:
-            fitness_addon = 0.02 * self.wife.genes.get_trait('strongness')
-            altruism_addon = 0.02 * (1.1 * self.wife.genes.get_trait('altruism') - self.husband.genes.get_trait('altruism'))
-            wife_food_addon = self.resource * (0.5 + fitness_addon + altruism_addon)
-            self.resource -= wife_food_addon
-            ideal_food = genetics.FOOD_COEF * genetics.HEDONIC_CONSUME_RATE
-            temp = self.wife.health.have_food + wife_food_addon
-            fd = temp - ideal_food
-            if fd > 0:  # чтобы жена не переедала
-                self.wife.health.have_food_equal(ideal_food)
-                self.resource += fd
-            else:
-                self.wife.health.have_food_equal(temp)
-            s = s + pref + "Жена берет %5.1f| съедает %5.1f\n" % (wife_food_addon, self.wife.health.have_food)
-            s = s + pref + "Запасы: %5.1f\n" % self.resource
-        #кормим главу семьи
-        ideal_food = genetics.FOOD_COEF * genetics.HEDONIC_CONSUME_RATE
-        tf = self.resource
-        self.resource = 0
-        temp = self.head.health.have_food + tf
-        fd = temp - ideal_food
-        if fd > 0:  # чтобы жена не переедала
-            self.head.health.have_food_equal(ideal_food)
-            self.resource = fd
-        else:
-            self.head.health.have_food_equal(temp)
-        s = s + pref + "Глава берет %5.1f| съедает %5.1f\n" % (tf, self.head.health.have_food)
-        s = s + pref + "Запасы: %6.1f\n" % self.resource
-
-        #кормим стариков
-        if len(self.parents) > 0:
-            self.resource = food_for_old_ones
-            if self.resource > 0 and  len(self.parents) > 0:
-                food_per_parent = self.resource / len(self.parents)
-                for i in self.parents:
-                    i.health.have_food_change(food_per_parent)
-                self.resource = 0
-
-                s = s + pref + "Остатками еды кормим родителей по %5.1f\n" % food_per_parent
-        self.family_feeding.write(s)
-
-
-    def food_display(self, message: str=''):
-        pref = "%s|=================%s\n" % (self.id, message)
-        self.family_food_file.write(pref)
-        pref = "%d:%d| %s|" % (self.head.socium.anno.year, self.head.socium.anno.month, self.id)
-        self.budget = 0
-        budget_prev = 0
-        for i in self.all:
-            self.budget += i.health.have_food
-            budget_prev += i.health.have_food_prev
-            if i is self.head:
-                role = "гла"
-            elif i is self.wife:
-                role = "жен"
-            else:
-                role = "реб"
-            s = pref + " %s| %5.1f| %5.1f| %2d\n" % (role, i.health.have_food, i.health.have_food_prev,
-                                                     int(i.health.have_food/genetics.FOOD_COEF) )
-            self.family_food_file.write(s)
-        b = "Бюждет до %6.1f  после %6.1f \n" % (budget_prev, self.budget)
-        self.family_food_file.write(pref + b)
-
-
     def del_grown_up_children(self): # проверить, работает ли она вообще
         # убираем повзрослевших иждивенцев
         too_old =[]
@@ -312,14 +216,174 @@ class Family:
         return strok + '\n'
 
 
+    def get_family_role_sting(self, person:human.Human) -> str:
+        if person is self.head:
+            s = ' глав'
+        elif person is self.wife:
+            s = ' жена'
+        elif person in self.dependents:
+            s = ' чадо'
+        else:
+            raise Exception('Определение роли человека в семье: неизвестная роль.')
+        return s
 
 
 
-def generate_family_id() -> str:
-    ALFABET =('BBCCDDFFGHJKLKLMMNPQRSTPQRRSSTVWXZ', 'AEIAEEIOOUY')
-    id = ''
-    while  len(id) < 7:
-        for l in range(2):
-            for sec in range(round(random.random() * .75) + 1):
-                id += ALFABET[l][random.randrange(len(ALFABET[l]))]
-    return id[:7]
+class FamilySupplies:
+    '''
+    Формирует и распределяет семейный бюждет
+    '''
+    def __init__(self, family:Family):
+        self.family = family
+        self._supplies = 0
+        self.budget = 0
+
+    def make(self, food):
+        '''полняем семейный бюджет'''
+        # возможность переносить запасы на следующий ход пока не делаю
+        self._supplies = 0
+        for member in self.family.all:
+            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
+            member.health.have_food_change(-give)
+            self._supplies += give
+
+
+    def make_food_supplies(self):
+
+        def form_text_body() ->str:
+            s = f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
+            s += f' alt={self.family.head.genes.get_trait("altruism"):2d}| имеет {member.health.have_food_prev:5.1f}| ' \
+                 f'вкладывает {give:5.1f}| остается {member.health.have_food:5.1f}\n'
+            return s
+
+        pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'
+        s = pref +"-------------\n"
+        self._supplies = 0
+        for member in self.family.all:
+            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
+            member.health.have_food_change(-give)
+            self._supplies += give
+            s+= pref + form_text_body()
+        s = s + pref + " Всего запас: %6.1f\n" %  self._supplies
+        Family.family_feeding.write(s)
+
+
+    def _calculate_portions(self, fam_list):
+        '''
+        Считаем расределение еды на всех членов семьи (пропорции)
+        '''
+        portions = dict()
+        denominator = 0
+        for member in fam_list:
+            # здесь не учитываем, что старики плохо уствивают пищу и для насыщения им нужно больше, они будут получать, как взрослые
+            age_proportion = min(DIGEST_FOOD_MULTIPLIER[member.age.stage], 1)
+            egoism_proportion = member.genes.get_trait('harshness') / genetics.Gene.MAX_VALUE
+            #part = age_proportion + egoism_proportion
+            part = egoism_proportion # отключу слагаемое, отвечающее за возраст, пусть дети получают столько же, сколько и взрослые
+            portions[member] = part
+            denominator += part
+        for member in fam_list:
+            portions[member] = portions[member] / denominator
+        return portions
+
+
+    def distribute(self):
+        # Новая концепция, попробовать кормить детей так, чтобы у всех детей сытость была на одном уровне примерно
+        # а потом о родителях думать
+        '''
+        Расрелеоение пищи между членами семьи
+        Если для одного еды слишком много, оставшаяся от него еда перераспределяется между оставшимися членами семьи
+        Если посое всех членов семьи остается еда ...
+        '''
+        pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'
+        s ='\n'+ pref +"---- питание ---------\n"
+        s = s+ pref +"Запасы: %6.1f\n" % self._supplies
+
+        members_list = self.family.all.copy()
+        portions = self._calculate_portions(members_list)
+        s +=  pref + f'Первонаяальное распределение:\n'
+        for member in self.family.all:
+            s = s + pref + f'\t{self.family.get_family_role_sting(member):6s}({member.age.year:3d})| {member.id}| {portions[member] * 100:4.1f}% - {self._supplies * portions[member]:5.1f} еды \n'
+
+        # пища, уже отданная из общих запасов кому-то из семьи
+        aside = 0
+        distributed_food = dict()
+        while len(members_list)>0:
+            member = members_list.pop()
+            s = s + pref + f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
+            supplies_share = self._supplies * portions[member] # доля человека из общих запасов
+            temp_food = member.health.have_food + supplies_share
+            ideal_food = member.health.ideal_food_amount()
+            get_food  = min(supplies_share, ideal_food - member.health.have_food)
+            member.health.have_food_change(get_food)
+            distributed_food[member] = get_food
+            aside += get_food
+            s += f' доля: {temp_food:5.1f}| идеально: {ideal_food:5.1f}'
+            s += f' взято из запасов: {get_food:5.1f}| остаток: {self._supplies-aside:6.1f}|\n'
+            if temp_food > ideal_food and len(members_list) > 0:
+                # если кто-то не съел свою порцию, обновляем значение запасов и считаем ноаве пропорции исходя из изменившихся запасов
+                self._supplies -= aside
+                aside = 0
+                portions = self._calculate_portions(members_list)
+                s = s + pref +  f'\tПЕРЕРАССЧЕТ ({len(members_list)} членов семьи):\n'
+                for mem in members_list:
+                    s = s + pref + f'\t{self.family.get_family_role_sting(mem)} {portions[mem]:5.3f}\n'
+                s += '\n'
+
+        self._supplies -= aside
+        # если после распределения еды что-то осталось
+        s += f'{self.family.id}| осталось запасов:{self._supplies}\n'
+        if self._supplies > 0.01:
+            # если есть живые старики, кормим стариков
+            if len(self.family.parents) > 0:
+                food_per_parent = self._supplies / len(self.family.parents)
+                s = s + pref + f'КОРМИМ СТАРИКОВ: {len(self.family.parents)} человека, каждлому по {food_per_parent:5.1f} еды\n'
+                for i in self.family.parents:
+                    i.health.have_food_change(food_per_parent)
+                self._supplies = 0
+            else:
+                s = s + pref + f'\tРАСПРЕДЕЛЯЕМ ОСТАТКИ: \n'
+                # если нет, перераспределяем остатки между членами семьи, не пропадать же еде
+                portions = self._calculate_portions(self.family.all)
+                for member in self.family.all:
+                    s = s + pref + f'\t{self.family.get_family_role_sting(member):6s}| {member.id}| {portions[member]*100:4.1f}% - {self._supplies * portions[member]} еды \n'
+                    member.health.have_food_change(self._supplies * portions[member])
+                    distributed_food[member] += self._supplies * portions[member]
+                self._supplies = 0
+
+        s +=  pref + f'окончательное распределение:\n'
+        sum_dist_food = 0
+        for member in self.family.all:
+            sum_dist_food += distributed_food[member]
+        for member in self.family.all:
+            persent = distributed_food[member]/sum_dist_food * 100 if sum_dist_food > 0 else 999
+            s = s + pref + f'\t{self.family.get_family_role_sting(member):6s}({member.age.year:3d})| {member.id}| {persent:4.1f}% - {distributed_food[member]:5.1f} еды \n'
+
+        self.family.family_feeding.write(s)
+
+
+    @property
+    def suppplies(self):
+        return self._supplies
+
+    def change_supplies(self, amount):
+        self._supplies += amount
+
+    def family_food_display(self, message: str=''):
+        fam_pref = f'{self.family.id}|'
+        pref = f'{fam_pref}================={message}\n'
+        Family.family_food_file.write(pref)
+
+        pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {fam_pref}'
+        self.budget = 0
+        budget_prev = 0
+        for i in self.family.all:
+            self.budget += i.health.have_food
+            budget_prev += i.health.have_food_prev
+            role = self.family.get_family_role_sting(i)
+            s = pref + f'{role}| {i.health.have_food:5.1f}| {i.health.have_food_prev:5.1f}| непонятная фигня {int(i.health.have_food/genetics.FOOD_COEF):2d}\n'
+
+            Family.family_food_file.write(s)
+        b = "Бюждет до %6.1f  после %6.1f \n" % (budget_prev, self.budget)
+        Family.family_food_file.write(pref + b)
+
