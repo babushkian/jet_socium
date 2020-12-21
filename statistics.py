@@ -34,8 +34,8 @@ class Soc_stat():
         header = "year\t"
         sex = ["women_", "men_"]
         for g in range(len(sex)):
-            for i in genetics.Genes.GENOTYPE:
-                header += "%s \t" % (sex[g]+i)
+            for i in genetics.GN:
+                header += f'{sex[g]+i.value:s} \t'
         header = header[:-1] +"\n"
         self.genes_average.write(header)
 
@@ -210,12 +210,12 @@ class Soc_stat():
         """
         рассчет средних значений генов у всей популяции
         """
-        g_m: Dict[str, int] = {i:0 for i in genetics.Genes.GENOTYPE} # мужчины отдельно
-        g_f: Dict[str, int] = g_m.copy() # женщины отдельно
-        g: Dict[Gender, Dict[str, int]] = {Gender.FEMALE: g_f, Gender.MALE: g_m}
+        g_m: Dict[genetics.GN, int] = {i:0 for i in genetics.GN} # мужчины отдельно
+        g_f: Dict[genetics.GN, int] = g_m.copy() # женщины отдельно
+        g: Dict[Gender, Dict[genetics.GN, int]] = {Gender.FEMALE: g_f, Gender.MALE: g_m}
         col: Dict[Gender, int] = {Gender.FEMALE: self.women, Gender.MALE: self.men}
         for person in self.socium.people_alive:
-            for trait in genetics.Genes.GENOTYPE:
+            for trait in genetics.GN:
                 g[person.gender][trait] += person.genes.get_trait(trait)
 
         genome_record = "%s\t" % self.socium.anno.year
@@ -233,9 +233,9 @@ class Soc_stat():
 
 
     def count_family_genes_average(self, family):
-        g = {i:0 for i in genetics.Genes.GENOTYPE}
+        g = {i:0 for i in genetics.GN}
         for person in family.all:
-            for trait in genetics.Genes.GENOTYPE:
+            for trait in genetics.GN:
                 g[trait] += person.genes.get_trait(trait)
         genome_record = ""
         for i in g:
@@ -246,7 +246,7 @@ class Soc_stat():
 
 
     def count_tribe_genes_average(self, tribe_name):
-        fg = {i: 0 for i in genetics.Genes.GENOTYPE}
+        fg = {i: 0 for i in genetics.GN}
         for person in self.tribes_in_socium[tribe_name]:
             for i in fg:
                 fg[i] += person.genes.get_trait(i)
@@ -255,7 +255,6 @@ class Soc_stat():
             fg[i] /= self.tribes_in_socium_count[tribe_name]
             genome_record +=  "%s=%4.1f |" %(i[:3], fg[i])
         return genome_record
-
 
 
     def count_soc_state(self):

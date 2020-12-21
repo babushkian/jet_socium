@@ -4,6 +4,7 @@ from typing import Optional, List
 from enum  import Enum
 from common import GET_FOOD_MULTIPLIER, DIGEST_FOOD_MULTIPLIER
 import genetics
+
 import human
 class FE(Enum):
     MOTHER = 0
@@ -243,7 +244,7 @@ class FamilySupplies:
         # возможность переносить запасы на следующий ход пока не делаю
         self._supplies = 0
         for member in self.family.all:
-            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
+            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait(genetics.GN.ALTRUISM)
             member.health.have_food_change(-give)
             self._supplies += give
 
@@ -252,7 +253,7 @@ class FamilySupplies:
 
         def form_text_body() ->str:
             s = f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
-            s += f' alt={self.family.head.genes.get_trait("altruism"):2d}| имеет {member.health.have_food_prev:5.1f}| ' \
+            s += f' alt={self.family.head.genes.get_trait(genetics.GN.ALTRUISM):2d}| имеет {member.health.have_food_prev:5.1f}| ' \
                  f'вкладывает {give:5.1f}| остается {member.health.have_food:5.1f}\n'
             return s
 
@@ -260,7 +261,7 @@ class FamilySupplies:
         s = pref +"-------------\n"
         self._supplies = 0
         for member in self.family.all:
-            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait('altruism')
+            give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait(genetics.GN.ALTRUISM)
             member.health.have_food_change(-give)
             self._supplies += give
             s+= pref + form_text_body()
@@ -277,7 +278,7 @@ class FamilySupplies:
         for member in fam_list:
             # здесь не учитываем, что старики плохо уствивают пищу и для насыщения им нужно больше, они будут получать, как взрослые
             age_proportion = min(DIGEST_FOOD_MULTIPLIER[member.age.stage], 1)
-            egoism_proportion = member.genes.get_trait('harshness') / genetics.Gene.MAX_VALUE
+            egoism_proportion = member.genes.get_trait(genetics.GN.EGOISM) / genetics.Gene.MAX_VALUE
             #part = age_proportion + egoism_proportion
             part = egoism_proportion # отключу слагаемое, отвечающее за возраст, пусть дети получают столько же, сколько и взрослые
             portions[member] = part

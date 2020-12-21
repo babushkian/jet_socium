@@ -91,8 +91,8 @@ class FoodDistribution:
         family_strongness = []
         for i in (first, second):
             # нельзя чтобы у семейной пары было слишком большое приемущество над одиночками, поэтому берем среднеквадратичную силу
-            ff = (i.wife.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.wife.age.stage])**2 if i.wife else 0
-            ff += (i.head.genes.get_trait('strongness') * GET_FOOD_MULTIPLIER[i.head.age.stage])**2
+            ff = (i.wife.genes.get_trait(genetics.GN.STRONGNESS) * GET_FOOD_MULTIPLIER[i.wife.age.stage])**2 if i.wife else 0
+            ff += (i.head.genes.get_trait(genetics.GN.STRONGNESS) * GET_FOOD_MULTIPLIER[i.head.age.stage])**2
             family_strongness.append(math.sqrt(ff))
 
         delta = family_strongness[0] - family_strongness[1]

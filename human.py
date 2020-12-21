@@ -6,6 +6,8 @@ from typing import Optional, List, Dict, Tuple, IO, Set, NewType
 
 from names import CharName
 import genetics
+from genetics import GN
+
 from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender
 
 import prop
@@ -160,8 +162,8 @@ class Human:
     def check_divorce(self) -> bool:
         if self.is_married:
             chanse: float = DIVOCE_CHANSE *(1+ (
-                    self.genes.get_trait('harshness') * self.spouse.genes.get_trait('harshness')
-                    - self.spouse.genes.get_trait('altruism')/ 4))  # супруг сопротивляется разводу
+                    self.genes.get_trait(genetics.GN.EGOISM) * self.spouse.genes.get_trait(genetics.GN.EGOISM)
+                    - self.spouse.genes.get_trait(genetics.GN.ALTRUISM)/ 4))  # супруг сопротивляется разводу
             return chanse > random.random()
         else:
             return False
@@ -246,9 +248,9 @@ class Human:
             damage = abs(prop.gauss_sigma_2())
             # урон, вызванный привычкой умеренно птиаться (в годах)
             # если женщина неумеренная, наоборот, роды пройдут лучше
-            frail_damage =  self.genes.get_trait('strongness') - 5
+            frail_damage =  self.genes.get_trait(genetics.GN.STRONGNESS) - 5
             # бонус от физической выносливости
-            recovery = self.genes.get_trait('strongness') # меньше родовая травма
+            recovery = self.genes.get_trait(genetics.GN.STRONGNESS) # меньше родовая травма
             total_damage = max(0, damage + frail_damage - recovery)
             # в среднем должен получаться год-два уронм, поэтому делю на 4
             birth_injury = genetics.HEALTH_PER_DAY * Date.DAYS_IN_YEAR * total_damage / 4
@@ -257,11 +259,9 @@ class Human:
 
     def check_pregnant(self) -> None:
         if len(self.pregnant) == 0:
-            check = PREGNANCY_CHANCE*3*(self.genes.get_trait('fertility') * math.sqrt(self.spouse.genes.get_trait('fertility')) )
-            # print(f'{self.socium.anno.display()} {self.id} пл мужа:{self.spouse.genes.get_trait("fertility")} '
-            # 	  f'пл жены:{self.genes.get_trait("fertility")} Шанс забеременнеть: {check:>5.3f}')
+            check = PREGNANCY_CHANCE*3*(self.genes.get_trait(genetics.GN.FERTILITY) * math.sqrt(self.spouse.genes.get_trait(genetics.GN.FERTILITY)) )
             if  check > random.random():
-                fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait('fertility') - 5))
+                fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait(genetics.GN.FERTILITY) - 5))
                 if fetus_amount < 1:
                     fetus_amount = 1
                 for num in range(fetus_amount):
@@ -281,7 +281,7 @@ class Human:
             return date
         fert = True
         for person in (self, self.spouse):
-            if person.age < _count_fertil_age(person.genes.get_trait('fert_age')):
+            if person.age < _count_fertil_age(person.genes.get_trait(GN.FERT_AGE)):
                 fert = False
                 break
         return fert
@@ -289,7 +289,7 @@ class Human:
     def check_fertil_satiety(self) -> bool:
         fert = True
         for person in (self, self.spouse):
-            if person.health.satiety < person.genes.get_trait('fert_satiety'):
+            if person.health.satiety < person.genes.get_trait(GN.FERT_SATIETY):
                 fert = False
                 break
         return fert
@@ -311,7 +311,7 @@ class Human:
 
         def show_genes() -> str:
             g = 'Гены:\n'
-            for i in self.genes.GENOTYPE:
+            for i in GN:
                 g += '\t%s: %2d' %(i[:6], self.genes.get_trait(i))
                 if self.genes.genome[i].predecessor is None:
                     sex = 'нет'

@@ -83,8 +83,8 @@ class Simulation:
                 satge_name = i.age.stage.name
 
                 sex = "М" if i.gender is common.Gender.MALE else "Ж"
-                b = i.genes.get_trait('strongness')
-                c = i.genes.get_trait('abstinence')
+                b = i.genes.get_trait(genetics.GN.STRONGNESS)
+                c = i.genes.get_trait(genetics.GN.ABSTINENCE)
                 d = i.health.satiety
                 e = Date(0, 0, round(i.health.health / genetics.HEALTH_PER_DAY)).display(False)
                 fb = - i.health.food_sum
@@ -109,8 +109,8 @@ class Simulation:
 
 def display_start_genotype(genome) -> str:
     s = ''
-    for name, num in zip(genetics.Genes.GEN_PSEUDONYM,  genome):
-        s += f'| {genetics.Genes.GEN_PSEUDONYM[name]:4s}:{num:3d} '
+    for name in genetics.GN:
+        s += f'| {genetics.Genes.GEN_PSEUDONYM[name]:4s}:{genome[name]:3d} '
     return s
 
 if __name__ == '__main__':
