@@ -50,7 +50,7 @@ class Stage_of_age(int, Enum):
     AGED = 5
     SENILE = 6
 
-STAGE_LIST = [i for i in Stage_of_age]
+STAGE_LIST =list(Stage_of_age)
 
 STAGE_DICT = {Stage_of_age.BABY: Date(6),
               Stage_of_age.CHILD: Date(12),
@@ -61,7 +61,17 @@ STAGE_DICT = {Stage_of_age.BABY: Date(6),
               Stage_of_age.SENILE: Date(100_000)
               }
 
+
 # множитель еды для насыщения в зависимости от возраста
+'''
+На самом деле это не вполне насыщене. Планируется, что это будет коэффициент усвоения пищи
+человек может съесть много пищи, но она плохо усвоится, и у человека не будет сил на какие-то действия
+а насыщение зависит от размера желудка. У старого человека он не увеличивается.Он будет насыщаться тем же количеством 
+пищи, что и молодой. 
+вобще-то это у меня уже реализовано, что старик не будет себе брать 1.7 от нормы пищи. Иначе старики никогда бы не 
+делилисьпищей, потому что им всегда мало. Просто из-за плохого усвоения у них будет быстрее тратиться жизнь.
+ 
+'''
 DIGEST_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0.3,
               Stage_of_age.CHILD: 0.5,
               Stage_of_age.TEEN: 0.7,
@@ -83,22 +93,22 @@ GET_FOOD_MULTIPLIER = {Stage_of_age.BABY: 0,
 
 class Stage:
     """
-    Класс показывает возрастную стадию человека и контролирует чтобы стадии совевременном енялись.
+    Класс показывает возрастную стадию человека и контролирует чтобы стадии совевременно менялись.
     Так же поределяет садию по возрасту.
     """
     def __init__(self,  age_int: int, age: Age):
         self.age = age
+        self._stage: Stage_of_age
+        self._timer: Date
         self._stage, self._timer = self.get_stage_by_age(age_int)
 
     def check_stage(self):
-        self._stage: Stage_of_age
-        self._timer: Date
         if self.age == self._timer:
             self._stage, self._timer = self.get_next_stage()
 
     def get_next_stage(self) ->Tuple[Stage_of_age, Date]:
         next_stage: Stage_of_age = STAGE_LIST[self._stage.value + 1]
-        # таймер должен перескочить на вле стадии
+        # таймер должен перескочить на две стадии
         next_stage_timer: Date = STAGE_DICT[next_stage.value]
         return next_stage, next_stage_timer
 
