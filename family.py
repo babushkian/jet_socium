@@ -12,6 +12,13 @@ class FE(Enum):
 
 
 
+'''
+вот бы еще сжделать классы Parents и Childern
+class Parents
+social_parents = Parents(pers1, pers2)
+biological_parents = Parents(pers1, pers2)
+'''
+
 
 class Family:
     family_log_file = None
@@ -70,6 +77,7 @@ class Family:
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
+        return len(self.dependents)
 
 
     def add_dependents(self, family: Family):

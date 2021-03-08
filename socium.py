@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, List, Dict, IO
+import csv
 import random
 import common
 from soc_time import Date, Anno
@@ -29,6 +30,15 @@ class Socium:
 
         self.stat = statistics.Soc_stat(self)
         self.food = FoodDistribution(self)
+
+        self.person_stat_file = open('./person_features_table.csv', 'w', encoding="UTF16")
+        self.person_stat = csv.writer(self.person_stat_file, delimiter='\t', lineterminator='\n')
+        pers_stat_header = list()
+        for i in genetics.GN:
+            pers_stat_header.append(i)
+        hextend = ['макс. возр. отца', 'возр. отца при рождении', 'макс. возр. матери', 'возр. матери при рождении', 'каким по счету родился', 'кол-во супругов', 'кол-во детей', 'возраст смерти']
+        pers_stat_header.extend(hextend)
+        self.person_stat.writerow(pers_stat_header)
         # текущий год
         self.anno: Anno = Anno(anno)
         # локальный счетчик смертей, после появления чужака обнуляется
@@ -231,5 +241,6 @@ class Socium:
             # записи про каждого мертвого человека с подробностями его жизни
             hall.write("\n====================================\n")
             hall.write(person.necrolog())
+            self.person_stat.writerow(person.magareport())
         hall.close()
 

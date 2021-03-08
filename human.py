@@ -108,14 +108,17 @@ class Human:
         # множество близких родственников для определения, на ком можно жениться
         self.close_ancestors: Set[Human] = self.define_close_ancestors()
         if self.mother.is_human:
-            self.mother.family.add_child(self)
+            self.child_number_in_mothers_family = self.mother.family.add_child(self)
             self.family: family.Family = self.mother.family
+            self.birth_family = self.family
             self.tribe_name = self.mother.tribe_name
             tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
                    self.father.id,	self.father.name.display(), self.father.age.year)
             Human.write_chronicle(Human.chronicle_born.format(*tup))
         else:
+            self.child_number_in_mothers_family =0
             self.family: family.Family = family.Family(self)
+            self.birth_family = self.family
             self.genes.define_adult()
             self.tribe_name = self.family.id
             Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
@@ -210,6 +213,13 @@ class Human:
 
 
     def define_close_ancestors(self) -> Set[Human]:
+        '''
+        Метод определяет близких родственников человека для предотвращения кровосмешения. С первого взгляда может
+        показаться, что он работает неправильно, так как в близкие родственники записывает только отца с матерью
+        и бабушек с дедушками. А двоюродные братья и дяди с тетями остаются за бортом. Но на самом деле ищутся
+        пересечения множеств у двух человек. Если у жениха с невестой общий бабущка или ддедушка, это означает
+        как минимум их двоюродное родство.
+        '''
         def get_close_ancestors(person: Human, close_an: set, step: int) -> None:
             if step > 0:
                 if person.is_human:
@@ -367,6 +377,33 @@ class Human:
             sp = "\tнет\n"
         nec += sp
         return nec
+
+    def magareport(self):
+        stat_list= list()
+        # гены
+        for i in GN:
+            stat_list.append(self.genes.get_trait(i))
+        # возраст отца и матери на момент проверки. Человек может умереть, радителт все еще живут
+        # так же возраст родителей на момент рождения человека
+        preds_old_age = {x:0 for x in Gender}
+        preds_age_on_birthday = preds_old_age.copy()
+        if self.biological_parents[0] is not None:
+            for pred in self.biological_parents:
+                preds_old_age[pred.gender] = pred.age.len()
+                preds_age_on_birthday[pred.gender] = (self.birth_date - pred.birth_date).len()
+        for gen in Gender:
+            stat_list.append(preds_old_age[gen])
+            stat_list.append(preds_age_on_birthday[gen])
+
+        # каким по счету ребенком в семье он был
+        stat_list.append(self.child_number_in_mothers_family)
+        stat_list.append(len(self.marry_dates))
+        # количество детей у человека
+        stat_list.append(len(self.children))
+        # возраст смерти
+        stat_list.append(self.age.len())
+        return stat_list
+
 
 
 class NoneHuman(Human):

@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import  Dict, List
 from soc_time import Date
 from common import Stage_of_age, Gender, GENDER_LIST
+import csv
 
 import socium
 import human
@@ -40,7 +41,8 @@ class Soc_stat():
         self.genes_average.write(header)
 
         self.ss = open("./statistics.csv", "w", encoding="UTF16")
-        # для вычисления среднего возраста смерти содержатся люди умершие за последние 5 дет
+
+
 
         self.death_dist = open("./death_distribution.csv", "w", encoding="UTF16")
         dead_head = "год\t"
