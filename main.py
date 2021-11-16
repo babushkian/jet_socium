@@ -116,7 +116,7 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
     print('Start.')
 
-    town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=100)
+    town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
 
     result, final_date = town.simulate()
     town.close()

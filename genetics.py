@@ -124,10 +124,12 @@ class Health:
         # также делим еду на возрастной коэффициент(пока маленьктй, легко питаться)
         fp = self.person.health.have_food / FOOD_COEF / DIGEST_FOOD_MULTIPLIER[self.person.age.stage] \
              + abstinence_bonus + fertility_bonus + pregnancy_bonus
-        self.satiety = int(self.satiety if self.satiety > 0 else 0)
+        self.satiety = int(fp)
+        self.satiety = self.satiety if self.satiety >= 0 else 0
         if self.satiety > 11:
             self.satiety = 11
             fp = 11
+        self.satiety = min(self.satiety, 11)
         main_health_bonus = FOOD_BONUS[self.satiety]  # целая часть еды
         f_delta = FOOD_BONUS[self.satiety + 1] - FOOD_BONUS[self.satiety]
         additional_health_bonus = f_delta * (fp - self.satiety)  # дробная часть бонуса вычисленная по линейной пропорции
