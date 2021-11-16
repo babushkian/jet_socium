@@ -32,12 +32,16 @@ STARVE_CONSUME_RATE = 2
 FOOD_COEF = 20
 
 # Какой урон или пользу добавляет еда человеку 
-# (в качестве индекса должно выптупать количество потребленной еды satiety)
-#               0     1   2   3     4    5   6    7    8    9     10  11   12 - на должен достигаться
+# (в качестве индекса должно выступать количество потребленной еды satiety)
+#               0     1   2   3     4    5   6    7    8    9     10  11   12 - не должен достигаться
 FOOD_BONUS = [-256, -56, -8, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.3, -0.8, -3, -16]
 #FOOD_BONUS = [-64, -16, -7, -2, -0.6, -0.2, 0, 0.2, 0.1, -0.2, -0.4, -1, -3]
-
+'''
+готовой запас здоровья. сколько здоровья отнимется за год просто в процессе жизни, без всяких модификаторов 
+цифра абстрактная, видимо может быть любой
+'''
 YEAR_HEALTH_AMOUNT = 365.0
+# дневной запас здоровья. Вычисляется в зависимости от количества дней в году
 HEALTH_PER_DAY = YEAR_HEALTH_AMOUNT / Date.DAYS_IN_YEAR
 # для 4-х дней в году  HEALTH_PER_DAY = 91.25, каждый прожитый день будет отниматься столько
 
@@ -48,8 +52,8 @@ class Health:
         self.person = person
         # сколько еды удалось достать за ход
         self.have_food = 0
-        # странная перемсенная. Нужна для статистики, чтобы показывватьь, сколько еды было у человека до перераспределения
-        # тго есть предполагается, что будет выводиться сравнение, сколько еды было изначально, и сколько стало по сле перераспределения. Но  перераспределений может быть несколько
+        # странная переменная. Нужна для статистики, чтобы показывватьь, сколько еды было у человека до перераспределения
+        # то есть предполагается, что будет выводиться сравнение, сколько еды было изначально, и сколько стало по слеперераспределения. Но  перераспределений может быть несколько
         self.have_food_prev = 0
         # Определяем запас здоровья человека через его предполагаемый возраст.
         # Задаем его предполагаемый возраст смерти, отнимаем текущий возраст, переводим в дни и умнодаем на дневную норму очков жизни
@@ -69,7 +73,7 @@ class Health:
 
     def have_food_change(self, number):
         """
-        Изменяет количество добытой человектом еды на пареметр number
+        Изменяет количество добытой человеком еды на параметр number
         :param number: количество еды, на которе нужно изменить переменную  have_food
         """
         self.have_food_prev = self.have_food
@@ -86,13 +90,20 @@ class Health:
 
 
     def ideal_food_amount(self):
-        return NORMAL_CONSUME_RATE * FOOD_COEF * DIGEST_FOOD_MULTIPLIER[self.person.age.stage]
+        '''
+        Определяем сколько бы человек хотел съетсть. Назанчение функции: распределение еды среди детей в семье.
+        Чтобы ребенок не брал себе больше, чем ему нужно.
+        У стариков коэффициент усвояемости больше единицы, таким образом они будут требовать  для себя больше пищи, мем им нужно
+        Но концепция а том, мто старики так же едят обычную взрослую пайку, но еда усваивается хуже. Так что максимальный коэ всегда равноа единице, даже
+        '''
+        digest =  DIGEST_FOOD_MULTIPLIER[self.person.age.stage] if DIGEST_FOOD_MULTIPLIER[self.person.age.stage] < 1 else 1
+        return NORMAL_CONSUME_RATE * FOOD_COEF * digest
 
     def modify(self):
         """
-        общий метод для изменения здоровья в завистмости от множества факторов
+        общий метод для изменения здоровья в зависимости от множества факторов
         """
-        # уменьшение зроровья за прожитый день (фиксированное количество)
+        # уменьшение здоровья за прожитый день (фиксированное количество)
         self.reduce()
         # голод
         abstinence_bonus = 0.2 * (self.person.genes.get_trait(GN.ABSTINENCE) - 5)  # чем меньше, тем хуже усваивается еда
@@ -113,8 +124,7 @@ class Health:
         # также делим еду на возрастной коэффициент(пока маленьктй, легко питаться)
         fp = self.person.health.have_food / FOOD_COEF / DIGEST_FOOD_MULTIPLIER[self.person.age.stage] \
              + abstinence_bonus + fertility_bonus + pregnancy_bonus
-        self.satiety = int(fp)
-        self.satiety = self.satiety if self.satiety >= 0 else 0
+        self.satiety = int(self.satiety if self.satiety > 0 else 0)
         if self.satiety > 11:
             self.satiety = 11
             fp = 11
@@ -126,7 +136,7 @@ class Health:
 
     def reduce(self, amount=HEALTH_PER_DAY):
         """
-        Уменьшает здоровье человека. По умлочанию - на количество здоровья, отнимающееся за один прожитый день.
+        Уменьшает здоровье человека. По умолчанию - на количество здоровья, отнимающееся за один прожитый день.
         """
         self.health = self.health - amount
 
@@ -147,7 +157,7 @@ def lust_coef(age):
     хорошо бы описать это гладкой кривой, но я формулы не знаю, поэтому будет серия опорных точек
     """
     lust_checkpoints = [21, 26, 31, 37, 50]  # возраст
-    lust_curve = [0.5, 0.6, 0.4, 0.3, 0.2]  # вероятность пожениться (вероятности пары перемннжаются)
+    lust_curve = [0.5, 0.6, 0.4, 0.3, 0.2]  # вероятность пожениться (вероятности пары перемножаются)
     attraction = 0.1
     for i in range(len(lust_checkpoints)):
         if age < lust_checkpoints[i]:
@@ -173,8 +183,8 @@ class GN(str, Enum):
     EGOISM = 'egoism' # склонность к разводам
     ALTRUISM = 'altruism' # склонность отдавать часть еды родным
     FERT_AGE = 'fertile age' #  возраст деторождения
-    FERT_SATIETY = 'fertile satiety' # сытость, при которой невозможно зачать ребенка
-    MUTATION = 'mutation' # вероятность мутации одного гена, формула: 1/(mutation + 2)**2
+    FERT_SATIETY = 'fertile satiety' # определяет минимальную сытость, при которой невозможно зачать ребенка
+    MUTATION = 'mutation' # параметр, влияющий на вероятность мутации одного гена, а прогон идет по всем генам
 
 
 class Genes:
@@ -185,7 +195,7 @@ class Genes:
     '''
     protogenome_profile = {GN.ENHERITANCE: 9,  # наследование генов
                            GN.FERTILITY: 5,  # плодовитость
-                           GN.STRONGNESS: 5,  # проспособленность
+                           GN.STRONGNESS: 5,  # приспособленность
                            GN.ABSTINENCE: 5,  # умеренность
                            GN.EGOISM: 5,  # неуживчивость
                            GN.ALTRUISM: 6,  # альтруизм
@@ -209,12 +219,21 @@ class Genes:
         self.genome: Dict[GN, Gene] = {i: Gene(i, self) for i in GN}
 
     @staticmethod
-    # в начале симуляции случайным образом создает шаблон генома для всей популяции
     def init_protogenome():
+        """
+        В начале симуляции случайным образом создает шаблон генома для всей популяции.
+        Для людей первого поколения, а так же для странников - взрослых людей, периодически
+        приходящих в социум.
+        """
         Genes.protogenome_profile = generate_genome()
 
     def define(self):
-        # определяет геном новорожденного
+        """
+        Определяет геном новорожденного. Вызывается из класса Fetus при зачатии, так что не стоит
+        опасаться , что к моменту рождения у ребенка сменится отец и гены отнаследуюстя от чужого дяди.
+        Проводит инициацию каждого гена, который наследуется от одного из родителей и с некоторой
+        вероятностью модифицируется.
+        """
         for i in self.genome.values():
             i.init_gene()
 
@@ -231,11 +250,11 @@ class Genes:
 
     def transit(self, person: human.Human):
         """
-        копирует геном из эмбриона в целевого человека, когда тот рождается
+        Копирует геном из эмбриона в целевого человека, когда тот рождается
+        Метод вызывается из класса Fetus
         """
         for i in self.genome:
             person.genes.genome[i] = self.genome[i]
-        #person.genes.genome = self.genome.copy()
 
     def get_trait(self, trait):
         """
@@ -252,13 +271,13 @@ class Gene:
         self.containing_genome: Genes = genome
         self.person: Genes_Holder = genome.person
         self.value: int = value
-        self.predecessor: Optional[human.Human] = None
+        self.predecessor: Optional[human.Human] = None # ссылка на родителя, от которого унаследован конкретный ген
 
     def init_gene(self):
-        # если эмбрион имеет живых рподителей, то гаследуем от родителей
-        # если у объекта не тродителей, то это не эмбрион,  а странник, и он получает гены без наследования
+        # если эмбрион имеет живых родителей, то наследуем от родителей
+        # если у объекта нет родителей, то это не эмбрион, а странник, и он получает гены без наследования
         parents = self.person.parents_in_same_sex_order()
-        #  ген "наследование" наследуется тольлко от родителя того же пола. От отца к сыну, от матери к дочери.
+        #  ген "наследование" наследуется только от родителя того же пола. От отца к сыну, от матери к дочери.
         # этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
         if self.name == GN.ENHERITANCE:
             self.inherit_gene(parents[0])
@@ -269,12 +288,13 @@ class Gene:
         self.gene_score()
 
 
-    def inherit_any_gene(self, parents,  default=5):
-        # выбираем, от кого из родителей будем наследовать ген
-
+    def inherit_any_gene(self, parents,  gene_value=5):
+        """
+        Случайно определяем, от кого из родителей будет копироваться данный ген
+        """
         if random.random() < 1 / (self.person.genes.get_trait(GN.ENHERITANCE) + 1) and parents[1] is not None:
             parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-        self.inherit_gene(parents[0], default)
+        self.inherit_gene(parents[0], gene_value)
 
     def inherit_gene(self, parent,  default=5):
         self.predecessor = parent
@@ -289,13 +309,13 @@ class Gene:
     def mutate_gene(self) -> int:
         shift: float = 0 # величина мутации
         # при mutation  = 11 шанс у гена мутировать: 0.444 (каждый человек мутант гарантированно)
-        # при mutation  = 0 шанс у гена мутировать: 0.02 (мутирует кажлый 0.02*len(GENOME) человек)
+        # при mutation  = 0 шанс у гена мутировать: 0.02 (мутирует каждый 0.02*len(GENOME) человек)
         mutation_chance: float = 4 / (14 - self.predecessor.genes.get_trait(GN.MUTATION)) ** 2
         if mutation_chance > random.random():
             shift = 0.45 * prop.gauss_sigma_1() # величина мутации
             if shift < 0:
                 shift -= 1 # если мутация случилась, то ее величина  должна быть больше или меньше единицы,
-            if shift >= 0: # иначе пнри округлении эффект мутации равен нулю
+            if shift >= 0: # иначе при округлении эффект мутации равен нулю
                 shift += 1
         trait = round(self.predecessor.genes.get_trait(self.name) + shift)
         return trait
@@ -305,14 +325,6 @@ class Gene:
         gene_delta = abs(self.value - self.pred_value)
         if gene_delta > 0:
             self.person.score.update_gene(gene_delta)
-
-
-class Gene_Inheritance(Gene):
-    def inherit_gene(self, parents, default=5):
-        # надо будет переписать особое поведение гена наслеоования
-        # и удалить из суперкласса inherit_enheritance
-        pass
-
 
 
 

@@ -24,14 +24,6 @@ import fetus
 PREGNANCY_CONST = 0.398
 
 
-AGE_BABY: Date = Date(0)
-AGE_CHILD: Date = Date(3)
-AGE_TEEN: Date = Date(13)
-AGE_ADULT: Date = Date(18)
-AGE_AGED: Date = Date(55)
-AGE_SENILE: Date = Date(70)
-
-
 DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
 FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT]).year \
@@ -94,7 +86,7 @@ class Human:
         self.biological_parents: Tuple[Human, Human] = biol_parents
 
         if self.biological_parents[0] is not None:
-            # ребенок родиляся естественным путем
+            # ребенок родился естественным путем
             self.mother: Human = self.biological_parents[0]
             self.father: Human = self.mother.spouse
         else:

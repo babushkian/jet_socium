@@ -11,7 +11,7 @@ import genetics
 
 
 # хочется повторяемости картины, фиксируем сид
-random.seed(666)
+#random.seed(666)
 # количество людей в начальной популяции
 FIRST_POPULATION = 60
 TIMELINE = Date(200)  # кличество лет симуляции
@@ -90,8 +90,8 @@ class Simulation:
                 fb = - i.health.food_sum
                 hf = i.health.have_food
                 z = anno_date + famil
-                z += f' {a}| {sex}|{i.age.display():14s}| {satge_name:7s}| str = {b:2d}| abs = {c:2d}| sat = {d:2d}| ' \
-                     f'fd = {hf:5.1f}| bonus = {fb:6.1f}| heal = {e}\n'
+                z += f' {a}| {sex}|{i.age.display():14s}| {satge_name:7s}| str= {b:2d}| abs= {c:2d}| sat= {d:2d}| ' \
+                     f'food= {hf:5.1f}| hbonus= {fb:6.1f}| healt={i.health.health:6.1f}| lifetim={e}\n'
                 town.every_man_state_log.write(z)
 
         write_lohfile(self)
@@ -116,7 +116,7 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
     print('Start.')
 
-    town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
+    town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=100)
 
     result, final_date = town.simulate()
     town.close()

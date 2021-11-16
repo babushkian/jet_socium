@@ -10,10 +10,8 @@ class FE(Enum):
     MOTHER = 0
     FATHER = 1
 
-
-
 '''
-вот бы еще сжделать классы Parents и Childern
+вот бы еще сделать классы Parents и Children
 class Parents
 social_parents = Parents(pers1, pers2)
 biological_parents = Parents(pers1, pers2)
@@ -21,21 +19,31 @@ biological_parents = Parents(pers1, pers2)
 
 
 class Family:
+    """
+    Поисываеится семья и внутрисемейные отношения. Свадьба развод, смерти супругов, уход из семьи взрослых детей.
+    Ну и конечно дележка совместно нажитой пищи.
+
+    Если в семье отдельно выделяется роль главы семьи, то неплохо было бы назначить какую то обязанность,
+    характерную только для главы семьи. Которой остальные домочадцы не занимаются.
+    """
     family_log_file = None
     family_food_file = None
     family_feeding = None
 
     def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
-        self.obsolete: bool = False
+        self.obsolete: bool = False # признак того, сто семья перестала существовать
         self.id: str = self.generate_family_id()
+        # в семье должен быть хотя бы один человек - глава. В начале симуляции все дети получают
+        # собственную семью, как и дети-сироты после смерти родителей, как и повзрослевшие дети, покидающие семью
         self.head: human.Human = head
         self.head.socium.families.append(self) # добавляет семью в список семей
+        # если человек холостой, husband  и wife равны None
         self.husband: Optional[human.Human] = None
         self.wife: Optional[human.Human] = None
         self.parents: List[human.Human] = list()
         self.add_parents()
         self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
-        # список детей (не обязательно родных)
+        # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
         self.dependents: List[Optional[human.Human]] = list()
         if depend:
             for i in depend:
@@ -81,37 +89,45 @@ class Family:
 
 
     def add_dependents(self, family: Family):
+        '''
+        При замужестве добавляем всех детей жены от предыдущего брака в список иждивенцев главы семьи
+        '''
         for i in family.dependents:
             if not i.age.is_big:
                 i.tribe_name = self.head.tribe_name
                 # меняем имя и фамилию
-                i.name.change_father(self.head)
+                i.name.change_fathers_name(self.head)
                 i.name.change_family_name(self.head)
                 self.add_child(i)
 
 
-    def unite_families(self, other: Family):
-        # добавляем жену в семью мужа. Семья жены уничтожается
-        # объединяем родителей жены и мужа
-        # объединяем иждивенцев жены и мужа
-        # у жены удаляются родители прежнего мужа
+    def unite_families(self, wifes_family: Family):
+        '''
+        добавляем жену в семью мужа. Семья жены уничтожается
+        объединяем родителей жены и мужа в переменную self.parents
+        объединяем иждивенцев жены и мужа в переменную self.dependents
+        у жены удаляются родители прежнего мужа
+        '''
         s = "Объединились семьи:\n"
         s += "\t %s| %s| %s\n" % (self.id, self.head.id, self.head.name.display())
-        s += "\t %s| %s| %s\n" % (other.id, other.head.id, other.head.name.display())
+        s += "\t %s| %s| %s\n" % (wifes_family.id, wifes_family.head.id, wifes_family.head.name.display())
         self.family_log_file.write(s)
-        self.wife: human.Human  = other.head
+        self.wife: human.Human  = wifes_family.head
         self.husband: human.Human  = self.head
         self.wife.tribe_name = self.head.tribe_name
         self.all.append(self.wife)
-        self.parents.extend(other.parents)
-        self.add_dependents(other)
-        self.family_disband(other)
+        self.parents.extend(wifes_family.parents)
+        self.add_dependents(wifes_family)
+        self.family_disband(wifes_family)
         self.wife.family = self
 
 
     def divide_families(self):
-        # это разводик
-        # у жены генерится новая семья, дети к совоему отцу перестают иметь отношение
+        '''
+        происходит развод: разделение на две семьи
+        у жены генерится новая семья, дети к своему отцу перестают иметь отношение, переходят в семью матери
+        какое у них племя при этом остается?
+        '''
         s = "=======Семья | %s | распалась\n" % self.id
         s += "\t %s| %s\n" % (self.head.id, self.head.name.display())
         s += "\t %s| %s\n" % (self.wife.id, self.wife.name.display())
@@ -240,25 +256,33 @@ class Family:
 
 class FamilySupplies:
     '''
-    Формирует и распределяет семейный бюждет
+    Формирует и распределяет семейный бюджет
     '''
     def __init__(self, family:Family):
         self.family = family
-        self._supplies = 0
-        self.budget = 0
+        self._supplies = 0.0
+        self.budget = 0.0
 
     def make(self, food):
-        '''полняем семейный бюджет'''
+        '''
+        Полняем семейный бюджет.
+        Каждый член семьи вкладывает в бюджет долю, пропорциональную его альтруизму. Долю от
+        имеющихся у него запасов, полученных после первоначальной добычи пищи
+        '''
         # возможность переносить запасы на следующий ход пока не делаю
         self._supplies = 0
         for member in self.family.all:
+            # каждый член семьи вкладывает в бюджет долю, пропорциональную его альтруизму
             give = member.health.have_food * genetics.ALTRUISM_COEF * member.genes.get_trait(genetics.GN.ALTRUISM)
             member.health.have_food_change(-give)
             self._supplies += give
 
 
     def make_food_supplies(self):
-
+        '''
+        Делает то же самое, что и make, по помимо этого пишет в логи кто сколько еды добавил.
+        Это неправильный подход, часть с логами надо отделить.
+        '''
         def form_text_body() ->str:
             s = f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
             s += f' alt={self.family.head.genes.get_trait(genetics.GN.ALTRUISM):2d}| имеет {member.health.have_food_prev:5.1f}| ' \
@@ -279,16 +303,17 @@ class FamilySupplies:
 
     def _calculate_portions(self, fam_list):
         '''
-        Считаем расределение еды на всех членов семьи (пропорции)
+        Считаем распределение еды на всех членов семьи (пропорции)
         '''
         portions = dict()
         denominator = 0
         for member in fam_list:
-            # здесь не учитываем, что старики плохо уствивают пищу и для насыщения им нужно больше, они будут получать, как взрослые
+            # нужно учитывать, что старики плохо уствивают пищу и для насыщения им нужно больше, они будут получать, как взрослые, не бльше 1
             age_proportion = min(DIGEST_FOOD_MULTIPLIER[member.age.stage], 1)
-            egoism_proportion = member.genes.get_trait(genetics.GN.EGOISM) / genetics.Gene.MAX_VALUE
+            # опасная штука, если EGOISM==0, может статься, что denominator==0 и деление на ноль, поэтому нужно небольшое смещение
+            egoism_proportion = 0.1 + member.genes.get_trait(genetics.GN.EGOISM) / genetics.Gene.MAX_VALUE
             #part = age_proportion + egoism_proportion
-            part = egoism_proportion # отключу слагаемое, отвечающее за возраст, пусть дети получают столько же, сколько и взрослые
+            part = egoism_proportion
             portions[member] = part
             denominator += part
         for member in fam_list:
@@ -300,9 +325,9 @@ class FamilySupplies:
         # Новая концепция, попробовать кормить детей так, чтобы у всех детей сытость была на одном уровне примерно
         # а потом о родителях думать
         '''
-        Расрелеоение пищи между членами семьи
+        Распределение пищи между членами семьи
         Если для одного еды слишком много, оставшаяся от него еда перераспределяется между оставшимися членами семьи
-        Если посое всех членов семьи остается еда ...
+        Если после всех членов семьи остается еда ...
         '''
         pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'
         s ='\n'+ pref +"---- питание ---------\n"

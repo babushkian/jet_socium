@@ -7,6 +7,10 @@ from common import Gender
 
 
 class CharName:
+    '''
+    Определяет ФИО новорожденного ребенка. Меняет фамилию жены при разводе. Меняет фамилию и отчество
+    детей у женщины, которая вышла замуж за другого мужчину.
+    '''
     family_name: Tuple
     female_name: Tuple
     male_name: Tuple
@@ -39,7 +43,7 @@ class CharName:
 
     def display(self):
         '''
-        Возвращает Имя Отчество Фамилию
+        Возвращает Имя Отчество Фамилию человека
         '''
         gend_index = 1 if self.gender is Gender.MALE else 0
         return f'{self.first} {self.second} {self.family_name[gend_index]}'
@@ -48,10 +52,14 @@ class CharName:
     def change_family_name(self, head):
         '''
         При замужестве изменяет фамилию жены и ее детей от предыдущих браков на фамилию мужа.
+        Не трогает скрытое свойство tribe_name
         '''
         self.family_name = head.name.family_name
 
-    def change_father(self, stepfather):
+    def change_fathers_name(self, stepfather):
+        '''
+        Меняет отчество ребенка, если мать вышла замуж за другого мужчину.
+        '''
         point = CharName.male_name.index(stepfather.name.first)
         if self.gender is Gender.MALE:
             self.second = CharName.second_name_male[point]

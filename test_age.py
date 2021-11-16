@@ -6,7 +6,7 @@ import socium
 
 s = socium.Socium()
 h = human.Human(s, (None, None), 1,  0)
-h.health.set_health(1000)
+h.health.set_health(100) # тут количество лет передается, а не количество дней
 s.add_human(h)
 h = human.Human(s, (None, None), 1,  5)
 s.add_human(h)

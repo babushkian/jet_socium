@@ -19,7 +19,7 @@ class Socium:
     FOOD_RESOURCE = None
 
     def __init__(self, anno=1000, estimate_people=100):
-        # список всех людей в социуме, на данный помент вклюяая мертвых(проверить)
+        # список всех людей в социуме, на данный момент включая мертвых (проверить)
         genetics.Genes.init_protogenome()
         Socium.class_var_init(estimate_people)
         Human.init_files()
@@ -52,7 +52,7 @@ class Socium:
     @staticmethod
     def class_var_init(estimate_people):
         Socium.ESTIMAED_NUMBER_OF_PEOPLE = estimate_people # предполагаемое количество людей
-        # общее клоичестов пищи за ход, которое люди делят между собой
+        # общее количество пищи за ход, которое люди делят между собой
         Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
 
 
@@ -188,7 +188,7 @@ class Socium:
     def stranger_comes_to_socium(self):
         '''
         процедура для пополнения социума свежей кровью.
-        в срежнем после пяти умарших персонажей в социум приходит взрослый чужак,
+        в среднем после пяти умерших персонажей в социум приходит взрослый чужак,
         который никому не является родственником и может завести семью
         '''
         if self.short_death_count > random.randrange(9):

@@ -13,19 +13,17 @@ class InnocentError(Exception):
 
 class Fetus:
 	# при зачатии мать порождает эмбрион (или несколько), они закреплены за матерью и в общий социум не добавляются
-	#  для эмбрионов определены: билолгические родители, пол и гены
+	#  для эмбрионов определены: биологические родители, пол и гены
 
 	def __init__(self, mother: human.Human, gender: Optional[Gender]=None):
 		self.score = score.Score()
 		self.gender: Gender = apply_gender(gender)
-
-
 		self.mother: human.Human = mother
 
 		if not isinstance(self.mother.spouse, human.Human):
-			raise InnocentError("ПРоизошло непорочное зачатие. Жена без мужа.")
+			raise InnocentError("Произошло непорочное зачатие. Жена без мужа.")
 		else:
-			self.father: human.Human = mother.spouse # в момент зачатия муж в любом сдучае есть
+			self.father: human.Human = mother.spouse # в момент зачатия муж в любом случае есть (это при рождении он может уйти или умереть)
 		self.age = ZERO_DATE
 
 		self.genes = genetics.Genes(self)
@@ -37,7 +35,11 @@ class Fetus:
 		return newborn
 
 	def parents_in_same_sex_order(self) ->Tuple[human.Human, human.Human]:
-		# возвращает пару родителей, сначал  одноименный пол, затем противоположный
+		"""
+		Возвращает пару родителей, сначала одноименный пол, затем противоположный
+		Не зря метод определен в классе Fetus эти эти родители возвращаются прямо в момент зачатия.
+		Тут невозможна мать-одиночка.
+		"""
 		same_gender = None
 		opposit_gender = None
 		def get_father() -> human.Human:
