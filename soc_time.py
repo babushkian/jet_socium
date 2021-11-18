@@ -17,7 +17,7 @@ class Date:
         self.day = day
         self.month = month
         self.year  = year
-        self.nornalize()
+        self.normalize()
 
     def display(self, calendar_date = True):
         if calendar_date:
@@ -41,7 +41,7 @@ class Date:
     def len(self):
         return self.day + self.month * self.DAYS_IN_MONTH + self.year * self.DAYS_IN_YEAR
 
-    def nornalize(self):
+    def normalize(self):
         day = self.day
         month = self.month
         year = self.year
@@ -105,7 +105,7 @@ class Anno(Date):
         self.day +=1
 
     def display(self):
-        self.nornalize()
+        self.normalize()
         return super().display(calendar_date=True)
 
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     x = x + Date(0, 0, 1)
     print(x.display())
     print("Нормализуем:")
-    x.nornalize()
+    x.normalize()
     print(x.display())
     Date.MONTHS_IN_YEAR = 12
     Date.DAYS_IN_MONTH = 30

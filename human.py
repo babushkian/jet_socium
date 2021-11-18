@@ -23,6 +23,10 @@ import fetus
 #PREGNANCY_CONST = 0.218 # вроде маловата, надо больше, люди мрут
 PREGNANCY_CONST = 0.398
 
+PREGNANCY_DURATION = Date(0, 0, round(Date.DAYS_IN_YEAR*3/4))
+print(PREGNANCY_DURATION.display())
+print(PREGNANCY_DURATION.len())
+
 
 DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
@@ -69,15 +73,15 @@ class Human:
         self.health: genetics.Health = genetics.Health(self)
         self.score = score.Score()
         self.genes: genetics.Genes = genetics.Genes(self)
-        self.tribe_name: str = ''
+        self.tribe_id: str = ''
 
         self.spouse: Optional[Human] = None  # супруга нет
         # текущий супруг в этот список не входит
 
-        self.marry_dates: Dict[Human, MarryDate] = dict()  # для каждого супруга своя дата свадьбы, причем на
+        self.marry_dates: Dict[MarryDate, Human] = dict()  # для каждого супруга своя дата свадьбы, причем на
         # одном человеке можно жениться несколько раз, бывает и такое
         # в этих словарях дата указывает на объект бывшего супруга
-        self.divorce_dates: Dict[Human, DivorseDate] = dict()
+        self.divorce_dates: Dict[DivorseDate, Human] = dict()
         self.pregnant: List[Optional[fetus.Fetus]] = list()
         self.children: List[Optional[Human]] = list()
 
@@ -93,6 +97,9 @@ class Human:
             # пришел странник
             self.father: Human = NoneHuman()
             self.mother: Human = NoneHuman()
+
+        # пои идее структура так должна выгляжеть, потому что у ребенка может смениться несколько отцов и матерей
+        self.social_parents: Dict[FE, List[Human]] # пои идее структура так должна выглядеть
         self.social_parents: Dict[FE, Human] = {FE.MOTHER: self.mother, FE.FATHER: self.father}
 
         self.name: CharName = CharName(self)
@@ -103,7 +110,7 @@ class Human:
             self.child_number_in_mothers_family = self.mother.family.add_child(self)
             self.family: family.Family = self.mother.family
             self.birth_family = self.family
-            self.tribe_name = self.mother.tribe_name
+            self.tribe_id = self.mother.tribe_id
             tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
                    self.father.id,	self.father.name.display(), self.father.age.year)
             Human.write_chronicle(Human.chronicle_born.format(*tup))
@@ -112,7 +119,7 @@ class Human:
             self.family: family.Family = family.Family(self)
             self.birth_family = self.family
             self.genes.define_adult()
-            self.tribe_name = self.family.id
+            self.tribe_id = self.family.id
             Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
 
 
@@ -224,7 +231,7 @@ class Human:
         get_close_ancestors(self, s, 2)
         return s
 
-    def get_marry(self, spouse: Optional['Human']) -> None:
+    def get_marry(self, spouse: Human) -> None:
         self.spouse = spouse
         self.add_marry_date()
         if self.gender is Gender.FEMALE:
@@ -248,7 +255,7 @@ class Human:
             self.spouse.score.update(self.score.MAKE_CHILD)
             # на сколько лет сокращается жизнь в результате родов
             damage = abs(prop.gauss_sigma_2())
-            # урон, вызванный привычкой умеренно птиаться (в годах)
+            # урон, вызванный привычкой умеренно питаться (в годах)
             # если женщина неумеренная, наоборот, роды пройдут лучше
             frail_damage =  self.genes.get_trait(genetics.GN.STRONGNESS) - 5
             # бонус от физической выносливости
@@ -273,7 +280,7 @@ class Human:
             for i in self.pregnant:
                 i.age += TIK
             # не важно, сколько детей, берем первого попавшегося ; срок беременности > 3 месяцев, то есть год
-            if self.pregnant[0].age > Date(0, 3):
+            if self.pregnant[0].age > PREGNANCY_DURATION:
                 self.give_birth()
 
     def check_fertil_age(self) -> bool:

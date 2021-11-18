@@ -30,14 +30,17 @@ class Family:
     family_food_file = None
     family_feeding = None
 
-    def __init__(self, head: 'human.Human', depend: Optional[List[human.Human]]=None):  # (человек; список иждивенцев)
+    def __init__(self, head: 'human.Human', # человек
+                 depend: Optional[List[human.Human]]=None): #список иждивенцев
+
         self.obsolete: bool = False # признак того, сто семья перестала существовать
         self.id: str = self.generate_family_id()
+        self.parents_family_id:Optional[Family] = None
         # в семье должен быть хотя бы один человек - глава. В начале симуляции все дети получают
         # собственную семью, как и дети-сироты после смерти родителей, как и повзрослевшие дети, покидающие семью
         self.head: human.Human = head
         self.head.socium.families.append(self) # добавляет семью в список семей
-        # если человек холостой, husband  и wife равны None
+        # если человек холостой, husband  и wife равны None. В случае свадьбы, этим переменным назначаются конкретные люди
         self.husband: Optional[human.Human] = None
         self.wife: Optional[human.Human] = None
         self.parents: List[human.Human] = list()
@@ -76,6 +79,12 @@ class Family:
         return id[:7]
 
     def add_parents(self):
+        '''
+        В переменную Family.parents добавляются родители родители главы семьи.
+        При женитьбе сливаются вде семьи, поэтому в переменную добавляются родители глав двух
+        семейств.
+        Это те родители, которые были у ребенка на момент его взросления не биологические, а последние социальные родители
+        '''
         for i in [self.head.father, self.head.mother]:
             if i is not None:
                 if i.is_alive:
@@ -91,15 +100,24 @@ class Family:
     def add_dependents(self, family: Family):
         '''
         При замужестве добавляем всех детей жены от предыдущего брака в список иждивенцев главы семьи
+        Отец их усыновляет.
         '''
         for i in family.dependents:
             if not i.age.is_big:
-                i.tribe_name = self.head.tribe_name
+                i.tribe_id = self.head.tribe_id
                 # меняем имя и фамилию
                 i.name.change_fathers_name(self.head)
                 i.name.change_family_name(self.head)
                 self.add_child(i)
 
+    def reassign_patrnts_to_children(self):
+        '''
+        Для детей из новосозданной семьи заново присваиваются родители. И мать и отец усыновляют всех иждивенцев.
+        А при развале семьи надо аккуратно отсоединить текущего мужа. Жена забирает всех детей себе.
+        '''
+        for child in self.dependents:
+            for parent, mopa in zip(FE, [self.wife, self.husband]):
+                child.social_parents[FE] = mopa
 
     def unite_families(self, wifes_family: Family):
         '''
@@ -114,7 +132,7 @@ class Family:
         self.family_log_file.write(s)
         self.wife: human.Human  = wifes_family.head
         self.husband: human.Human  = self.head
-        self.wife.tribe_name = self.head.tribe_name
+        self.wife.tribe_id = self.head.tribe_id
         self.all.append(self.wife)
         self.parents.extend(wifes_family.parents)
         self.add_dependents(wifes_family)
@@ -148,7 +166,7 @@ class Family:
         '''
         Уничтожение семьи происходит в двух случаях:
         1) при свадьбе семья жены уничтожается - жена с иждивенцами переходит в семью мужа
-        2) при смерти холостого гоавы семьи. Иждивенцы не наслебуют его семью, а создаютс собственные
+        2) при смерти холостого главы семьи. Иждивенцы не наследуют его семью, а создают собственные
         '''
         family.obsolete = True
         family.head = None
@@ -158,18 +176,28 @@ class Family:
         family.dependents = []
 
     def dead_in_family(self, person: human.Human):
+        '''
+        Вызывается, когда в семье кто-то умирает. Не важно, кто: родитель или ребенок. В зависимости
+        от тго, кто умер, метод вызывает другие методы. Вызывается из объекта Human.
+        '''
         if person not in self.dependents:
+            # проверяем наличие роли супруга. Если есть wife, то и husband должен быть.
             if self.wife: # нельзя применять person.married(), так как в person.die супруг уже убран
                 self.spouse_dies(person)
-            else: # одинок или одинеока
+            else: # человек без пары - семья распадается (дети начинают жить самостоятельно)
                 self.orphane_family()
         else:
             self.child_dies(person)
 
     def spouse_dies(self, person: human.Human):
-        # когда супруг умирает, семья сохраняеися
-        # списки родителей и иждивенцев остаются без изменения
-        # если умирает супруг, жена становится главой семьи
+        '''
+        Вызывается, если умирает один из супругов в полной семье. То есть наличие второго супруга
+        подразумевается.
+        Когда супруг умирает, семья сохраняется
+        Списки родителей и иждивенцев остаются без изменения
+        Важно родители умершей жены остаются на попечении вдовца. И наоборот.
+        Если умирает супруг, жена становится главой семьи
+        '''
         if person == self.head:
             s ="\nВ семье |%s|  умер супруг |%s| %s\n"% (self.id, self.head.id, self.head.name.display())
             self.all.remove(self.head)
@@ -186,7 +214,10 @@ class Family:
 
 
     def orphane_family(self):
-        # если у детей умирают оба родителя, они становятся главами своих собственных семей
+        '''
+        Умирает последний (или единственный) взрослый представитель семьи
+        если у детей не остается ни одного родителя, они становятся главами своих собственных семей
+        '''
         if len(self.dependents) > 0:
             s = "%s| %s из семьи |%s| умер, оставив несовершеннолетних детей.\n" % (self.head.id, self.head.name.display(), self.id)
             for i in self.dependents:
@@ -198,12 +229,18 @@ class Family:
 
 
     def child_dies(self, person: human.Human):
+        '''
+        В семье умирает ребенок
+        '''
         self.dependents.remove(person)
         self.all.remove(person)
 
 
-    def del_grown_up_children(self): # проверить, работает ли она вообще
-        # убираем повзрослевших иждивенцев
+    def del_grown_up_children(self):
+        '''
+        Когда ребенок взрослеет, он исключается из состава семьи. Он сам становится новой семьей.
+        Вызывается каждый ход в главном цикле объекта socium
+        '''
         too_old =[]
         for i in self.dependents:
             if i.age.is_big:
@@ -212,10 +249,16 @@ class Family:
             for i in too_old:
                 self.dependents.remove(i)
                 self.all.remove(i)
+                i.parents_family = self
                 i.family = Family(i)
 
 
     def live(self):
+        '''
+        Альтернативный метод, двигающий людей по жизни. в отличие от голбального цикла по людям, в
+        socium перебираются семьи, а в семье уже перебираются люди.
+        К сожалению, этот метод работает некорректно, не знаю, почему.
+        '''
         for i in self.all:
             i.live()
 
@@ -242,6 +285,9 @@ class Family:
 
 
     def get_family_role_sting(self, person:human.Human) -> str:
+        '''
+        Возвращает роль человека в семье: глава, жена или ребенок
+        '''
         if person is self.head:
             s = ' глав'
         elif person is self.wife:
@@ -303,7 +349,10 @@ class FamilySupplies:
 
     def _calculate_portions(self, fam_list):
         '''
-        Считаем распределение еды на всех членов семьи (пропорции)
+        Считаем распределение еды на всех членов семьи. В какой пропорции нужно поделить еду на
+        членов семьи, переданных в переменной fam_list. При распределении еды члены семьи выбывают
+        по одному, поэтому функция вызывается несколько раз - пока есть хотя бы один член с
+        нераспределенной пайкой.
         '''
         portions = dict()
         denominator = 0
@@ -326,7 +375,8 @@ class FamilySupplies:
         # а потом о родителях думать
         '''
         Распределение пищи между членами семьи
-        Если для одного еды слишком много, оставшаяся от него еда перераспределяется между оставшимися членами семьи
+        Если для одного еды слишком много, оставшаяся от него еда перераспределяется между
+        оставшимися членами семьи
         Если после всех членов семьи остается еда ...
         '''
         pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'

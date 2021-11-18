@@ -353,10 +353,10 @@ class Soc_stat():
 
     def get_families_in_socium(self):
         self.families_in_socium = {}  # перечисление семей по family_id
-        self.tribes_in_socium = {}  # перечисление племен, ключ - tribe_name, значение - список клюей в племени
-        self.tribes_in_socium_count = {}  # количество членов племени по ключу tribe_name
-        self.families_in_tribe = {}  # перечисление семей в племени по ключу tribe_name
-        self.families_in_tribe_count = {}  # количество семей в племени по ключу tribe_name
+        self.tribes_in_socium = {}  # словарь племен, ключ - tribe_id, значение - список клюей в племени
+        self.tribes_in_socium_count = {}  # количество членов племени по ключу tribe_id
+        self.families_in_tribe = {}  # перечисление семей в племени по ключу tribe_id
+        self.families_in_tribe_count = {}  # количество семей в племени по ключу tribe_id
         for person in self.socium.people_alive:
             #считаем семьи
             temp = self.families_in_socium.get(person.family.id, 0)
@@ -366,16 +366,16 @@ class Soc_stat():
                 self.families_in_socium[person.family.id].append(person)
 
             #считаем племена
-            temp = self.tribes_in_socium.get(person.tribe_name, 0)
+            temp = self.tribes_in_socium.get(person.tribe_id, 0)
             if temp == 0:
-                self.tribes_in_socium[person.tribe_name] = [person]
-                self.tribes_in_socium_count[person.tribe_name] = 1
+                self.tribes_in_socium[person.tribe_id] = [person]
+                self.tribes_in_socium_count[person.tribe_id] = 1
             else:
-                self.tribes_in_socium[person.tribe_name].append(person)
-                self.tribes_in_socium_count[person.tribe_name] += 1
+                self.tribes_in_socium[person.tribe_id].append(person)
+                self.tribes_in_socium_count[person.tribe_id] += 1
         # количество семей в племени
         for fam in self.socium.families:
-            tribe = fam.head.tribe_name
+            tribe = fam.head.tribe_id
             temp = self.families_in_tribe.get(tribe, 0)
             if temp == 0:
                 self.families_in_tribe[tribe] = [fam]

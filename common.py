@@ -163,7 +163,7 @@ class Age(Date):
         self._stage.check_stage()
 
     def display(self):
-        self.nornalize()
+        self.normalize()
         d = f'{self.year:5d} лет'
         if self.MONTHS_IN_YEAR > 1:
             d += f', {self.month:2d} мес'

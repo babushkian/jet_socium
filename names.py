@@ -52,7 +52,7 @@ class CharName:
     def change_family_name(self, head):
         '''
         При замужестве изменяет фамилию жены и ее детей от предыдущих браков на фамилию мужа.
-        Не трогает скрытое свойство tribe_name
+        Не трогает скрытое свойство tribe_id
         '''
         self.family_name = head.name.family_name
 
