@@ -4,6 +4,7 @@ import os
 from soc_time import Date
 from human import Human
 from socium import Socium
+import family
 
 import soc_time
 import common
@@ -43,7 +44,7 @@ class Simulation:
         for p in range(first_popul):
             age = random.randint(9, 20)
             # почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
-            self.soc.add_human(Human(self.soc, (None, None), None,  age))
+            self.soc.add_human(Human(self.soc, family.Parents(None), None,  age))
 
     def simulate(self):
         extinct = False

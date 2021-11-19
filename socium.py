@@ -5,7 +5,7 @@ import random
 import common
 from soc_time import Date, Anno
 #import family
-from family import Family
+from family import Family, Parents
 from human import Human
 from fdistrib import FoodDistribution
 import statistics
@@ -191,9 +191,9 @@ class Socium:
         в среднем после пяти умерших персонажей в социум приходит взрослый чужак,
         который никому не является родственником и может завести семью
         '''
-        if self.short_death_count > random.randrange(9):
+        if self.short_death_count > random.randrange(16):
             # пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
-            self.add_human(Human(self, (None, None), gender=None, age_int=random.randrange(18, 35)))
+            self.add_human(Human(self, Parents(None), gender=None, age_int=random.randrange(18, 35)))
             self.short_death_count = 0
 
 

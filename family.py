@@ -1,22 +1,51 @@
 ﻿from __future__ import annotations
 import random
-from typing import Optional, List
-from enum  import Enum
-from common import GET_FOOD_MULTIPLIER, DIGEST_FOOD_MULTIPLIER
-import genetics
-
+from typing import Optional, List, Dict
+from common import ( DIGEST_FOOD_MULTIPLIER,
+                    Gender)
 import human
-class FE(Enum):
-    MOTHER = 0
-    FATHER = 1
+
+import genetics
 
 '''
 вот бы еще сделать классы Parents и Children
-class Parents
-social_parents = Parents(pers1, pers2)
-biological_parents = Parents(pers1, pers2)
 '''
 
+
+
+class Parents:
+    '''
+    Родители ребенка. Роль родителя жестко определяется его полом. Отцом может быть только мужчина,
+    ма матерью - только женщина
+    '''
+    def __init__(self, family:Optional[Family]=None):
+        self._parents: Dict[Gender, Optional[human.Human]] = {Gender.FEMALE: None, Gender.MALE: None}
+        if family:
+            self.assign_parents(family)
+
+    @property
+    def mother(self) -> Optional[human.Human]:
+        return self._parents[Gender.FEMALE]
+
+    @property
+    def father(self) -> Optional[human.Human]:
+        return self._parents[Gender.MALE]
+
+    def assign_parents(self, family: Family):
+        # такой порядок родителей, потому что одинокая женщина тоже может быть главой семьи
+        # и wife будет равна None
+        for par in [family.wife, family.head]:
+            self.assign_parent(par)
+
+    def assign_parent(self, parent: human.Human):
+        self._parents[parent.gender] = parent
+
+    @property
+    def lst(self):
+        '''
+        Возвращает итерируемый объект (список), состоящий из родителей.
+        '''
+        return [self.mother, self.father]
 
 class Family:
     """
@@ -30,7 +59,7 @@ class Family:
     family_food_file = None
     family_feeding = None
 
-    def __init__(self, head: 'human.Human', # человек
+    def __init__(self, head: human.Human, # человек
                  depend: Optional[List[human.Human]]=None): #список иждивенцев
 
         self.obsolete: bool = False # признак того, сто семья перестала существовать
@@ -105,19 +134,10 @@ class Family:
         for i in family.dependents:
             if not i.age.is_big:
                 i.tribe_id = self.head.tribe_id
-                # меняем имя и фамилию
-                i.name.change_fathers_name(self.head)
-                i.name.change_family_name(self.head)
+                i.name.change_fathers_name(self.head) # менем отчество
+                i.name.change_family_name(self.head) # меняем фамилию ребенка
                 self.add_child(i)
 
-    def reassign_patrnts_to_children(self):
-        '''
-        Для детей из новосозданной семьи заново присваиваются родители. И мать и отец усыновляют всех иждивенцев.
-        А при развале семьи надо аккуратно отсоединить текущего мужа. Жена забирает всех детей себе.
-        '''
-        for child in self.dependents:
-            for parent, mopa in zip(FE, [self.wife, self.husband]):
-                child.social_parents[FE] = mopa
 
     def unite_families(self, wifes_family: Family):
         '''
@@ -178,7 +198,7 @@ class Family:
     def dead_in_family(self, person: human.Human):
         '''
         Вызывается, когда в семье кто-то умирает. Не важно, кто: родитель или ребенок. В зависимости
-        от тго, кто умер, метод вызывает другие методы. Вызывается из объекта Human.
+        от тго, кто умер, метод вызывает другие методы. Вызывается из объекта human.Human.
         '''
         if person not in self.dependents:
             # проверяем наличие роли супруга. Если есть wife, то и husband должен быть.

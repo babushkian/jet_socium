@@ -8,11 +8,10 @@ from names import CharName
 import genetics
 from genetics import GN
 
-from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender
+from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender, Parnt
 
 import prop
 import family
-from family import FE
 import score
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import fetus
@@ -56,7 +55,7 @@ class Human:
     # spouse_death: "из-за сметри супруга", death: "по причине смерти"}
     # такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-    def __init__(self, socium, biol_parents:Tuple[Optional[Human], Optional[Human]], gender: Optional[Gender]=None, age_int: int=0):
+    def __init__(self, socium, biol_parents:family.Parents, gender: Optional[Gender]=None, age_int: int=0):
         Human.GLOBAL_HUMAN_NUMBER += 1
         self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
         self.socium = socium
@@ -87,11 +86,11 @@ class Human:
 
 
         # родители, которые зачали ребенка
-        self.biological_parents: Tuple[Human, Human] = biol_parents
+        self.biological_parents: family.Parents = biol_parents
 
-        if self.biological_parents[0] is not None:
+        if self.biological_parents.mother is not None:
             # ребенок родился естественным путем
-            self.mother: Human = self.biological_parents[0]
+            self.mother: Human = self.biological_parents.mother
             self.father: Human = self.mother.spouse
         else:
             # пришел странник
@@ -99,8 +98,8 @@ class Human:
             self.mother: Human = NoneHuman()
 
         # пои идее структура так должна выгляжеть, потому что у ребенка может смениться несколько отцов и матерей
-        self.social_parents: Dict[FE, List[Human]] # пои идее структура так должна выглядеть
-        self.social_parents: Dict[FE, Human] = {FE.MOTHER: self.mother, FE.FATHER: self.father}
+        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
+        self.social_parents: Dict[Parnt, Human] = {Parnt.MOTHER: self.mother, Parnt.FATHER: self.father}
 
         self.name: CharName = CharName(self)
 
@@ -386,8 +385,8 @@ class Human:
         # так же возраст родителей на момент рождения человека
         preds_old_age = {x:0 for x in Gender}
         preds_age_on_birthday = preds_old_age.copy()
-        if self.biological_parents[0] is not None:
-            for pred in self.biological_parents:
+        if self.biological_parents.mother is not None:
+            for pred in self.biological_parents.lst:
                 preds_old_age[pred.gender] = pred.age.len()
                 preds_age_on_birthday[pred.gender] = (self.birth_date - pred.birth_date).len()
         for gen in Gender:

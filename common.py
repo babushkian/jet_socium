@@ -21,10 +21,23 @@ def init_sim_dir():
 
 
 class Gender(str, Enum):
-    MALE = 'male'
+    '''
+    Пол человека
+    '''
     FEMALE = 'female'
+    MALE = 'male'
+
+
+class Parnt(Enum):
+    '''
+    Перечисление, содержащее пол родителей.
+    '''
+    MOTHER = 0
+    FATHER = 1
 
 GENDER_LIST = list(Gender)
+
+PARENT_GENDERS = {i:j for i, j in zip(Gender, Parnt)}
 
 def apply_gender(gen: Optional[Gender]) -> Gender:
     if gen is None:
@@ -32,6 +45,7 @@ def apply_gender(gen: Optional[Gender]) -> Gender:
     else:
         g = gen
     return g
+
 
 class Consume_rate(int, Enum):
     HEDONIC = 10
@@ -64,7 +78,7 @@ STAGE_DICT = {Stage_of_age.BABY: Date(6),
 
 # множитель еды для насыщения в зависимости от возраста
 '''
-На самом деле это не вполне насыщене. Планируется, что это будет коэффициент усвоения пищи
+На самом деле это не вполне насыщение. Планируется, что это будет коэффициент усвоения пищи
 человек может съесть много пищи, но она плохо усвоится, и у человека не будет сил на какие-то действия
 а насыщение зависит от размера желудка. У старого человека он не увеличивается. Он будет насыщаться тем же количеством 
 пищи, что и молодой. 
