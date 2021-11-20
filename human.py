@@ -2,7 +2,7 @@ from __future__ import annotations
 import random
 import math
 from typing import Optional, List, Dict, Tuple, IO, Set, NewType
-
+from copy import copy
 
 from names import CharName
 import genetics
@@ -88,37 +88,45 @@ class Human:
         # родители, которые зачали ребенка
         self.biological_parents: family.Parents = biol_parents
 
-        if self.biological_parents.mother is not None:
+        if self.biological_parents.mother.is_human :
             # ребенок родился естественным путем
             self.mother: Human = self.biological_parents.mother
             self.father: Human = self.mother.spouse
         else:
             # пришел странник
-            self.father: Human = NoneHuman()
-            self.mother: Human = NoneHuman()
+            self.father: Human = self.biological_parents.father
+            self.mother: Human = self.biological_parents.mother
 
-        # пои идее структура так должна выгляжеть, потому что у ребенка может смениться несколько отцов и матерей
-        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
-        self.social_parents: Dict[Parnt, Human] = {Parnt.MOTHER: self.mother, Parnt.FATHER: self.father}
-
+        # имя надо дать до создания семьи. Тем более что биологические родители известны
+        # когда в семье определятся социальные родители, можно переопределить отчество-фамилию,
+        # тем более в классе семьи это должно делаться автоматически
         self.name: CharName = CharName(self)
+        if self.biological_parents.mother.is_human:
+            self.family: family.Family = self.biological_parents.mother.family
+            self.child_number_in_mothers_family = self.mother.family.add_child(self)
+            self.social_parents = family.Parents(self.family)
+
+        else:
+            self.child_number_in_mothers_family = 0
+            self.family: family.Family = family.Family(self)
+            self.genes.define_adult()
+            self.social_parents = copy(biol_parents)
+
+        self.tribe_id = self.family.id
+        # по идее структура так должна выглядеть, потому что у ребенка может смениться несколько отцов и матерей
+        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
+        # социальные родители определяются после попадания в семью
+
+
 
         # множество близких родственников для определения, на ком можно жениться
         self.close_ancestors: Set[Human] = self.define_close_ancestors()
+
         if self.mother.is_human:
-            self.child_number_in_mothers_family = self.mother.family.add_child(self)
-            self.family: family.Family = self.mother.family
-            self.birth_family = self.family
-            self.tribe_id = self.mother.tribe_id
             tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
                    self.father.id,	self.father.name.display(), self.father.age.year)
             Human.write_chronicle(Human.chronicle_born.format(*tup))
         else:
-            self.child_number_in_mothers_family =0
-            self.family: family.Family = family.Family(self)
-            self.birth_family = self.family
-            self.genes.define_adult()
-            self.tribe_id = self.family.id
             Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
 
 
@@ -138,7 +146,6 @@ class Human:
 
     @property
     def is_human(parent: Human) -> bool:
-        #return not isinstance(parent, NoneHuman)
         return True
 
     def live(self) -> None:
@@ -406,15 +413,15 @@ class Human:
 
 class NoneHuman(Human):
 
-    def __init__(self):
+    def __init__(self, gender):
         self.id: str = 'NoneHuman_id'
-        self.gender: Gender = Gender.MALE
+        self.gender: Gender = gender
         self.state: bool = False
         self.name: CharName = CharName(self)
 
+
     @property
     def is_human(parent: Human) -> bool:
-        #return not isinstance(parent, NoneHuman)
         return False
 
     def info(self):

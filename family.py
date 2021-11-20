@@ -18,10 +18,13 @@ class Parents:
     Родители ребенка. Роль родителя жестко определяется его полом. Отцом может быть только мужчина,
     ма матерью - только женщина
     '''
-    def __init__(self, family:Optional[Family]=None):
-        self._parents: Dict[Gender, Optional[human.Human]] = {Gender.FEMALE: None, Gender.MALE: None}
+    def __init__(self, family:Optional[Family]):
+        self._parents: Dict[Gender, human.Human] = dict()
         if family:
             self.assign_parents(family)
+        else:
+            for g in Gender:
+                self._parents[g] = human.NoneHuman(g)
 
     @property
     def mother(self) -> Optional[human.Human]:

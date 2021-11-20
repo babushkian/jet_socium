@@ -136,6 +136,7 @@ class Socium:
             if self.anno.year < 1200:
                 self.stranger_comes_to_socium()
 
+        print(f'количество семей{len(self.families)}')
         self.families[0].print_something("\n==============================\n"+ self.anno.display())
         self.families[0].print_something("Количество семей: %d" % len(self.families))
         for fam in self.families:

@@ -44,7 +44,8 @@ class Simulation:
         for p in range(first_popul):
             age = random.randint(9, 20)
             # почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
-            self.soc.add_human(Human(self.soc, family.Parents(None), None,  age))
+            none_parents = family.Parents(None)
+            self.soc.add_human(Human(self.soc, none_parents,  gender=None,  age_int=0))
 
     def simulate(self):
         extinct = False
@@ -118,7 +119,8 @@ if __name__ == '__main__':
     print('Start.')
 
     town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
-
+    print(town.soc.families)
+    print(len(town.soc.families))
     result, final_date = town.simulate()
     town.close()
     print(display_start_genotype(genetics.Genes.protogenome_profile))
