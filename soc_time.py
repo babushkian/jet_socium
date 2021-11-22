@@ -19,7 +19,8 @@ class Date:
         self.year  = year
         self.normalize()
 
-    def display(self, calendar_date = True):
+    def display(self, calendar_date = True, verbose=True):
+
         if calendar_date:
             d = f'Год: {self.year:5d}'
             if self.MONTHS_IN_YEAR > 1:
@@ -27,12 +28,19 @@ class Date:
             if self.DAYS_IN_MONTH > 1:
                 d += f' день: {self.day:2d}'
 
-        else:
+        elif verbose:
             d = f'{self.year:5d} лет'
             if self.MONTHS_IN_YEAR > 1:
                 d += f', {self.month:2d} мес'
             if self.DAYS_IN_MONTH > 1:
                 d += f', {self.day:2d} дней'
+
+        else:
+            d = f'{self.year:5d}'
+            if self.MONTHS_IN_YEAR > 1 or self.DAYS_IN_MONTH > 1:
+                d += f':{self.month:02d}'
+            if self.DAYS_IN_MONTH > 1:
+                d += f':{self.day:02d}'
         return d
 
     def	years_float(self):
@@ -104,9 +112,12 @@ class Anno(Date):
     def increase(self):
         self.day +=1
 
-    def display(self):
+    def display(self, verbose=True):
         self.normalize()
-        return super().display(calendar_date=True)
+        if verbose:
+            return super().display()
+        else:
+            return super().display(calendar_date=False, verbose=False)
 
 
 

@@ -12,7 +12,7 @@ import genetics
 
 
 # хочется повторяемости картины, фиксируем сид
-#random.seed(666)
+#random.seed(664)
 # количество людей в начальной популяции
 FIRST_POPULATION = 60
 TIMELINE = Date(200)  # кличество лет симуляции
@@ -45,7 +45,7 @@ class Simulation:
             age = random.randint(9, 20)
             # почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
             none_parents = family.Parents(None)
-            self.soc.add_human(Human(self.soc, none_parents,  gender=None,  age_int=0))
+            self.soc.add_human(Human(self.soc, none_parents,  gender=None,  age_int=age))
 
     def simulate(self):
         extinct = False
@@ -119,8 +119,6 @@ if __name__ == '__main__':
     print('Start.')
 
     town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
-    print(town.soc.families)
-    print(len(town.soc.families))
     result, final_date = town.simulate()
     town.close()
     print(display_start_genotype(genetics.Genes.protogenome_profile))

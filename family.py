@@ -126,6 +126,7 @@ class Family:
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
+        person.tribe_id = self.head.tribe_id
         return len(self.dependents)
 
 
@@ -136,7 +137,6 @@ class Family:
         '''
         for i in family.dependents:
             if not i.age.is_big:
-                i.tribe_id = self.head.tribe_id
                 i.name.change_fathers_name(self.head) # менем отчество
                 i.name.change_family_name(self.head) # меняем фамилию ребенка
                 self.add_child(i)

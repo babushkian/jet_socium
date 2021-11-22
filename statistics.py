@@ -6,6 +6,8 @@
 '''
 from __future__ import annotations
 from typing import  Dict, List
+
+import family
 from soc_time import Date
 from common import Stage_of_age, Gender, GENDER_LIST
 import csv
@@ -352,11 +354,12 @@ class Soc_stat():
 
 
     def get_families_in_socium(self):
-        self.families_in_socium = {}  # перечисление семей по family_id
-        self.tribes_in_socium = {}  # словарь племен, ключ - tribe_id, значение - список клюей в племени
+        # словарь, содержащий списки людей по ключу family_id : список семей
+        self.families_in_socium: Dict[str, List[human.Human]] = {}
+        self.tribes_in_socium: Dict[str, List[human.Human]]= {}  # словарь племен, ключ - tribe_id, значение - список людей в племени
         self.tribes_in_socium_count = {}  # количество членов племени по ключу tribe_id
         self.families_in_tribe = {}  # перечисление семей в племени по ключу tribe_id
-        self.families_in_tribe_count = {}  # количество семей в племени по ключу tribe_id
+        self.families_in_tribe_count: Dict[str, int] = {}  # количество семей в племени по ключу tribe_id
         for person in self.socium.people_alive:
             #считаем семьи
             temp = self.families_in_socium.get(person.family.id, 0)

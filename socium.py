@@ -136,7 +136,6 @@ class Socium:
             if self.anno.year < 1200:
                 self.stranger_comes_to_socium()
 
-        print(f'количество семей{len(self.families)}')
         self.families[0].print_something("\n==============================\n"+ self.anno.display())
         self.families[0].print_something("Количество семей: %d" % len(self.families))
         for fam in self.families:
@@ -201,14 +200,22 @@ class Socium:
     def display_tribes(self):
         '''
         Краткая сводка по племенам, когда выводятся их айдишники, количество членов и средние значения генов в племени
+        выводит в файл population.txt
         '''
-        st = ''
+        anno= self.anno.display(verbose=False)
+        st = f'{{:^{len(anno)}s}}'.format('год')+ f'|{"фамилия":^15s}|{"id рода":^8s}|{"семей":5s}|{"людей":5s}| '
+        for gene_name in genetics.GN:
+            st += f'{gene_name.value:9.9s}|'
+        st += '\n'
         for tribe in self.stat.tribes_in_socium:
-            elder_of_tribe = self.stat.tribes_in_socium[tribe][0]
-            tribe_family_name = elder_of_tribe.name.family_name[1]
-            st += '%d:%d| '% (self.anno.year, self.anno.month)
-            st += '%12s| %7s: %4d | ' % (tribe_family_name, tribe, self.stat.families_in_tribe_count[tribe])
-            st += '%4d | %s\n' %(self.stat.tribes_in_socium_count[tribe], self.stat.count_tribe_genes_average(tribe))
+            elder_of_tribe = self.stat.tribes_in_socium[tribe][0]  # берем первого человека в племени
+            tribe_family_name = elder_of_tribe.name.family_name[1] # достаем его фамилию в мужском роде
+            st += anno
+            num_fam_in_tribe = self.stat.families_in_tribe_count[tribe]
+            st += f'|{tribe_family_name:>15s}|{tribe:>8s}|{num_fam_in_tribe:5d}|'
+            num_in_tribe = self.stat.tribes_in_socium_count[tribe]
+            st += f'{num_in_tribe:5d}| {self.stat.count_tribe_genes_average(tribe)}\n'
+
         return st
 
 

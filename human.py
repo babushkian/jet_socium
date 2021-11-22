@@ -106,13 +106,15 @@ class Human:
             self.child_number_in_mothers_family = self.mother.family.add_child(self)
             self.social_parents = family.Parents(self.family)
 
+
         else:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
             self.social_parents = copy(biol_parents)
+            self.tribe_id = self.family.id # основателю имя племени не передается от семьи, нужно присваивать вручную
 
-        self.tribe_id = self.family.id
+
         # по идее структура так должна выглядеть, потому что у ребенка может смениться несколько отцов и матерей
         self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
         # социальные родители определяются после попадания в семью
@@ -392,7 +394,7 @@ class Human:
         # так же возраст родителей на момент рождения человека
         preds_old_age = {x:0 for x in Gender}
         preds_age_on_birthday = preds_old_age.copy()
-        if self.biological_parents.mother is not None:
+        if self.biological_parents.mother.is_human:
             for pred in self.biological_parents.lst:
                 preds_old_age[pred.gender] = pred.age.len()
                 preds_age_on_birthday[pred.gender] = (self.birth_date - pred.birth_date).len()
