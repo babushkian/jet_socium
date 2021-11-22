@@ -251,6 +251,12 @@ class Human:
     def add_divorce_date(self) -> None:
         self.divorce_dates[self.socium.anno.create()] = self.spouse
 
+
+    def compare_genes(self, other):
+        return math.log(self.genes.difference(other.genes)+2)
+
+
+
     def give_birth(self) -> None:
         # сделать цикл для двойни, тройни и тд
         while len(self.pregnant) > 0 :

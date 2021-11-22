@@ -14,18 +14,16 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 #random.seed(664)
 # количество людей в начальной популяции
-FIRST_POPULATION = 60
-TIMELINE = Date(200)  # кличество лет симуляции
+FIRST_POPULATION = 40
+TIMELINE = Date(300)  # кличество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:
-    def __init__(self, first_popul, timeline, estimate_people):
+    def __init__(self, timeline, estimate_people):
         self.estimate_people = estimate_people
         self.init_logs()
         self.soc = Socium(1000, self.estimate_people)  # создется социум
         self.timeline = timeline
-        self.populate(first_popul)
-        self.soc.stat.count_soc_state()
 
     def init_logs(self):
         common.init_sim_dir()
@@ -37,17 +35,20 @@ class Simulation:
         self.lohfile.close()
         self.every_man_state_log.close()
         self.tribes_verbose.close()
+        all_time_lived = Human.GLOBAL_HUMAN_NUMBER
         self.soc.close(self.estimate_people)
         os.chdir(HOME_DIR)
+        return all_time_lived
 
-    def populate(self, first_popul):
-        for p in range(first_popul):
+    def populate(self, popul):
+        for p in range(popul):
             age = random.randint(9, 20)
             # почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
             none_parents = family.Parents(None)
             self.soc.add_human(Human(self.soc, none_parents,  gender=None,  age_int=age))
 
     def simulate(self):
+        self.soc.stat.count_soc_state()
         extinct = False
         for year in range(self.timeline.len()):
             if self.soc.stat.people_alive_number < 6:
@@ -58,8 +59,8 @@ class Simulation:
             Human.write_chronicle(f'население: {self.soc.stat.people_alive_number}')
             self.write_to_logs()
         self.last_record_to_annals()
-        self.close()
-        return not extinct, self.soc.anno
+        all_time_lived = self.close()
+        return not extinct, self.soc.anno, all_time_lived
 
     def write_chronicle_title(self):
         s = f'\n {"="*40}\n{self.soc.anno.display()}\nнаселение: {self.soc.stat.people_alive_number}'
@@ -118,9 +119,15 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
     print('Start.')
 
-    town = Simulation(FIRST_POPULATION, TIMELINE, estimate_people=200)
-    result, final_date = town.simulate()
-    town.close()
+    town = Simulation(TIMELINE, estimate_people=300)
+
+    for i in range(5):
+        town.populate(FIRST_POPULATION)
+        town.soc.roll_genome()
+
+    result, final_date, atl = town.simulate()
+
     print(display_start_genotype(genetics.Genes.protogenome_profile))
+    print(f'население за всю историю: {atl}' )
     print(f'Последний год: {final_date.display()}')
 

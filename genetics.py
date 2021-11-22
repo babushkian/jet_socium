@@ -264,6 +264,15 @@ class Genes:
         """
         return self.genome[trait].value
 
+    def difference(self, other):
+        '''
+        Количественная разница генома с другим геномом.
+        '''
+        d = 0
+        for i in GN:
+            d +=abs(self.genome[i].value - other.genome[i].value)
+        return d
+
 
 class Gene:
     MIN_VALUE = 0

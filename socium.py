@@ -20,7 +20,8 @@ class Socium:
 
     def __init__(self, anno=1000, estimate_people=100):
         # список всех людей в социуме, на данный момент включая мертвых (проверить)
-        genetics.Genes.init_protogenome()
+        self.roll_genome()
+
         Socium.class_var_init(estimate_people)
         Human.init_files()
         Family.init_files()
@@ -55,6 +56,9 @@ class Socium:
         # общее количество пищи за ход, которое люди делят между собой
         Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
 
+    @staticmethod
+    def roll_genome():
+        genetics.Genes.init_protogenome()
 
     def close(self, estimate_people):
         self.__class__.class_var_init(estimate_people)
@@ -155,11 +159,15 @@ class Socium:
         def success_marry_chanse(person1, person2):
             attraction = (genetics.lust_coef(person1.age.year) *
                           genetics.lust_coef(person2.age.year))
+            genes_difference = person1.compare_genes(person2)
+            attraction = attraction/genes_difference # шанс пожениться больше у людей с похожими геномами
             return attraction >= random.random()
+
         # если есть возможность создать хоть одну пару
         if min(self.stat.unmarried_adult_men_number, self.stat.unmarried_adult_women_number) > 0:
             s = f'Холостых мужчин: {self.stat.unmarried_adult_men_number}\nХолостых женщин: {self.stat.unmarried_adult_women_number}'
             Human.write_chronicle(s)
+            # Проходимся по тому полу, которого меньше в штуках
             if self.stat.unmarried_adult_men_number < self.stat.unmarried_adult_women_number:
                 a = self.stat.unmarried_adult_men
                 b = self.stat.unmarried_adult_women
@@ -167,13 +175,16 @@ class Socium:
                 b = self.stat.unmarried_adult_men
                 a = self.stat.unmarried_adult_women
             random.shuffle(b)
-            # за один раз можно попытать счастья только с одним избранниким
+            # за один раз можно попытать счастья только с одним избранником
             # цикл идет по представителям пола, который сейчас в меньшинстве
             for person in a:
-                if person.close_ancestors.isdisjoint(b[-1].close_ancestors): # ксли не являются близкими родственниками
+                if person.close_ancestors.isdisjoint(b[-1].close_ancestors): # если не являются близкими родственниками
                     if success_marry_chanse(person, b[-1]):
                         tup = (person.id, b[-1].id, person.name.display(), person.age.year, b[-1].name.display(), b[-1].age.year)
                         Human.write_chronicle(Human.chronicle_marriage.format(*tup))
+
+                        print(person.compare_genes(b[-1]))
+
                         person.get_marry(b[-1])
                         b[-1].get_marry(person)
                         person.score.update(person.score.MARRY_SCORE)
