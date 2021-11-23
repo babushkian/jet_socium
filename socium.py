@@ -183,7 +183,7 @@ class Socium:
                         tup = (person.id, b[-1].id, person.name.display(), person.age.year, b[-1].name.display(), b[-1].age.year)
                         Human.write_chronicle(Human.chronicle_marriage.format(*tup))
 
-                        print(person.compare_genes(b[-1]))
+                        #print(person.compare_genes(b[-1]))
 
                         person.get_marry(b[-1])
                         b[-1].get_marry(person)

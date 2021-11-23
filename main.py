@@ -14,8 +14,8 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 #random.seed(664)
 # количество людей в начальной популяции
-FIRST_POPULATION = 40
-TIMELINE = Date(300)  # кличество лет симуляции
+FIRST_POPULATION = 50
+TIMELINE = Date(200)  # кличество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:
@@ -119,9 +119,9 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
     print('Start.')
 
-    town = Simulation(TIMELINE, estimate_people=300)
+    town = Simulation(TIMELINE, estimate_people=200)
 
-    for i in range(5):
+    for i in range(3):
         town.populate(FIRST_POPULATION)
         town.soc.roll_genome()
 

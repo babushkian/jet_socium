@@ -101,11 +101,16 @@ class Human:
         # когда в семье определятся социальные родители, можно переопределить отчество-фамилию,
         # тем более в классе семьи это должно делаться автоматически
         self.name: CharName = CharName(self)
+
+        # по идее структура так должна выглядеть, потому что у ребенка может смениться несколько отцов и матерей
+        # социальные родители определяются после попадания в семью
+        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
+
         if self.biological_parents.mother.is_human:
             self.family: family.Family = self.biological_parents.mother.family
             self.child_number_in_mothers_family = self.mother.family.add_child(self)
             self.social_parents = family.Parents(self.family)
-
+            self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
 
         else:
             self.child_number_in_mothers_family = 0
@@ -113,11 +118,7 @@ class Human:
             self.genes.define_adult()
             self.social_parents = copy(biol_parents)
             self.tribe_id = self.family.id # основателю имя племени не передается от семьи, нужно присваивать вручную
-
-
-        # по идее структура так должна выглядеть, потому что у ребенка может смениться несколько отцов и матерей
-        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
-        # социальные родители определяются после попадания в семью
+            self.tribe_origin = self.tribe_id # основатель имеет свое изначальное племя
 
 
 

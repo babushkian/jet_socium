@@ -64,10 +64,18 @@ class Family:
 
     def __init__(self, head: human.Human, # человек
                  depend: Optional[List[human.Human]]=None): #список иждивенцев
-
+        '''
+        Создается новая семья. Это присходит в случаях: 1) добавления странника в социум; 2) при разводе;
+        3) когда ребенок взрослеет и уходит из семьи; 4) когда у детей умирают все кормильцы
+        Если создается семья с дополнительным параметром dependents - это значит жена ушла от мужа с детьми.
+        Мужчина при разводе не забирает с собой детей.
+        При объединении семей, жена и дети автоматически меняют свое племя на значение племени главы семьи.
+        При разводе жена вспоминает свое изначальное племя tribe_origin - племя последней семьи, в которой
+        она воспитывалась. Параметр tribe_origin присваивается только когда ребенок основывает собственную
+        семью (когда повзрослеет или осиротеет)
+        '''
         self.obsolete: bool = False # признак того, сто семья перестала существовать
         self.id: str = self.generate_family_id()
-        self.parents_family_id:Optional[Family] = None
         # в семье должен быть хотя бы один человек - глава. В начале симуляции все дети получают
         # собственную семью, как и дети-сироты после смерти родителей, как и повзрослевшие дети, покидающие семью
         self.head: human.Human = head
@@ -80,6 +88,7 @@ class Family:
         self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
         # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
         self.dependents: List[Optional[human.Human]] = list()
+        # при добавлении иждивенцев в семью, они наследуют племя главы семьи
         if depend:
             for i in depend:
                 self.add_child(i)
@@ -167,13 +176,14 @@ class Family:
         '''
         происходит развод: разделение на две семьи
         у жены генерится новая семья, дети к своему отцу перестают иметь отношение, переходят в семью матери
-        какое у них племя при этом остается?
+
         '''
         s = "=======Семья | %s | распалась\n" % self.id
         s += "\t %s| %s\n" % (self.head.id, self.head.name.display())
         s += "\t %s| %s\n" % (self.wife.id, self.wife.name.display())
         self.family_log_file.write(s)
-        children = self.wife.family.dependents[:] # передаем содержимое, а не объект
+        children = self.dependents[:] # передаем содержимое, а не объект
+        self.wife.tribe_id = self.wife.tribe_origin
         self.wife.family = Family(self.wife, children)
         # мужчина бросает всех иждивенцев на жену
         self.dependents = []
@@ -218,7 +228,7 @@ class Family:
         подразумевается.
         Когда супруг умирает, семья сохраняется
         Списки родителей и иждивенцев остаются без изменения
-        Важно родители умершей жены остаются на попечении вдовца. И наоборот.
+        Родители умершей жены остаются на попечении вдовца. И наоборот.
         Если умирает супруг, жена становится главой семьи
         '''
         if person == self.head:
@@ -244,6 +254,7 @@ class Family:
         if len(self.dependents) > 0:
             s = "%s| %s из семьи |%s| умер, оставив несовершеннолетних детей.\n" % (self.head.id, self.head.name.display(), self.id)
             for i in self.dependents:
+                i.tribe_origin =self.head.tribe_id
                 i.family = Family(i)
         else:
             s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
@@ -272,7 +283,8 @@ class Family:
             for i in too_old:
                 self.dependents.remove(i)
                 self.all.remove(i)
-                i.parents_family = self
+                # запоминаем племя, в котором вырос ребенок, так как tribe_id по жизни может меняться
+                i.tribe_origin = self.head.tribe_id
                 i.family = Family(i)
 
 
