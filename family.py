@@ -1,6 +1,5 @@
 ﻿from __future__ import annotations
 import random
-from pprint import pprint
 from typing import Optional, List, Dict
 from common import ( DIGEST_FOOD_MULTIPLIER,
                     Gender)
@@ -91,7 +90,7 @@ class Family:
         self.dependents: List[Optional[human.Human]] = list()
 
         if self.head.biological_parents.mother.is_human:
-            self.tribe_id = self.head.tribe_origin
+            self.tribe_id = self.head.family.tribe_id
         else:
             self.tribe_id = self.id
 
@@ -260,6 +259,7 @@ class Family:
         if len(self.dependents) > 0:
             s = "%s| %s из семьи |%s| умер, оставив несовершеннолетних детей.\n" % (self.head.id, self.head.name.display(), self.id)
             for i in self.dependents:
+                i.tribe_origin = self.tribe_id
                 i.family = Family(i)
         else:
             s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
@@ -286,18 +286,11 @@ class Family:
                 too_old.append(i)
         if len(too_old) > 0:
             for i in too_old:
-                print(f'Уходит из семьи {i.id}')
                 self.dependents.remove(i)
                 self.all.remove(i)
                 # запоминаем племя, в котором вырос ребенок, так как tribe_id по жизни может меняться
                 i.tribe_origin = self.tribe_id
-                print('Оставшиеся члены семьи:')
-                for rest in self.all:
-                    print(f'\t\t{rest.id}')
                 i.family = Family(i)
-                print('Дети:')
-                for rest in self.dependents:
-                    print(f'\t\t{rest.id}')
 
 
 

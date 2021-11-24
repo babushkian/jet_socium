@@ -14,8 +14,8 @@ import genetics
 # хочется повторяемости картины, фиксируем сид
 random.seed(664)
 # количество людей в начальной популяции
-FIRST_POPULATION = 6
-TIMELINE = Date(200)  # кличество лет симуляции
+FIRST_POPULATION = 20
+TIMELINE = Date(200)  # количество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:

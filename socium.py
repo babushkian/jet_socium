@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import Optional, List, Dict, IO
 import csv
 import random
+from pprint import pprint
+
 import common
 from soc_time import Date, Anno
 #import family
@@ -218,11 +220,10 @@ class Socium:
         for gene_name in genetics.GN:
             st += f'{gene_name.value:9.9s}|'
         st += '\n'
-        print(anno)
         for tribe in self.stat.tribes_in_socium:
             elder_of_tribe = self.stat.tribes_in_socium[tribe][0]  # берем первого человека в племени
             tribe_family_name = elder_of_tribe.name.family_name[1] # достаем его фамилию в мужском роде
-            print(f'    {tribe=}' )
+            #print(f'    {tribe=}' )
 
 
             st += anno

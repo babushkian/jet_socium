@@ -363,7 +363,7 @@ class Soc_stat():
 
 
         for fam in self.socium.families:
-            assert fam is not None, 'Пустая семья'
+            assert fam.tribe_id is not None, f'Пустое племя {self.socium.anno.display()}'
             # считаем семьи
             self.families_in_socium[fam.id] = fam.all
             # считаем племена
