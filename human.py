@@ -27,7 +27,7 @@ print(PREGNANCY_DURATION.display())
 print(PREGNANCY_DURATION.len())
 
 
-DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 20 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
+DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 40 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
 FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT]).year \
                 * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
@@ -72,7 +72,6 @@ class Human:
         self.health: genetics.Health = genetics.Health(self)
         self.score = score.Score()
         self.genes: genetics.Genes = genetics.Genes(self)
-        self.tribe_id: str = ''
 
         self.spouse: Optional[Human] = None  # супруга нет
         # текущий супруг в этот список не входит
@@ -117,8 +116,7 @@ class Human:
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
             self.social_parents = copy(biol_parents)
-            self.tribe_id = self.family.id # основателю имя племени не передается от семьи, нужно присваивать вручную
-            self.tribe_origin = self.tribe_id # основатель имеет свое изначальное племя
+            self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 
 
@@ -325,6 +323,13 @@ class Human:
     @property
     def is_alive(self) -> bool:
         return self.state
+
+    def display(self):
+        s= f'{self.id}| {self.gender.value:7s} семья:{self.family.id:7s}  trib_orig:{str(self.tribe_origin):7s} '
+        s+=f'{self.age.display()} жив:{self.state}'
+
+
+        return s
 
     def necrolog(self) -> str:
         nec  = "%s| %s | %s \n" % (self.id, self.name.display(), self.family.id)

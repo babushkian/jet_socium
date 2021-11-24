@@ -218,12 +218,19 @@ class Socium:
         for gene_name in genetics.GN:
             st += f'{gene_name.value:9.9s}|'
         st += '\n'
+        print(anno)
         for tribe in self.stat.tribes_in_socium:
             elder_of_tribe = self.stat.tribes_in_socium[tribe][0]  # берем первого человека в племени
             tribe_family_name = elder_of_tribe.name.family_name[1] # достаем его фамилию в мужском роде
+            print(f'    {tribe=}' )
+
+
             st += anno
             num_fam_in_tribe = self.stat.families_in_tribe_count[tribe]
-            st += f'|{tribe_family_name:>15s}|{tribe:>8s}|{num_fam_in_tribe:5d}|'
+            st += f'|{tribe_family_name:>15s}|'
+            st += f'{tribe:>8s}|'
+            st += f'{num_fam_in_tribe:5d}|'
+
             num_in_tribe = self.stat.tribes_in_socium_count[tribe]
             st += f'{num_in_tribe:5d}| {self.stat.count_tribe_genes_average(tribe)}\n'
 

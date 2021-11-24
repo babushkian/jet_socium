@@ -166,7 +166,7 @@ class Stage:
 
 
     def __str__(self):
-        return f'Возрастная стадия {self._stage.name} у человека {self.age.person.id}  возрастом {self.age.display() }|{self.age.len()} '
+        return f'Возрастная стадия {self._stage.name:7s} у человека {self.age.person.id}  возрастом {self.age.display():14s}|{self.age.len():4d} '
 
 
 class Age(Date):
@@ -189,7 +189,7 @@ class Age(Date):
         return d
 
     def tech_display(self):
-        return self._stage.__str__() + f' next stage time:{self._stage._timer.display()}|{self._stage._timer.len()}'
+        return self._stage.__str__() + f' next stage time:{self._stage._timer.display():14s}|{self._stage._timer.len():4d}'
 
     @property
     def stage(self) -> Stage_of_age:

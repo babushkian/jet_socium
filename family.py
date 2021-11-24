@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 import random
+from pprint import pprint
 from typing import Optional, List, Dict
 from common import ( DIGEST_FOOD_MULTIPLIER,
                     Gender)
@@ -65,10 +66,10 @@ class Family:
     def __init__(self, head: human.Human, # человек
                  depend: Optional[List[human.Human]]=None): #список иждивенцев
         '''
-        Создается новая семья. Это присходит в случаях: 1) добавления странника в социум; 2) при разводе;
+        Создается новая семья. Это происходит в случаях: 1) добавления странника в социум; 2) при разводе;
         3) когда ребенок взрослеет и уходит из семьи; 4) когда у детей умирают все кормильцы
-        Если создается семья с дополнительным параметром dependents - это значит жена ушла от мужа с детьми.
-        Мужчина при разводе не забирает с собой детей.
+        Если создается семья с дополнительным параметром dependents - это значит жена ушла от мужа с детьми
+        (от этого и от предыдущих браков). Мужчина при разводе не забирает с собой детей.
         При объединении семей, жена и дети автоматически меняют свое племя на значение племени главы семьи.
         При разводе жена вспоминает свое изначальное племя tribe_origin - племя последней семьи, в которой
         она воспитывалась. Параметр tribe_origin присваивается только когда ребенок основывает собственную
@@ -88,7 +89,14 @@ class Family:
         self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
         # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
         self.dependents: List[Optional[human.Human]] = list()
-        # при добавлении иждивенцев в семью, они наследуют племя главы семьи
+
+        if self.head.biological_parents.mother.is_human:
+            self.tribe_id = self.head.tribe_origin
+        else:
+            self.tribe_id = self.id
+
+
+            # при добавлении иждивенцев в семью, они наследуют племя главы семьи
         if depend:
             for i in depend:
                 self.add_child(i)
@@ -135,7 +143,6 @@ class Family:
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
-        person.tribe_id = self.head.tribe_id
         return len(self.dependents)
 
 
@@ -164,7 +171,6 @@ class Family:
         self.family_log_file.write(s)
         self.wife: human.Human  = wifes_family.head
         self.husband: human.Human  = self.head
-        self.wife.tribe_id = self.head.tribe_id
         self.all.append(self.wife)
         self.parents.extend(wifes_family.parents)
         self.add_dependents(wifes_family)
@@ -183,8 +189,8 @@ class Family:
         s += "\t %s| %s\n" % (self.wife.id, self.wife.name.display())
         self.family_log_file.write(s)
         children = self.dependents[:] # передаем содержимое, а не объект
-        self.wife.tribe_id = self.wife.tribe_origin
         self.wife.family = Family(self.wife, children)
+        self.wife.family.tribe_id = self.wife.tribe_origin
         # мужчина бросает всех иждивенцев на жену
         self.dependents = []
         # родители разделяются на линии жены и мужа
@@ -254,7 +260,6 @@ class Family:
         if len(self.dependents) > 0:
             s = "%s| %s из семьи |%s| умер, оставив несовершеннолетних детей.\n" % (self.head.id, self.head.name.display(), self.id)
             for i in self.dependents:
-                i.tribe_origin =self.head.tribe_id
                 i.family = Family(i)
         else:
             s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
@@ -281,11 +286,19 @@ class Family:
                 too_old.append(i)
         if len(too_old) > 0:
             for i in too_old:
+                print(f'Уходит из семьи {i.id}')
                 self.dependents.remove(i)
                 self.all.remove(i)
                 # запоминаем племя, в котором вырос ребенок, так как tribe_id по жизни может меняться
-                i.tribe_origin = self.head.tribe_id
+                i.tribe_origin = self.tribe_id
+                print('Оставшиеся члены семьи:')
+                for rest in self.all:
+                    print(f'\t\t{rest.id}')
                 i.family = Family(i)
+                print('Дети:')
+                for rest in self.dependents:
+                    print(f'\t\t{rest.id}')
+
 
 
     def live(self):
@@ -333,7 +346,20 @@ class Family:
             raise Exception('Определение роли человека в семье: неизвестная роль.')
         return s
 
+    def display(self):
+        s = '==================================\n'
+        s += f'семья:{self.id} племя: {self.tribe_id} статус:{not self.obsolete} \n'
+        for nam, person in zip(['head', 'husband', 'wife'], [self.head, self.husband, self.wife]):
+            if person is not None:
+                s += f'{nam:>7s}: {person.id}| {person.gender.value:6s}| fam:{person.family.id}| orig:{person.tribe_origin}| age: {person.age.display()}\n'
+            else:
+                s += f'{nam:>7s}: None\n'
+        print('---------------------')
 
+
+        for pers in self.all:
+            s += f'{pers.id}| {pers.gender.value:6s}| fam:{pers.family.id}| orig:{pers.tribe_origin}| age: {pers.age.display()}\n'
+        return s
 
 class FamilySupplies:
     '''

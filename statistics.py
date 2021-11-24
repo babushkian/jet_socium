@@ -360,25 +360,24 @@ class Soc_stat():
         self.tribes_in_socium_count = {}  # количество членов племени по ключу tribe_id
         self.families_in_tribe = {}  # перечисление семей в племени по ключу tribe_id
         self.families_in_tribe_count: Dict[str, int] = {}  # количество семей в племени по ключу tribe_id
-        for person in self.socium.people_alive:
-            #считаем семьи
-            temp = self.families_in_socium.get(person.family.id, 0)
-            if temp == 0:
-                self.families_in_socium[person.family.id] = [person]
-            else:
-                self.families_in_socium[person.family.id].append(person)
 
-            #считаем племена
-            temp = self.tribes_in_socium.get(person.tribe_id, 0)
+
+        for fam in self.socium.families:
+            assert fam is not None, 'Пустая семья'
+            # считаем семьи
+            self.families_in_socium[fam.id] = fam.all
+            # считаем племена
+            temp = self.tribes_in_socium.get(fam.tribe_id, 0)
             if temp == 0:
-                self.tribes_in_socium[person.tribe_id] = [person]
-                self.tribes_in_socium_count[person.tribe_id] = 1
+                self.tribes_in_socium[fam.tribe_id] = fam.all[:]
+                self.tribes_in_socium_count[fam.tribe_id] = len(fam.all)
             else:
-                self.tribes_in_socium[person.tribe_id].append(person)
-                self.tribes_in_socium_count[person.tribe_id] += 1
+                self.tribes_in_socium[fam.tribe_id].extend(fam.all)
+                self.tribes_in_socium_count[fam.tribe_id] += len(fam.all)
+
         # количество семей в племени
         for fam in self.socium.families:
-            tribe = fam.head.tribe_id
+            tribe = fam.tribe_id
             temp = self.families_in_tribe.get(tribe, 0)
             if temp == 0:
                 self.families_in_tribe[tribe] = [fam]
