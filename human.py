@@ -33,8 +33,6 @@ FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT])
                 * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST / FERTIL_RERIOD
 
-#BirthDate = NewType('BirthDate', Date)
-#DeathDate = NewType('DeathDate', Date)
 MarryDate = NewType('MarryDate', Date)
 DivorseDate = NewType('DivorseDate', Date)
 
@@ -70,13 +68,8 @@ class Human:
         self.score = score.Score()
         self.genes: genetics.Genes = genetics.Genes(self)
 
-        self.spouse: Optional[Human] = None  # супруга нет
-        # текущий супруг в этот список не входит
+        self.spouses = family.Spouses()
 
-        self.marry_dates: Dict[MarryDate, Human] = dict()  # для каждого супруга своя дата свадьбы, причем на
-        # одном человеке можно жениться несколько раз, бывает и такое
-        # в этих словарях дата указывает на объект бывшего супруга
-        self.divorce_dates: Dict[DivorseDate, Human] = dict()
         self.pregnant: List[Optional[fetus.Fetus]] = list()
         self.children: List[Optional[Human]] = list()
 
@@ -87,7 +80,7 @@ class Human:
         if self.biological_parents.mother.is_human :
             # ребенок родился естественным путем
             self.mother: Human = self.biological_parents.mother
-            self.father: Human = self.mother.spouse
+            self.father: Human = self.mother.spouses.spouse
         else:
             # пришел странник
             self.father: Human = self.biological_parents.father
@@ -156,7 +149,7 @@ class Human:
             self.score.update(self.score.LIVE_SCORE)
             if self.age.is_big:
                 # Зачинаем детей
-                if self.is_married and self.gender is Gender.FEMALE and self.age.is_fertile_age:
+                if self.spouses.is_married and self.gender is Gender.FEMALE and self.age.is_fertile_age:
                     if self.check_fertil_age() and self.check_fertil_satiety():
                         self.check_pregnant()
                 # Разводимся
@@ -166,26 +159,22 @@ class Human:
                     self.divorce()
 
     def check_divorce(self) -> bool:
-        if self.is_married:
+        if self.spouses.is_married:
             chanse: float = DIVOCE_CHANSE *(1+ (
-                    self.genes.get_trait(genetics.GN.EGOISM) * self.spouse.genes.get_trait(genetics.GN.EGOISM)
-                    - self.spouse.genes.get_trait(genetics.GN.ALTRUISM)/ 4))  # супруг сопротивляется разводу
+                    self.genes.get_trait(genetics.GN.EGOISM) * self.spouses.spouse.genes.get_trait(genetics.GN.EGOISM)
+                    - self.spouses.spouse.genes.get_trait(genetics.GN.ALTRUISM)/ 4))  # супруг сопротивляется разводу
             return chanse > random.random()
         else:
             return False
 
     def divorce(self) -> None:
-        def divorce_one_spouse(person: Human) -> None:
-            person.add_divorce_date()
-            person.spouse = None
-
-        spouse = self.spouse
+        spouse = self.spouses.spouse
         self.score.update(self.score.DIVORSE_ACTIVE_SCORE)
         spouse.score.update(self.score.DIVORSE_PASSIVE_SCORE)
         tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
         Human.write_chronicle(Human.chronicle_divorce.format(*tup))
-        divorce_one_spouse(self)
-        divorce_one_spouse(spouse)
+        for s in [self, spouse]:
+            s.spouses.divorce()
         self.family.divide_families()
 
     # удалять мертвых людей не надо может быть перемещать в какой-то другой список
@@ -201,17 +190,15 @@ class Human:
             form = Human.chronicle_died_fem
         Human.write_chronicle(form.format(self.id, self.name.display(), self.age.year))
         self.socium.stat.add_to_deadpool(self)
-        if self.spouse:
+        if self.spouses.spouse:
             if self.gender is Gender.MALE:
                 form = Human.chronicle_widowed_fem
             else:
                 form = Human.chronicle_widowed_mal
-            Human.write_chronicle(form.format(self.spouse.id, self.spouse.name.display()))
-            self.add_divorce_date()
-            self.spouse.add_divorce_date()
-            spouse = self.spouse
-            self.spouse = None
-            spouse.spouse = None
+            Human.write_chronicle(form.format(self.spouses.spouse.id, self.spouses.spouse.name.display()))
+            sp = self.spouses.spouse
+            self.spouses.divorce()
+            sp.spouses.divorce()
         self.family.dead_in_family(self)
 
 
@@ -235,18 +222,6 @@ class Human:
         get_close_ancestors(self, s, 2)
         return s
 
-    def get_marry(self, spouse: Human) -> None:
-        self.spouse = spouse
-        self.add_marry_date()
-        if self.gender is Gender.FEMALE:
-            self.name.change_family_name(spouse)
-
-    def add_marry_date(self) -> None:
-        self.marry_dates[self.socium.anno.create()] = self.spouse
-
-    def add_divorce_date(self) -> None:
-        self.divorce_dates[self.socium.anno.create()] = self.spouse
-
 
     def compare_genes(self, other):
         return math.log(self.genes.difference(other.genes)+2)
@@ -259,10 +234,10 @@ class Human:
             child = self.pregnant.pop().born(self.socium)
             self.socium.add_human(child)
             self.children.append(child)
-            self.spouse.children.append(child)
+            self.spouses.spouse.children.append(child)
 
             self.score.update(self.score.MAKE_CHILD)
-            self.spouse.score.update(self.score.MAKE_CHILD)
+            self.spouses.spouse.score.update(self.score.MAKE_CHILD)
             # на сколько лет сокращается жизнь в результате родов
             damage = abs(prop.gauss_sigma_2())
             # урон, вызванный привычкой умеренно питаться (в годах)
@@ -278,7 +253,7 @@ class Human:
 
     def check_pregnant(self) -> None:
         if len(self.pregnant) == 0:
-            check = PREGNANCY_CHANCE*3*(self.genes.get_trait(genetics.GN.FERTILITY) * math.sqrt(self.spouse.genes.get_trait(genetics.GN.FERTILITY)) )
+            check = PREGNANCY_CHANCE*3*(self.genes.get_trait(genetics.GN.FERTILITY) * math.sqrt(self.spouses.spouse.genes.get_trait(genetics.GN.FERTILITY)) )
             if  check > random.random():
                 fetus_amount = int(1 +  abs(prop.gauss_sigma_1()) + 1/12 * (self.genes.get_trait(genetics.GN.FERTILITY) - 5))
                 if fetus_amount < 1:
@@ -299,7 +274,7 @@ class Human:
             date = STAGE_DICT[Stage_of_age.CHILD] + add_date
             return date
         fert = True
-        for person in (self, self.spouse):
+        for person in (self, self.spouses.spouse):
             if person.age < _count_fertil_age(person.genes.get_trait(GN.FERT_AGE)):
                 fert = False
                 break
@@ -307,15 +282,12 @@ class Human:
 
     def check_fertil_satiety(self) -> bool:
         fert = True
-        for person in (self, self.spouse):
+        for person in (self, self.spouses.spouse):
             if person.health.satiety < person.genes.get_trait(GN.FERT_SATIETY):
                 fert = False
                 break
         return fert
 
-    @property
-    def is_married(self) -> bool:
-        return self.spouse is not None
 
     @property
     def is_alive(self) -> bool:
@@ -353,11 +325,12 @@ class Human:
 
         g = show_genes()
         nec = nec +g +"\n"
-
-        nec +="Супруги (%d):\n" % len(self.marry_dates)
-        if len(self.marry_dates) > 0:
+        '''
+        nec +="Супруги (%d):\n" % self.spouses.len()
+        if self.spouses.len() > 0:
             sp=""
             # а может они и так упорядочены?
+            rec_m = sorted(self.spouses.keys(), key=lambda x: x.len())  # список упорядоченных дат женитьбы
             rec_m = sorted(self.marry_dates.keys(), key=lambda x: x.len()) # список упорядоченных дат женитьбы
             rec_d = sorted(self.divorce_dates.keys(), key=lambda x: x.len())  # список упорядоченных дат развода
             for (dm, dd) in zip(rec_m, rec_d):
@@ -391,6 +364,8 @@ class Human:
 
         else:
             sp = "\tнет\n"
+        '''
+        sp = self.spouses.display_all_spouses()
         nec += sp
         return nec
 
@@ -413,7 +388,7 @@ class Human:
 
         # каким по счету ребенком в семье он был
         stat_list.append(self.child_number_in_mothers_family)
-        stat_list.append(len(self.marry_dates))
+        stat_list.append(self.spouses.len())
         # количество детей у человека
         stat_list.append(len(self.children))
         # возраст смерти

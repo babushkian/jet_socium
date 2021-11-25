@@ -1,8 +1,10 @@
 ﻿from __future__ import annotations
 import random
 from typing import Optional, List, Dict
+from dataclasses import dataclass
 from common import ( DIGEST_FOOD_MULTIPLIER,
                     Gender)
+from soc_time import Date
 import human
 
 import genetics
@@ -49,6 +51,66 @@ class Parents:
         Возвращает итерируемый объект (список), состоящий из родителей.
         '''
         return [self.mother, self.father]
+
+
+@dataclass
+class SpouseRec:
+    spouse: human.Human
+    marry: Date
+    divorse: Optional[Date] = None
+
+class Spouses:
+
+    def __init__(self):
+        self._spouses: List[SpouseRec] = list()
+
+    @property
+    def spouse(self)-> Optional[human.Human]:
+        if self.len()>0 and self._spouses[-1].divorse is None:
+            return self._spouses[-1].spouse
+        return None
+
+    @property
+    def is_married(self) -> bool:
+        return self.spouse is not None
+
+
+    def marry(self, spouse):
+        self._spouses.append(SpouseRec(spouse, spouse.socium.anno.create()))
+
+    def divorce(self):
+        self._spouses[-1].divorse = self.spouse.socium.anno.create()
+
+    def len(self) -> int:
+        return len(self._spouses)
+
+
+    def display_all_spouses(self):
+        s = f'Супруги {self.len()}:\n'
+        '''
+        if self.spouses.len() > 0:
+            sp=""
+            # а может они и так упорядочены?
+            rec_m = sorted(self.spouses.keys(), key=lambda x: x.len())  # список упорядоченных дат женитьбы
+            rec_m = sorted(self.marry_dates.keys(), key=lambda x: x.len()) # список упорядоченных дат женитьбы
+            rec_d = sorted(self.divorce_dates.keys(), key=lambda x: x.len())  # список упорядоченных дат развода
+            for (dm, dd) in zip(rec_m, rec_d):
+                spouse = self.marry_dates[dm]
+                delta = dd - dm
+                sp += "\t%s| %s | брак - %s\n" % (spouse.id, spouse.name.display(), delta.display(False))
+                sp += "\t\tСвадьба: %s\n" % dm.display()
+                sp += "\t\tРазвод:  %s" % dd.display()
+                ss = "\n"
+                if dd == self.age.death_date:
+                    ss = " (смерть)\n"
+                elif spouse.age.death_date is None:
+                    pass
+                elif dd == spouse.age.death_date:
+                    ss = " (смерть супруга)\n"
+                sp +=ss
+            nec += sp
+        '''
+        return s
 
 class Family:
     """
@@ -170,6 +232,7 @@ class Family:
         self.family_log_file.write(s)
         self.wife: human.Human  = wifes_family.head
         self.husband: human.Human  = self.head
+        self.wife.name.change_family_name(self.head)  # меняем фамилию жены
         self.all.append(self.wife)
         self.parents.extend(wifes_family.parents)
         self.add_dependents(wifes_family)

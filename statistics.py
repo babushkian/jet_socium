@@ -333,7 +333,7 @@ class Soc_stat():
         self.unmarried_adult_women = []
         for person in self.socium.people_alive:
             # считаем замужних (разделение пополам не требуется, так как их всегда равное число)
-            if person.is_married:
+            if person.spouses.is_married:
                 self.married_people.append(person)
             # считаем незамужних (всех и отдельно взрослых)
             else:

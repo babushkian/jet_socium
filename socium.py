@@ -185,16 +185,12 @@ class Socium:
                         tup = (person.id, b[-1].id, person.name.display(), person.age.year, b[-1].name.display(), b[-1].age.year)
                         Human.write_chronicle(Human.chronicle_marriage.format(*tup))
 
-                        #print(person.compare_genes(b[-1]))
-
-                        person.get_marry(b[-1])
-                        b[-1].get_marry(person)
-                        person.score.update(person.score.MARRY_SCORE)
-                        b[-1].score.update(b[-1].score.MARRY_SCORE)
-                        if person.gender is common.Gender.MALE:
-                            person.family.unite_families(b[-1].family)
-                        else:
-                            b[-1].family.unite_families(person.family)
+                        pair = [person, b[-1]]
+                        for p in range(2):
+                            pair[p].spouses.marry(pair[1-p])
+                            pair[p].score.update(pair[p].score.MARRY_SCORE)
+                            if pair[p].gender is common.Gender.MALE:
+                                pair[p].family.unite_families(pair[1-p].family)
                     b.pop() # человек удаляется из списка кандидатов в супруги независтмо от того, заключил он брак или нет
 
 

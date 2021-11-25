@@ -24,10 +24,10 @@ class Fetus:
 		self.mother: human.Human = mother
 
 
-		if not isinstance(self.mother.spouse, human.Human):
+		if not isinstance(self.mother.spouses.spouse, human.Human):
 			raise InnocentError("Произошло непорочное зачатие. Жена без мужа.")
 		else:
-			self.father: human.Human = mother.spouse # в момент зачатия муж в любом случае есть (это при рождении он может уйти или умереть)
+			self.father: human.Human = mother.spouses.spouse # в момент зачатия муж в любом случае есть (это при рождении он может уйти или умереть)
 		self.age = ZERO_DATE
 
 		self.genes = genetics.Genes(self)
