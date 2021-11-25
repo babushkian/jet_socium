@@ -84,7 +84,7 @@ class Socium:
         temp = []
         self.forgotten = []
         for person in self.soc_list:
-            if not person.is_alive and self.anno - person.death_date > TIME_TO_EXCLUDE_DEAD_ANCESTORS:
+            if not person.is_alive and self.anno - person.age.death_date > TIME_TO_EXCLUDE_DEAD_ANCESTORS:
                 self.forgotten.append(person)
             else:
                 temp.append(person)
@@ -223,9 +223,6 @@ class Socium:
         for tribe in self.stat.tribes_in_socium:
             elder_of_tribe = self.stat.tribes_in_socium[tribe][0]  # берем первого человека в племени
             tribe_family_name = elder_of_tribe.name.family_name[1] # достаем его фамилию в мужском роде
-            #print(f'    {tribe=}' )
-
-
             st += anno
             num_fam_in_tribe = self.stat.families_in_tribe_count[tribe]
             st += f'|{tribe_family_name:>15s}|'

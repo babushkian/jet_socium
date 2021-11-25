@@ -173,6 +173,8 @@ class Age(Date):
     def __init__(self, person, age_int=0) :
         self.person = person
         super(Age, self).__init__(age_int)
+        self.birth_date: Date = self.person.socium.anno - self
+        self.death_date: Optional[Date] = None
         self._stage = Stage(age_int, self)
 
     def increase(self):

@@ -33,8 +33,8 @@ FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT])
                 * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST / FERTIL_RERIOD
 
-BirthDate = NewType('BirthDate', Date)
-DeathDate = NewType('DeathDate', Date)
+#BirthDate = NewType('BirthDate', Date)
+#DeathDate = NewType('DeathDate', Date)
 MarryDate = NewType('MarryDate', Date)
 DivorseDate = NewType('DivorseDate', Date)
 
@@ -65,9 +65,6 @@ class Human:
         self.state: bool = True
         # начальный возраст человека, будет увеличиваться каждый тик
         self.age: Age = Age(self, age_int)
-
-        self.birth_date: BirthDate = self.socium.anno - self.age
-        self.death_date: Optional[DeathDate] = None
 
         self.health: genetics.Health = genetics.Health(self)
         self.score = score.Score()
@@ -197,7 +194,7 @@ class Human:
         self.socium.global_death_count +=1
         self.socium.stat.people_dec()  # уменьшаем количество живущих людей
         self.state = False
-        self.death_date = self.socium.anno.create()
+        self.age.death_date = self.socium.anno.create()
         if self.gender is Gender.MALE:
             form = Human.chronicle_died_mal
         else:
@@ -333,9 +330,9 @@ class Human:
 
     def necrolog(self) -> str:
         nec  = "%s| %s | %s \n" % (self.id, self.name.display(), self.family.id)
-        nec += "Дата рождения: %s \n" % self.birth_date.display()
-        nec += "Дата смерти: %s \n" % self.death_date.display()
-        nec += "Возраст смерти: %s\n" % (self.death_date-self.birth_date).display(False)
+        nec += "Дата рождения: %s \n" % self.age.birth_date.display()
+        nec += "Дата смерти: %s \n" % self.age.death_date.display()
+        nec += "Возраст смерти: %s\n" % (self.age.death_date-self.age.birth_date).display(False)
         nec += "Карма: %d\n" % self.score.score
 
         def show_genes() -> str:
@@ -370,11 +367,11 @@ class Human:
                 sp += "\t\tСвадьба: %s\n" % dm.display()
                 sp += "\t\tРазвод:  %s" % dd.display()
                 ss = "\n"
-                if dd == self.death_date:
+                if dd == self.age.death_date:
                     ss = " (смерть)\n"
-                elif spouse.death_date is None:
+                elif spouse.age.death_date is None:
                     pass
-                elif dd == spouse.death_date:
+                elif dd == spouse.age.death_date:
                     ss = " (смерть супруга)\n"
                 sp +=ss
             nec += sp
@@ -385,7 +382,7 @@ class Human:
             else:
                 sp=""
                 for child in self.children:
-                    sp += "\t%s| %s (%s)" % (child.id, child.name.display(), child.birth_date.display())
+                    sp += "\t%s| %s (%s)" % (child.id, child.name.display(), child.age.birth_date.display())
                     if child.father == self:
                         other_patent = "(мать:  %s)\n" % child.mother.id
                     else:
@@ -409,7 +406,7 @@ class Human:
         if self.biological_parents.mother.is_human:
             for pred in self.biological_parents.lst:
                 preds_old_age[pred.gender] = pred.age.len()
-                preds_age_on_birthday[pred.gender] = (self.birth_date - pred.birth_date).len()
+                preds_age_on_birthday[pred.gender] = (self.age.birth_date - pred.age.birth_date).len()
         for gen in Gender:
             stat_list.append(preds_old_age[gen])
             stat_list.append(preds_age_on_birthday[gen])

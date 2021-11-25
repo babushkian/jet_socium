@@ -91,7 +91,7 @@ class Soc_stat():
     def update_deadpool(self):
         temp = []
         for person in self.dead_pool_avg:
-            if self.socium.anno < (person.death_date + Date(5)):
+            if self.socium.anno < (person.age.death_date + Date(5)):
                 temp.append(person)
         self.dead_pool_avg = temp
 
@@ -99,7 +99,7 @@ class Soc_stat():
     def count_avg_death_age(self):
         summa = 0
         for person in self.dead_pool_avg:
-            summa += (person.death_date - person.birth_date).len()
+            summa += (person.age.death_date - person.age.birth_date).len()
         ld = len(self.dead_pool_avg)
         if ld > 0:
             avg_date = summa / ld
@@ -120,7 +120,7 @@ class Soc_stat():
             nonlocal death_age
             nonlocal number_of_dead_people
             number_of_dead_people += 1
-            dec_index =int((person.death_date - person.birth_date).years_float()//10)
+            dec_index =int((person.age.death_date - person.age.birth_date).years_float()//10)
             if dec_index > 10:
                 dec_index = 10
             death_age[dec_index] += 1
@@ -132,13 +132,13 @@ class Soc_stat():
             nonlocal women_death_sum
             if person.gender is Gender.MALE:
                 nomb_men += 1
-                men_death_sum += (person.death_date - person.birth_date).years_float()
+                men_death_sum += (person.age.death_date - person.age.birth_date).years_float()
             else:
                 nomb_women += 1
-                women_death_sum += (person.death_date - person.birth_date).years_float()
+                women_death_sum += (person.age.death_date - person.age.birth_date).years_float()
 
         for person in self.socium.soc_list:
-            if not person.is_alive and self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD)):
+            if not person.is_alive and self.socium.anno < (person.age.death_date + Date(MEASURMENT_PERIOD)):
                 death_dist(person)
                 death_gender(person)
 
@@ -162,7 +162,7 @@ class Soc_stat():
         no_female = 0
         for person in self.socium.soc_list:
             if person.age.stage is Stage_of_age.ADULT and \
-                    (person.death_date is None or self.socium.anno < (person.death_date + Date(MEASURMENT_PERIOD))):
+                    (person.age.death_date is None or self.socium.anno < (person.age.death_date + Date(MEASURMENT_PERIOD))):
                 # считаем количество детей у мужчин и у женщин по отдельности
                 ch = len(person.children)
                 if ch >= CHILDREN_COUNT_TRESHOLD:
