@@ -71,6 +71,7 @@ class Human:
         self.spouses = family.Spouses()
 
         self.pregnant: List[Optional[fetus.Fetus]] = list()
+        # в список попадают биологические дети человека, не социальные
         self.children: List[Optional[Human]] = list()
 
 
@@ -234,6 +235,7 @@ class Human:
             child = self.pregnant.pop().born(self.socium)
             self.socium.add_human(child)
             self.children.append(child)
+            # переписать под биологического отца. Сейчас подставляется социальный
             self.spouses.spouse.children.append(child)
 
             self.score.update(self.score.MAKE_CHILD)
@@ -301,16 +303,16 @@ class Human:
         return s
 
     def necrolog(self) -> str:
-        nec  = "%s| %s | %s \n" % (self.id, self.name.display(), self.family.id)
-        nec += "Дата рождения: %s \n" % self.age.birth_date.display()
-        nec += "Дата смерти: %s \n" % self.age.death_date.display()
-        nec += "Возраст смерти: %s\n" % (self.age.death_date-self.age.birth_date).display(False)
-        nec += "Карма: %d\n" % self.score.score
+        nec = f'{self.id}| {self.name.display()} | {self.family.id} \n'
+        nec += f'Дата рождения: {self.age.birth_date.display()}\n'
+        nec += f'Дата смерти: {self.age.death_date.display()} \n'
+        nec += f'Возраст смерти: {(self.age.death_date-self.age.birth_date).display(False)}\n'
+        nec += f'Карма: {self.score.score}\n'
 
         def show_genes() -> str:
             g = 'Гены:\n'
             for i in GN:
-                g += '\t%s: %2d' %(i[:6], self.genes.get_trait(i))
+                g += f'\t{i.value:15.15s}: {self.genes.get_trait(i):2d}'
                 if self.genes.genome[i].predecessor is None:
                     sex = 'нет'
                 elif self.genes.genome[i].predecessor.gender is Gender.MALE:
@@ -320,56 +322,26 @@ class Human:
                 pv = self.genes.genome[i].pred_value
                 delta = self.genes.genome[i].value - pv
                 prog = '+' if delta > 0 else '-'
-                g += ' (%2d)| %s |%s\n' % (pv, sex, prog * abs(delta))
+                g += f' ({pv:2d})| {sex} |{prog*abs(delta)}\n'
             return g
 
         g = show_genes()
-        nec = nec +g +"\n"
-        '''
-        nec +="Супруги (%d):\n" % self.spouses.len()
-        if self.spouses.len() > 0:
-            sp=""
-            # а может они и так упорядочены?
-            rec_m = sorted(self.spouses.keys(), key=lambda x: x.len())  # список упорядоченных дат женитьбы
-            rec_m = sorted(self.marry_dates.keys(), key=lambda x: x.len()) # список упорядоченных дат женитьбы
-            rec_d = sorted(self.divorce_dates.keys(), key=lambda x: x.len())  # список упорядоченных дат развода
-            for (dm, dd) in zip(rec_m, rec_d):
-                spouse = self.marry_dates[dm]
-                delta = dd - dm
-                sp += "\t%s| %s | брак - %s\n" % (spouse.id, spouse.name.display(), delta.display(False))
-                sp += "\t\tСвадьба: %s\n" % dm.display()
-                sp += "\t\tРазвод:  %s" % dd.display()
-                ss = "\n"
-                if dd == self.age.death_date:
-                    ss = " (смерть)\n"
-                elif spouse.age.death_date is None:
-                    pass
-                elif dd == spouse.age.death_date:
-                    ss = " (смерть супруга)\n"
-                sp +=ss
-            nec += sp
+        nec += g +"\n"
+        nec += self.spouses.display_all_spouses(self)
 
-            nec +="Дети (%d):\n" % len(self.children)
-            if len(self.children)==0:
-                sp = "\tнет\n"
+        nec +=f'Дети ({len(self.children)}):\n'
+        sp = ''
+        for child in self.children:
+            sp += f'\t{child.id}| {child.name.display()} ({child.age.birth_date.display(calendar_date=False, verbose=False)}) '
+            if child.father == self:
+                other_patent = f'(мать:  {child.mother.id})\n'
             else:
-                sp=""
-                for child in self.children:
-                    sp += "\t%s| %s (%s)" % (child.id, child.name.display(), child.age.birth_date.display())
-                    if child.father == self:
-                        other_patent = "(мать:  %s)\n" % child.mother.id
-                    else:
-                        other_patent = "(отец:  %s)\n" % child.father.id
-                    sp += other_patent
-
-        else:
-            sp = "\tнет\n"
-        '''
-        sp = self.spouses.display_all_spouses()
+                other_patent = f'(отец:  {child.father.id})\n'
+            sp += other_patent
         nec += sp
         return nec
 
-    def magareport(self):
+    def megareport(self):
         stat_list= list()
         # гены
         for i in GN:

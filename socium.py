@@ -261,6 +261,6 @@ class Socium:
             # записи про каждого мертвого человека с подробностями его жизни
             hall.write("\n====================================\n")
             hall.write(person.necrolog())
-            self.person_stat.writerow(person.magareport())
+            self.person_stat.writerow(person.megareport())
         hall.close()
 

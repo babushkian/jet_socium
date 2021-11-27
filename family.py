@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from dataclasses import dataclass
 from common import ( DIGEST_FOOD_MULTIPLIER,
                     Gender)
-from soc_time import Date
+from soc_time import Date, FAR_FUTURE
 import human
 
 import genetics
@@ -74,7 +74,6 @@ class Spouses:
     def is_married(self) -> bool:
         return self.spouse is not None
 
-
     def marry(self, spouse):
         self._spouses.append(SpouseRec(spouse, spouse.socium.anno.create()))
 
@@ -84,33 +83,26 @@ class Spouses:
     def len(self) -> int:
         return len(self._spouses)
 
-
-    def display_all_spouses(self):
-        s = f'Супруги {self.len()}:\n'
-        '''
-        if self.spouses.len() > 0:
-            sp=""
-            # а может они и так упорядочены?
-            rec_m = sorted(self.spouses.keys(), key=lambda x: x.len())  # список упорядоченных дат женитьбы
-            rec_m = sorted(self.marry_dates.keys(), key=lambda x: x.len()) # список упорядоченных дат женитьбы
-            rec_d = sorted(self.divorce_dates.keys(), key=lambda x: x.len())  # список упорядоченных дат развода
-            for (dm, dd) in zip(rec_m, rec_d):
-                spouse = self.marry_dates[dm]
-                delta = dd - dm
-                sp += "\t%s| %s | брак - %s\n" % (spouse.id, spouse.name.display(), delta.display(False))
-                sp += "\t\tСвадьба: %s\n" % dm.display()
-                sp += "\t\tРазвод:  %s" % dd.display()
-                ss = "\n"
-                if dd == self.age.death_date:
-                    ss = " (смерть)\n"
-                elif spouse.age.death_date is None:
-                    pass
-                elif dd == spouse.age.death_date:
-                    ss = " (смерть супруга)\n"
-                sp +=ss
-            nec += sp
-        '''
+    def display_all_spouses(self, man):
+        s = f'Супруги ({self.len()}):\n'
+        if self.len() > 0:
+            for sp in self._spouses:
+                delta = sp.divorse - sp.marry
+                name = sp.spouse.name.display()
+                s += f'\t{sp.spouse.id}| {name}| брак: {delta.display(False)}\n'
+                s += f'\t\tСвадьба: {sp.marry.display(calendar_date=False, verbose=False)}\n'
+                s += f'\t\tРазвод:  {sp.divorse.display(calendar_date=False, verbose=False)}'
+                # надо следить за тем, чтобы даты смерти не равнялись None, иначе их нельзя будет сравнить
+                sdd = sp.spouse.age.death_date if sp.spouse.age.death_date is not None else FAR_FUTURE
+                mdd = man.age.death_date if man.age.death_date is not None else FAR_FUTURE
+                if sp.divorse == sdd:
+                    s += ' (смерть супруга)\n'
+                elif sp.divorse == mdd:
+                    s += ' (смерть)\n'
+                else:
+                    s += '\n'
         return s
+
 
 class Family:
     """
@@ -124,9 +116,9 @@ class Family:
     family_food_file = None
     family_feeding = None
 
-    def __init__(self, head: human.Human, # человек
-                 depend: Optional[List[human.Human]]=None): #список иждивенцев
-        '''
+    def __init__(self, head: human.Human,  # человек
+                 depend: Optional[List[human.Human]] = None):  # список иждивенцев
+        """
         Создается новая семья. Это происходит в случаях: 1) добавления странника в социум; 2) при разводе;
         3) когда ребенок взрослеет и уходит из семьи; 4) когда у детей умирают все кормильцы
         Если создается семья с дополнительным параметром dependents - это значит жена ушла от мужа с детьми
@@ -135,19 +127,19 @@ class Family:
         При разводе жена вспоминает свое изначальное племя tribe_origin - племя последней семьи, в которой
         она воспитывалась. Параметр tribe_origin присваивается только когда ребенок основывает собственную
         семью (когда повзрослеет или осиротеет)
-        '''
-        self.obsolete: bool = False # признак того, сто семья перестала существовать
+        """
+        self.obsolete: bool = False  # признак того, сто семья перестала существовать
         self.id: str = self.generate_family_id()
         # в семье должен быть хотя бы один человек - глава. В начале симуляции все дети получают
         # собственную семью, как и дети-сироты после смерти родителей, как и повзрослевшие дети, покидающие семью
         self.head: human.Human = head
-        self.head.socium.families.append(self) # добавляет семью в список семей
-        # если человек холостой, husband  и wife равны None. В случае свадьбы, этим переменным назначаются конкретные люди
+        self.head.socium.families.append(self)  # добавляет семью в список семей
+        # если человек холостой, husband  и wife равны None. После свадьбы, этим переменным назначаются конкретные люди
         self.husband: Optional[human.Human] = None
         self.wife: Optional[human.Human] = None
         self.parents: List[human.Human] = list()
         self.add_parents()
-        self.all: List[human.Human] = [self.head] # все члены семьи кроме стариков, которые и так не члены семьи
+        self.all: List[human.Human] = [self.head]  # все члены семьи кроме стариков, которые и так не члены семьи
         # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
         self.dependents: List[Optional[human.Human]] = list()
 
@@ -155,16 +147,13 @@ class Family:
             self.tribe_id = self.head.family.tribe_id
         else:
             self.tribe_id = self.id
-
-
-            # при добавлении иждивенцев в семью, они наследуют племя главы семьи
+        # при добавлении иждивенцев в семью, они наследуют племя главы семьи
         if depend:
             for i in depend:
                 self.add_child(i)
         self.food = FamilySupplies(self)
         s = f'Новая семья: {self.id}| {self.head.name.display()}| {self.head.id}| возраст - {self.head.age.year} лет.\n'
         self.family_log_file.write(s)
-
 
     @staticmethod
     def init_files():

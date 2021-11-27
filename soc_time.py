@@ -104,7 +104,7 @@ class Date:
 ZERO_DATE = Date()
 YEAR = Date(1,0,0)
 TIK = Date(0,0,1)
-FAR_FUTURE = Date(1_000_000,0,0)
+FAR_FUTURE = Date(10_000_000,0,0)
 
 
 class Anno(Date):
