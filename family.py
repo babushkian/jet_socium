@@ -65,9 +65,23 @@ class Spouses:
         self._spouses: List[SpouseRec] = list()
 
     @property
-    def spouse(self)-> Optional[human.Human]:
-        if self.len()>0 and self._spouses[-1].divorse is None:
+    def is_bachelor(self) -> bool:
+        '''
+        Проверяет, что человек никогда прежде не вступал в брак
+        '''
+        return self.len() == 0
+
+    @property
+    def last_spouse(self)->Optional[human.Human]:
+        if not self.is_bachelor:
             return self._spouses[-1].spouse
+        return None
+
+    @property
+    def spouse(self)-> Optional[human.Human]:
+        if not self.is_bachelor:
+            if self._spouses[-1].divorse is None:
+                return self.last_spouse
         return None
 
     @property

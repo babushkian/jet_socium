@@ -218,7 +218,7 @@ class Socium:
         st += '\n'
         for tribe in self.stat.tribes_in_socium:
             elder_of_tribe = self.stat.tribes_in_socium[tribe][0]  # берем первого человека в племени
-            tribe_family_name = elder_of_tribe.name.family_name[1] # достаем его фамилию в мужском роде
+            tribe_family_name = elder_of_tribe.name.family_name[common.Gender.MALE] # достаем его фамилию в мужском роде
             st += anno
             num_fam_in_tribe = self.stat.families_in_tribe_count[tribe]
             st += f'|{tribe_family_name:>15s}|'
