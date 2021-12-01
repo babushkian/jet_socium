@@ -17,17 +17,12 @@ class Fetus:
 	при зачатии мать порождает эмбрион (или несколько), они закреплены за матерью и в общий социум не добавляются
 	 для эмбрионов определены: биологические родители, пол и гены
 	'''
-	def __init__(self, mother: human.Human, gender: Optional[Gender]=None):
+	def __init__(self, fam: family.Family, gender: Optional[Gender]=None):
 		self.score = score.Score()
 		self.gender: Gender = apply_gender(gender)
-		self.parents = family.Parents(mother.family)
-		self.mother: human.Human = mother
-
-
-		if not isinstance(self.mother.spouses.spouse, human.Human):
+		self.parents = family.Parents(fam)
+		if not isinstance(self.parents.father, human.Human):
 			raise InnocentError("Произошло непорочное зачатие. Жена без мужа.")
-		else:
-			self.father: human.Human = mother.spouses.spouse # в момент зачатия муж в любом случае есть (это при рождении он может уйти или умереть)
 		self.age = ZERO_DATE
 
 		self.genes = genetics.Genes(self)

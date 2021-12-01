@@ -261,7 +261,7 @@ class Human:
                 if fetus_amount < 1:
                     fetus_amount = 1
                 for num in range(fetus_amount):
-                    self.pregnant.append(fetus.Fetus(self))
+                    self.pregnant.append(fetus.Fetus(self.family))
                 Human.write_chronicle(Human.chronicle_pregnacy.format(self.id, self.name.display(), fetus_amount))
         else:
             for i in self.pregnant:
