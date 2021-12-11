@@ -52,11 +52,11 @@ class Socium:
         self.forgotten: List = []
         self.people_alive: List = []
 
-    @staticmethod
-    def class_var_init(estimate_people):
-        Socium.ESTIMAED_NUMBER_OF_PEOPLE = estimate_people # предполагаемое количество людей
+    @classmethod
+    def class_var_init(cls, estimate_people):
+        cls.ESTIMAED_NUMBER_OF_PEOPLE = estimate_people # предполагаемое количество людей
         # общее количество пищи за ход, которое люди делят между собой
-        Socium.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * Socium.ESTIMAED_NUMBER_OF_PEOPLE
+        cls.FOOD_RESOURCE = genetics.FOOD_COEF * genetics.NORMAL_CONSUME_RATE * cls.ESTIMAED_NUMBER_OF_PEOPLE
 
     @staticmethod
     def roll_genome():

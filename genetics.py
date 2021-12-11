@@ -220,14 +220,14 @@ class Genes:
         self.person: Genes_Holder = person
         self.genome: Dict[GN, Gene] = {i: Gene(i, self) for i in GN}
 
-    @staticmethod
-    def init_protogenome():
+    @classmethod
+    def init_protogenome(cls):
         """
         В начале симуляции случайным образом создает шаблон генома для всей популяции.
         Для людей первого поколения, а так же для странников - взрослых людей, периодически
         приходящих в социум.
         """
-        Genes.protogenome_profile = generate_genome()
+        cls.protogenome_profile = generate_genome()
 
     def define(self):
         """

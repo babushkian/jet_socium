@@ -18,13 +18,13 @@ class FoodDistribution:
         self.socium = soc
         self.report: str = ''
 
-    @staticmethod
-    def init_files():
-        FoodDistribution.feeding_log = open("./global_food_distribution.log", "w", encoding="utf16")
+    @classmethod
+    def init_files(cls):
+        cls.feeding_log = open("./global_food_distribution.log", "w", encoding="utf16")
 
-    @staticmethod
-    def close():
-        FoodDistribution.feeding_log.close()
+    @classmethod
+    def close(cls):
+        cls.feeding_log.close()
 
     def distribute(self):
         # флаг изобилия. Когда изобилие, люди не отбирают еду у других людей,

@@ -9,11 +9,6 @@ import human
 
 import genetics
 
-'''
-вот бы еще сделать классы Parents и Children
-'''
-
-
 
 class Parents:
     '''
@@ -169,17 +164,17 @@ class Family:
         s = f'Новая семья: {self.id}| {self.head.name.display()}| {self.head.id}| возраст - {self.head.age.year} лет.\n'
         self.family_log_file.write(s)
 
-    @staticmethod
-    def init_files():
-        Family.family_log_file = open("./families.log", "w", encoding="utf16")
-        Family.family_food_file = open("./family_food_distrib.log", "w", encoding="utf16")
-        Family.family_feeding = open("./family_feeding.log", "w", encoding="utf16")
+    @classmethod
+    def init_files(cls):
+        cls.family_log_file = open("./families.log", "w", encoding="utf16")
+        cls.family_food_file = open("./family_food_distrib.log", "w", encoding="utf16")
+        cls.family_feeding = open("./family_feeding.log", "w", encoding="utf16")
 
-    @staticmethod
-    def close():
-        Family.family_log_file.close()
-        Family.family_food_file.close()
-        Family.family_feeding.close()
+    @classmethod
+    def close(cls):
+        cls.family_log_file.close()
+        cls.family_food_file.close()
+        cls.family_feeding.close()
 
     @staticmethod
     def generate_family_id() -> str:

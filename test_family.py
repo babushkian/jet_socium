@@ -10,23 +10,6 @@ import socium
 random.seed(666)
 
 s = socium.Socium()
-'''
-none_parents = family.Parents(None)
-m = human.Human(s, none_parents,  gender=common.Gender.MALE,  age_int=20)
-m.health.set_health(100)
-s.add_human(m)
-none_parents = family.Parents(None)
-f = human.Human(s, none_parents,  gender=common.Gender.FEMALE,  age_int=20)
-s.add_human(f)
-
-none_parents = family.Parents(None)
-m = human.Human(s, none_parents,  gender=common.Gender.MALE,  age_int=20)
-m.health.set_health(100)
-s.add_human(m)
-none_parents = family.Parents(None)
-f = human.Human(s, none_parents,  gender=common.Gender.FEMALE,  age_int=20)
-s.add_human(f)
-'''
 
 for  i in  range(12):
     none_parents = family.Parents(None)

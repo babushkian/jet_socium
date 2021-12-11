@@ -19,8 +19,7 @@ import fetus
 
 # подгоночный коэффициент для беременности, чтобы человек с фертильностью 5
 # забеременнил где-то два раза за фертильный возраст
-#PREGNANCY_CONST = 0.218 # вроде маловата, надо больше, люди мрут
-PREGNANCY_CONST = 0.398
+PREGNANCY_CONST = 0.218
 
 PREGNANCY_DURATION = Date(0, 0, round(Date.DAYS_IN_YEAR*3/4))
 print(PREGNANCY_DURATION.display())
@@ -54,7 +53,7 @@ class Human:
     # такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
     def __init__(self, socium, biol_parents:family.Parents, gender: Optional[Gender]=None, age_int: int=0):
-        Human.GLOBAL_HUMAN_NUMBER += 1
+        type(self).GLOBAL_HUMAN_NUMBER += 1
         self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
         self.socium = socium
         self.socium.stat.people_inc()
@@ -122,19 +121,19 @@ class Human:
             Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
 
 
-    @staticmethod
-    def init_files():
+    @classmethod
+    def init_files(cls):
         #Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf16')
-        Human.chronicle = open('./chronicle.txt', 'w', encoding='utf16')
+        cls.chronicle = open('./chronicle.txt', 'w', encoding='utf16')
 
-    @staticmethod
-    def close():
-        Human.GLOBAL_HUMAN_NUMBER = 0
-        Human.chronicle.close()
+    @classmethod
+    def close(cls):
+        cls.GLOBAL_HUMAN_NUMBER = 0
+        cls.chronicle.close()
 
-    @staticmethod
-    def write_chronicle( message):
-        Human.chronicle.write(message + '\n')
+    @classmethod
+    def write_chronicle(cls, message):
+        cls.chronicle.write(message + '\n')
 
     @property
     def is_human(parent: Human) -> bool:
