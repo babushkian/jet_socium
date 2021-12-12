@@ -30,6 +30,8 @@ class Gender(str, Enum):
     FEMALE = 'female'
     MALE = 'male'
 
+def opposite_gender(gender:Gender)->Gender:
+    return Gender.MALE if gender is Gender.FEMALE else Gender.FEMALE
 
 class Parnt(Enum):
     '''
@@ -170,7 +172,7 @@ class Stage:
 
 
 class Age(Date):
-    def __init__(self, person, age_int=0) :
+    def __init__(self, person, age_int=0) : # age_int - число лет ребенка, а не месяцев и дней
         self.person = person
         super(Age, self).__init__(age_int)
         self.birth_date: Date = self.person.socium.anno - self

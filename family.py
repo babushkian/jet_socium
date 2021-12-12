@@ -3,7 +3,8 @@ import random
 from typing import Optional, List, Dict
 from dataclasses import dataclass
 from common import ( DIGEST_FOOD_MULTIPLIER,
-                    Gender)
+                    Gender,
+                    opposite_gender)
 from soc_time import Date, FAR_FUTURE
 import human
 
@@ -15,13 +16,16 @@ class Parents:
     Родители ребенка. Роль родителя жестко определяется его полом. Отцом может быть только мужчина,
     ма матерью - только женщина
     '''
-    def __init__(self, family:Optional[Family]):
-        self._parents: Dict[Gender, human.Human] = dict()
+    def __init__(self, family:Optional[Family], none_soc = False):
+        self._parents: Dict[Gender, Optional[human.Human]] = dict()
         if family:
             self.assign_parents(family)
         else:
             for g in Gender:
-                self._parents[g] = human.NoneHuman(g)
+                if none_soc:
+                    self._parents[g] = None
+                else:
+                    self._parents[g] = human.NoneHuman(g)
 
     @property
     def mother(self) -> Optional[human.Human]:
@@ -32,13 +36,24 @@ class Parents:
         return self._parents[Gender.MALE]
 
     def assign_parents(self, family: Family):
-        # такой порядок родителей, потому что одинокая женщина тоже может быть главой семьи
-        # и wife будет равна None
-        for par in [family.wife, family.head]:
-            self.assign_parent(par)
+        # у родителей должна быть раскладка по полам. Если жена есть, с полами все понятно.
+        # Если жены нет, пол главы семьи может быть любой
+        gs = [family.head.gender, opposite_gender(family.head.gender)]
+        if family.wife is not None:
+            ps = [family.head, family.wife]
+        else:
+            ps = [family.head, None]
 
-    def assign_parent(self, parent: human.Human):
-        self._parents[parent.gender] = parent
+        for gend, par in zip(gs, ps):
+            self.assign_parent(gend, par)
+
+    def assign_parent(self, gender, parent: Optional[human.Human]):
+        self._parents[gender] = parent
+
+    def check_parents_alive(self):
+        for g in Gender:
+            if self._parents[g] is not None and not self._parents[g].is_alive:
+                self._parents[g] = None
 
     @property
     def lst(self):
@@ -52,10 +67,14 @@ class Parents:
 class SpouseRec:
     spouse: human.Human
     marry: Date
-    divorse: Optional[Date] = None
+    divorce: Optional[Date] = None
 
 class Spouses:
-
+    """
+    Содержит список всех супругов с датами женитьбы и развода. Список может быть нулевым. Возвращает
+    текуоощего супруга или None. Так же возвращает последнего по счету супруга, даже если человек в
+    разводе или овдовел.
+    """
     def __init__(self):
         self._spouses: List[SpouseRec] = list()
 
@@ -75,7 +94,7 @@ class Spouses:
     @property
     def spouse(self)-> Optional[human.Human]:
         if not self.is_bachelor:
-            if self._spouses[-1].divorse is None:
+            if self._spouses[-1].divorce is None:
                 return self.last_spouse
         return None
 
@@ -87,7 +106,7 @@ class Spouses:
         self._spouses.append(SpouseRec(spouse, spouse.socium.anno.create()))
 
     def divorce(self):
-        self._spouses[-1].divorse = self.spouse.socium.anno.create()
+        self._spouses[-1].divorce = self.spouse.socium.anno.create()
 
     def len(self) -> int:
         return len(self._spouses)
@@ -96,17 +115,17 @@ class Spouses:
         s = f'Супруги ({self.len()}):\n'
         if self.len() > 0:
             for sp in self._spouses:
-                delta = sp.divorse - sp.marry
+                delta = sp.divorce - sp.marry
                 name = sp.spouse.name.display()
                 s += f'\t{sp.spouse.id}| {name}| брак: {delta.display(False)}\n'
                 s += f'\t\tСвадьба: {sp.marry.display(calendar_date=False, verbose=False)}\n'
-                s += f'\t\tРазвод:  {sp.divorse.display(calendar_date=False, verbose=False)}'
+                s += f'\t\tРазвод:  {sp.divorce.display(calendar_date=False, verbose=False)}'
                 # надо следить за тем, чтобы даты смерти не равнялись None, иначе их нельзя будет сравнить
                 sdd = sp.spouse.age.death_date if sp.spouse.age.death_date is not None else FAR_FUTURE
                 mdd = man.age.death_date if man.age.death_date is not None else FAR_FUTURE
-                if sp.divorse == sdd:
+                if sp.divorce == sdd:
                     s += ' (смерть супруга)\n'
-                elif sp.divorse == mdd:
+                elif sp.divorce == mdd:
                     s += ' (смерть)\n'
                 else:
                     s += '\n'
@@ -146,8 +165,6 @@ class Family:
         # если человек холостой, husband  и wife равны None. После свадьбы, этим переменным назначаются конкретные люди
         self.husband: Optional[human.Human] = None
         self.wife: Optional[human.Human] = None
-        self.parents: List[human.Human] = list()
-        self.add_parents()
         self.all: List[human.Human] = [self.head]  # все члены семьи кроме стариков, которые и так не члены семьи
         # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
         self.dependents: List[Optional[human.Human]] = list()
@@ -186,22 +203,12 @@ class Family:
                     id += ALFABET[l][random.randrange(len(ALFABET[l]))]
         return id[:7]
 
-    def add_parents(self):
-        '''
-        В переменную Family.parents добавляются родители родители главы семьи.
-        При женитьбе сливаются вде семьи, поэтому в переменную добавляются родители глав двух
-        семейств.
-        Это те родители, которые были у ребенка на момент его взросления не биологические, а последние социальные родители
-        '''
-        for i in [self.head.father, self.head.mother]:
-            if i is not None:
-                if i.is_alive:
-                    self.parents.append(i)
 
     def add_child(self, person: human.Human):
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
+        person.social_parents = Parents(self)
         return len(self.dependents)
 
 
@@ -220,7 +227,6 @@ class Family:
     def unite_families(self, wifes_family: Family):
         '''
         добавляем жену в семью мужа. Семья жены уничтожается
-        объединяем родителей жены и мужа в переменную self.parents
         объединяем иждивенцев жены и мужа в переменную self.dependents
         у жены удаляются родители прежнего мужа
         '''
@@ -232,7 +238,6 @@ class Family:
         self.husband: human.Human  = self.head
         self.wife.name.change_family_name(self.head)  # меняем фамилию жены
         self.all.append(self.wife)
-        self.parents.extend(wifes_family.parents)
         self.add_dependents(wifes_family)
         self.family_disband(wifes_family)
         self.wife.family = self
@@ -254,8 +259,6 @@ class Family:
         # мужчина бросает всех иждивенцев на жену
         self.dependents = []
         # родители разделяются на линии жены и мужа
-        self.parents = []
-        self.add_parents()
         # никто ничей муж и не жена, только главы семьи
         self.husband = None
         self.wife = None
@@ -309,6 +312,8 @@ class Family:
             self.all.remove(self.wife)
             self.husband = None
             self.wife = None
+        for i in self.dependents:
+            i.social_parents.check_parents_alive()
         self.family_log_file.write(s)
 
 
@@ -321,6 +326,7 @@ class Family:
             s = "%s| %s из семьи |%s| умер, оставив несовершеннолетних детей.\n" % (self.head.id, self.head.name.display(), self.id)
             for i in self.dependents:
                 i.tribe_origin = self.tribe_id
+                i.social_parents.check_parents_alive()
                 i.family = Family(i)
         else:
             s = "%s| %s из семьи |%s| умер в одиночестве.\n" % (self.head.id, self.head.name.display(), self.id)
@@ -494,13 +500,17 @@ class FamilySupplies:
         оставшимися членами семьи
         Если после всех членов семьи остается еда ...
         '''
+
         pref = f'{self.family.head.socium.anno.year}:{self.family.head.socium.anno.month}| {self.family.id}|'
         s ='\n'+ pref +"---- питание ---------\n"
         s = s+ pref +"Запасы: %6.1f\n" % self._supplies
 
         members_list = self.family.all.copy()
         portions = self._calculate_portions(members_list)
-        s +=  pref + f'Первонаяальное распределение:\n'
+        s +=  pref + f'Первоначальное распределение:\n'
+        # чтобы не выделять пищу умершим старикам
+        for member in self.family.all:
+            member.social_parents.check_parents_alive()
         for member in self.family.all:
             s = s + pref + f'\t{self.family.get_family_role_sting(member):6s}({member.age.year:3d})| {member.id}| {portions[member] * 100:4.1f}% - {self._supplies * portions[member]:5.1f} еды \n'
 
@@ -534,10 +544,17 @@ class FamilySupplies:
         s += f'{self.family.id}| осталось запасов:{self._supplies}\n'
         if self._supplies > 0.01:
             # если есть живые старики, кормим стариков
-            if len(self.family.parents) > 0:
-                food_per_parent = self._supplies / len(self.family.parents)
-                s = s + pref + f'КОРМИМ СТАРИКОВ: {len(self.family.parents)} человека, каждлому по {food_per_parent:5.1f} еды\n'
-                for i in self.family.parents:
+            family_parents = [] # тут должен быть set, чтобы случайно один родственник не пролез два раза в сучае кровосмесительного брака
+            for member in [self.family.head,self.family.wife]:
+                if member is not None:
+                    for p in member.social_parents.lst:
+                        if p is not None:
+                            family_parents.append(p)
+
+            if len(family_parents) > 0:
+                food_per_parent = self._supplies / len(family_parents)
+                s = s + pref + f'КОРМИМ СТАРИКОВ: {len(family_parents)} человека, каждлому по {food_per_parent:5.1f} еды\n'
+                for i in family_parents:
                     i.health.have_food_change(food_per_parent)
                 self._supplies = 0
             else:

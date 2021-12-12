@@ -20,20 +20,15 @@ import fetus
 # подгоночный коэффициент для беременности, чтобы человек с фертильностью 5
 # забеременнил где-то два раза за фертильный возраст
 PREGNANCY_CONST = 0.218
-
+ # беременность должна длиться три четверти года
 PREGNANCY_DURATION = Date(0, 0, round(Date.DAYS_IN_YEAR*3/4))
-print(PREGNANCY_DURATION.display())
-print(PREGNANCY_DURATION.len())
 
 
-DIVOCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 40 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
+DIVROCE_CHANSE = 1 / (2 * 20 * Date.DAYS_IN_YEAR) / 40 # вероятность развестись раз в 20 лет, плюс проверяют оба супруга а еще подгоночный коэффициент
 
 FERTIL_RERIOD = (STAGE_DICT[Stage_of_age.AGED] - STAGE_DICT[Stage_of_age.ADULT]).year \
                 * Date.DAYS_IN_MONTH * Date.MONTHS_IN_YEAR
 PREGNANCY_CHANCE = PREGNANCY_CONST / FERTIL_RERIOD
-
-MarryDate = NewType('MarryDate', Date)
-DivorseDate = NewType('DivorseDate', Date)
 
 
 class Human:
@@ -60,7 +55,7 @@ class Human:
         self.gender = apply_gender(gender)
 
         self.state: bool = True
-        # начальный возраст человека, будет увеличиваться каждый тик
+        # начальный возраст человека (в годах), будет увеличиваться каждый тик
         self.age: Age = Age(self, age_int)
 
         self.health: genetics.Health = genetics.Health(self)
@@ -68,44 +63,31 @@ class Human:
         self.genes: genetics.Genes = genetics.Genes(self)
 
         self.spouses = family.Spouses()
-
+        # в этом списке находятся эмбрионы после зачатия. Переменная используется только женщинами
         self.pregnant: List[Optional[fetus.Fetus]] = list()
         # в список попадают биологические дети человека, не социальные
         self.children: List[Optional[Human]] = list()
 
-
         # родители, которые зачали ребенка
         self.biological_parents: family.Parents = biol_parents
-
-        if self.biological_parents.mother.is_human :
-            # ребенок родился естественным путем
-            self.mother: Human = self.biological_parents.mother
-            self.father: Human = self.mother.spouses.spouse
-        else:
-            # пришел странник
-            self.father: Human = self.biological_parents.father
-            self.mother: Human = self.biological_parents.mother
 
         # имя надо дать до создания семьи. Тем более что биологические родители известны
         # когда в семье определятся социальные родители, можно переопределить отчество-фамилию,
         # тем более в классе семьи это должно делаться автоматически
         self.name: CharName = CharName(self)
 
-        # по идее структура так должна выглядеть, потому что у ребенка может смениться несколько отцов и матерей
-        # социальные родители определяются после попадания в семью
-        self.social_parents: Dict[Parnt, List[Human]] # пои идее структура так должна выглядеть
-
         if self.biological_parents.mother.is_human:
             self.family: family.Family = self.biological_parents.mother.family
-            self.child_number_in_mothers_family = self.mother.family.add_child(self)
-            self.social_parents = family.Parents(self.family)
+            self.child_number_in_mothers_family = self.family.add_child(self)
+            # социальные родители определяются после попадания в семью
+            self.social_parents: family.Parents = family.Parents(self.family)
             self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
 
         else:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
-            self.social_parents = copy(biol_parents)
+            self.social_parents: family.Parents = family.Parents(None, none_soc=True)
             self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 
@@ -113,9 +95,9 @@ class Human:
         # множество близких родственников для определения, на ком можно жениться
         self.close_ancestors: Set[Human] = self.define_close_ancestors()
 
-        if self.mother.is_human:
-            tup = (self.id, self.name.display(), self.mother.id, self.mother.name.display(), self.mother.age.year,
-                   self.father.id,	self.father.name.display(), self.father.age.year)
+        if self.biological_parents.mother.is_human:
+            tup = (self.id, self.name.display(), self.social_parents.mother.id, self.social_parents.mother.name.display(),
+                   self.social_parents.mother.age.year, self.social_parents.father.id,	self.social_parents.father.name.display(), self.social_parents.father.age.year)
             Human.write_chronicle(Human.chronicle_born.format(*tup))
         else:
             Human.write_chronicle(Human.chronicle_stranger_come.format(self.id, self.name.display(), self.age.year))
@@ -140,6 +122,9 @@ class Human:
         return True
 
     def live(self) -> None:
+
+
+
         self.health.modify() # уменьшается счетчик жизней
         self.age.increase()
         is_dead = self.health.is_zero_health
@@ -157,10 +142,9 @@ class Human:
 
                 if self.check_divorce():
                     self.divorce()
-
     def check_divorce(self) -> bool:
         if self.spouses.is_married:
-            chanse: float = DIVOCE_CHANSE *(1+ (
+            chanse: float = DIVROCE_CHANSE * (1 + (
                     self.genes.get_trait(genetics.GN.EGOISM) * self.spouses.spouse.genes.get_trait(genetics.GN.EGOISM)
                     - self.spouses.spouse.genes.get_trait(genetics.GN.ALTRUISM)/ 4))  # супруг сопротивляется разводу
             return chanse > random.random()
@@ -213,10 +197,10 @@ class Human:
         def get_close_ancestors(person: Human, close_an: set, step: int) -> None:
             if step > 0:
                 if person.is_human:
-                    close_an.add(person.father)
-                    close_an.add(person.mother)
-                    get_close_ancestors(person.father, close_an, step-1)
-                    get_close_ancestors(person.mother, close_an, step-1)
+                    close_an.add(person.biological_parents.father)
+                    close_an.add(person.biological_parents.mother)
+                    get_close_ancestors(person.biological_parents.father, close_an, step-1)
+                    get_close_ancestors(person.biological_parents.mother, close_an, step-1)
         s = set()
         s.add(self)
         get_close_ancestors(self, s, 2)
@@ -332,10 +316,10 @@ class Human:
         sp = ''
         for child in self.children:
             sp += f'\t{child.id}| {child.name.display()} ({child.age.birth_date.display(calendar_date=False, verbose=False)}) '
-            if child.father == self:
-                other_patent = f'(мать:  {child.mother.id})\n'
+            if child.biological_parents.father == self:
+                other_patent = f'(мать:  {child.biological_parents.mother.id})\n'
             else:
-                other_patent = f'(отец:  {child.father.id})\n'
+                other_patent = f'(отец:  {child.biological_parents.father.id})\n'
             sp += other_patent
         nec += sp
         return nec

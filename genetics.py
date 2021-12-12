@@ -147,10 +147,7 @@ class Health:
         """
         Проверка на то, умер ли человек. Если здоровье равно или меньше нуля, то умер
         """
-        die = False
-        if self.health <= 0.0:
-            die = True
-        return die
+        return True if self.health <= 0.0 else False
 
 
 def lust_coef(age):

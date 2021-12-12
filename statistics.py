@@ -44,8 +44,6 @@ class Soc_stat():
 
         self.ss = open("./statistics.csv", "w", encoding="UTF16")
 
-
-
         self.death_dist = open("./death_distribution.csv", "w", encoding="UTF16")
         dead_head = "год\t"
         for i in range(11):
@@ -64,7 +62,7 @@ class Soc_stat():
         head = head[:-1] + "\n"
         self.children_m.write(head)
         self.children_f.write(head)
-        # люди, умершие за последне пять лет. Нужно .чтобы считать средний возраст смерти
+        # люди, умершие за последне пять лет. Нужно, чтобы считать средний возраст смерти
         self.dead_pool_avg = []
 
         header = "год\tлюдей за всю историю\tпища\tживущих\tмужчин\tженщин\tдетей\tвзрослых"
@@ -73,7 +71,6 @@ class Soc_stat():
         #header += ""
 
         self.ss.write(header)
-
 
 
     def people_inc(self, inc =1):
