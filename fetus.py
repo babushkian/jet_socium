@@ -20,7 +20,7 @@ class Fetus:
 	def __init__(self, fam: family.Family, gender: Optional[Gender]=None):
 		self.score = score.Score()
 		self.gender: Gender = apply_gender(gender)
-		self.biological_parents = family.Parents(fam)
+		self.biological_parents = family.BiolParents(fam)
 		if not isinstance(self.biological_parents.father, human.Human):
 			raise InnocentError("Произошло непорочное зачатие. Жена без мужа.")
 		self.age = ZERO_DATE

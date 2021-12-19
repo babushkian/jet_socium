@@ -44,7 +44,7 @@ class Simulation:
         for p in range(popul):
             age = random.randint(9, 20)
             # почему он сразу не  добавляется в социум по праву создания, зачем отдельно добавлять
-            none_parents = family.Parents(None)
+            none_parents = family.BiolParents(None)
             self.soc.add_human(Human(self.soc, none_parents,  gender=None,  age_int=age))
 
     def simulate(self):

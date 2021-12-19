@@ -47,7 +47,7 @@ class Human:
     # spouse_death: "из-за сметри супруга", death: "по причине смерти"}
     # такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-    def __init__(self, socium, biol_parents:family.Parents, gender: Optional[Gender]=None, age_int: int=0):
+    def __init__(self, socium, biol_parents:family.BiolParents, gender: Optional[Gender]=None, age_int: int=0):
         type(self).GLOBAL_HUMAN_NUMBER += 1
         self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
         self.socium = socium
@@ -69,7 +69,7 @@ class Human:
         self.children: List[Optional[Human]] = list()
 
         # родители, которые зачали ребенка
-        self.biological_parents: family.Parents = biol_parents
+        self.biological_parents: family.BiolParents = biol_parents
 
         # имя надо дать до создания семьи. Тем более что биологические родители известны
         # когда в семье определятся социальные родители, можно переопределить отчество-фамилию,
@@ -80,14 +80,14 @@ class Human:
             self.family: family.Family = self.biological_parents.mother.family
             self.child_number_in_mothers_family = self.family.add_child(self)
             # социальные родители определяются после попадания в семью
-            self.social_parents: family.Parents = family.Parents(self.family)
+            self.social_parents: family.SocParents = family.SocParents(self.family)
             self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
 
         else:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
-            self.social_parents: family.Parents = family.Parents(None, none_soc=True)
+            self.social_parents: family.SocParents = family.SocParents(None, none_soc=True)
             self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 

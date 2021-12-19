@@ -11,7 +11,47 @@ import human
 import genetics
 
 
-class Parents:
+@dataclass
+class HumanRec:
+    person: human.Human
+    start: Date
+    finish: Optional[Date] = None
+
+
+class BiolParents:
+
+    def __init__(self, family:Optional[Family]):
+        self._parents: Dict[Gender, Optional[human.Human]] = dict()
+        if family:
+            for parent in [family.wife, family.husband]:
+                self._parents[parent.gender] = parent
+        else:
+            for g in Gender:
+                self._parents[g] = human.NoneHuman(g)
+
+    @property
+    def mother(self) -> Optional[human.Human]:
+        return self._parents[Gender.FEMALE]
+
+    @property
+    def father(self) -> Optional[human.Human]:
+        return self._parents[Gender.MALE]
+
+    @property
+    def lst(self):
+        '''
+        Возвращает итерируемый объект (список), состоящий из родителей.
+        '''
+        return [self.mother, self.father]
+
+    def same_gender_parent(self, person:human.Human)-> human.Human:
+        return self._parents[person.gender]
+
+    def opposite_gender_parent(self, person:human.Human)-> human.Human:
+        return self._parents[opposite_gender(person.gender)]
+
+
+class SocParents:
     '''
     Родители ребенка. Роль родителя жестко определяется его полом. Отцом может быть только мужчина,
     ма матерью - только женщина
@@ -22,7 +62,7 @@ class Parents:
             self.assign_parents(family)
         else:
             for g in Gender:
-                if none_soc:
+                if none_soc: # для странников уних нет социальных родителей
                     self._parents[g] = None
                 else:
                     self._parents[g] = human.NoneHuman(g)
@@ -50,6 +90,9 @@ class Parents:
     def assign_parent(self, gender, parent: Optional[human.Human]):
         self._parents[gender] = parent
 
+    def update(self): # пополняем список новым родителем, удаляем ставим дату, когда старый родитель ушел
+        pass
+
     def check_parents_alive(self):
         for g in Gender:
             if self._parents[g] is not None and not self._parents[g].is_alive:
@@ -69,11 +112,6 @@ class Parents:
         return self._parents[opposite_gender(person.gender)]
 
 
-@dataclass
-class SpouseRec:
-    spouse: human.Human
-    marry: Date
-    divorce: Optional[Date] = None
 
 class Spouses:
     """
@@ -82,7 +120,7 @@ class Spouses:
     разводе или овдовел.
     """
     def __init__(self):
-        self._spouses: List[SpouseRec] = list()
+        self._spouses: List[HumanRec] = list()
 
     @property
     def is_bachelor(self) -> bool:
@@ -94,13 +132,13 @@ class Spouses:
     @property
     def last_spouse(self)->Optional[human.Human]:
         if not self.is_bachelor:
-            return self._spouses[-1].spouse
+            return self._spouses[-1].person
         return None
 
     @property
     def spouse(self)-> Optional[human.Human]:
         if not self.is_bachelor:
-            if self._spouses[-1].divorce is None:
+            if self._spouses[-1].finish is None:
                 return self.last_spouse
         return None
 
@@ -109,10 +147,10 @@ class Spouses:
         return self.spouse is not None
 
     def marry(self, spouse):
-        self._spouses.append(SpouseRec(spouse, spouse.socium.anno.create()))
+        self._spouses.append(HumanRec(spouse, spouse.socium.anno.create()))
 
     def divorce(self):
-        self._spouses[-1].divorce = self.spouse.socium.anno.create()
+        self._spouses[-1].finish = self.spouse.socium.anno.create()
 
     def len(self) -> int:
         return len(self._spouses)
@@ -121,17 +159,17 @@ class Spouses:
         s = f'Супруги ({self.len()}):\n'
         if self.len() > 0:
             for sp in self._spouses:
-                delta = sp.divorce - sp.marry
-                name = sp.spouse.name.display()
-                s += f'\t{sp.spouse.id}| {name}| брак: {delta.display(False)}\n'
-                s += f'\t\tСвадьба: {sp.marry.display(calendar_date=False, verbose=False)}\n'
-                s += f'\t\tРазвод:  {sp.divorce.display(calendar_date=False, verbose=False)}'
+                delta = sp.finish - sp.start
+                name = sp.person.name.display()
+                s += f'\t{sp.person.id}| {name}| брак: {delta.display(False)}\n'
+                s += f'\t\tСвадьба: {sp.start.display(calendar_date=False, verbose=False)}\n'
+                s += f'\t\tРазвод:  {sp.finish.display(calendar_date=False, verbose=False)}'
                 # надо следить за тем, чтобы даты смерти не равнялись None, иначе их нельзя будет сравнить
-                sdd = sp.spouse.age.death_date if sp.spouse.age.death_date is not None else FAR_FUTURE
+                sdd = sp.person.age.death_date if sp.person.age.death_date is not None else FAR_FUTURE
                 mdd = man.age.death_date if man.age.death_date is not None else FAR_FUTURE
-                if sp.divorce == sdd:
+                if sp.finish == sdd:
                     s += ' (смерть супруга)\n'
-                elif sp.divorce == mdd:
+                elif sp.finish == mdd:
                     s += ' (смерть)\n'
                 else:
                     s += '\n'
@@ -214,7 +252,7 @@ class Family:
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
-        person.social_parents = Parents(self)
+        person.social_parents = SocParents(self) # здесь нужно не пересоздавать родителей, а добавляьб новых родителей в список  (social_parents.update)
         return len(self.dependents)
 
 

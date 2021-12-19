@@ -12,7 +12,7 @@ random.seed(666)
 s = socium.Socium()
 
 for  i in  range(12):
-    none_parents = family.Parents(None)
+    none_parents = family.BiolParents(None)
     f = human.Human(s, none_parents, gender=None, age_int=18)
     s.add_human(f)
 

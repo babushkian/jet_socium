@@ -7,7 +7,7 @@ from pprint import pprint
 import common
 from soc_time import Date, Anno
 #import family
-from family import Family, Parents
+from family import Family, SocParents, BiolParents
 from human import Human
 from fdistrib import FoodDistribution
 import statistics
@@ -201,7 +201,7 @@ class Socium:
         '''
         if self.short_death_count > random.randrange(16):
             # пока будет случайный пол, но пол незнакомцев должен выравнивать демографическую обстановку в социуме
-            self.add_human(Human(self, Parents(None), gender=None, age_int=random.randrange(18, 35)))
+            self.add_human(Human(self, BiolParents(None), gender=None, age_int=random.randrange(18, 35)))
             self.short_death_count = 0
 
 
