@@ -286,11 +286,19 @@ class Human:
         return s
 
     def necrolog(self) -> str:
-        nec = f'{self.id}| {self.name.display()} | {self.family.id} \n'
+        nec = f'{self.id}| {self.name.display()} |семья: {self.family.id} |последнее племя: {self.family.tribe_id} '
+        tribe = self.biological_parents.father.tribe_origin if self.biological_parents.father.is_human else 'Неизвестно'
+        nec += f'|племя родителей: {tribe}\n'
         nec += f'Дата рождения: {self.age.birth_date.display()}\n'
         nec += f'Дата смерти: {self.age.death_date.display()} \n'
         nec += f'Возраст смерти: {(self.age.death_date-self.age.birth_date).display(False)}\n'
         nec += f'Карма: {self.score.score}\n'
+        nec += 'Биологичеcкие родители:\n'
+        for status, pers in zip(['Мать', 'Отец'], self.biological_parents.lst):
+            if pers.is_human:
+                nec += f'\t{status}: {pers.id} |{pers.name.display()}| племя: {pers.tribe_origin} \n'
+            else:
+                nec += f'\t{status}: Неизвестно\n'
 
         def show_genes() -> str:
             g = 'Гены:\n'
