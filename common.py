@@ -33,6 +33,7 @@ class Gender(str, Enum):
 def opposite_gender(gender:Gender)->Gender:
     return Gender.MALE if gender is Gender.FEMALE else Gender.FEMALE
 
+
 class Parnt(Enum):
     '''
     Перечисление, содержащее пол родителей.

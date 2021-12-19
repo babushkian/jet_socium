@@ -62,6 +62,12 @@ class Parents:
         '''
         return [self.mother, self.father]
 
+    def same_gender_parent(self, person:human.Human)-> human.Human:
+        return self._parents[person.gender]
+
+    def opposite_gender_parent(self, person:human.Human)-> human.Human:
+        return self._parents[opposite_gender(person.gender)]
+
 
 @dataclass
 class SpouseRec:

@@ -20,8 +20,8 @@ class Fetus:
 	def __init__(self, fam: family.Family, gender: Optional[Gender]=None):
 		self.score = score.Score()
 		self.gender: Gender = apply_gender(gender)
-		self.parents = family.Parents(fam)
-		if not isinstance(self.parents.father, human.Human):
+		self.biological_parents = family.Parents(fam)
+		if not isinstance(self.biological_parents.father, human.Human):
 			raise InnocentError("Произошло непорочное зачатие. Жена без мужа.")
 		self.age = ZERO_DATE
 
@@ -29,17 +29,7 @@ class Fetus:
 		self.genes.define()
 
 	def born(self, socium):
-		newborn =  human.Human(socium, self.parents, gender=self.gender, age_int=0 )
+		newborn =  human.Human(socium, self.biological_parents, gender=self.gender, age_int=0)
 		self.genes.transit(newborn)
 		return newborn
-
-
-	def parents_in_same_sex_order(self) ->Tuple[human.Human, human.Human]:
-		if self.gender is Gender.MALE:
-			same_gender = self.parents.father
-			opposit_gender = self.parents.mother
-		else:
-			same_gender = self.parents.father
-			opposit_gender = self.parents.mother
-		return (same_gender, opposit_gender)
 

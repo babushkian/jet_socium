@@ -282,27 +282,26 @@ class Gene:
         self.predecessor: Optional[human.Human] = None # ссылка на родителя, от которого унаследован конкретный ген
 
     def init_gene(self):
-        # если эмбрион имеет живых родителей, то наследуем от родителей
-        # если у объекта нет родителей, то это не эмбрион, а странник, и он получает гены без наследования
-        parents = self.person.parents_in_same_sex_order()
         #  ген "наследование" наследуется только от родителя того же пола. От отца к сыну, от матери к дочери.
         # этот ген определяет вероятность того, что другие гены будут копироваться по половой линии
         if self.name == GN.ENHERITANCE:
-            self.inherit_gene(parents[0])
+            self.inherit_gene(self.person.biological_parents.same_gender_parent(self.person))
         else: # остальные гены с вероятностью, зависящей от "наследование" могут быть унаследованы от любого из родителей
-            self.inherit_any_gene(parents)
+            self.inherit_any_gene()
 
         self.pred_value = self.predecessor.genes.get_trait(self.name)
         self.gene_score()
 
 
-    def inherit_any_gene(self, parents,  gene_value=5):
+    def inherit_any_gene(self,  gene_value=5):
         """
         Случайно определяем, от кого из родителей будет копироваться данный ген
         """
-        if random.random() < 1 / (self.person.genes.get_trait(GN.ENHERITANCE) + 1) and parents[1] is not None:
-            parents = (parents[1], parents[0])  # предков местами, будем наследовать от родителя противоположного пола
-        self.inherit_gene(parents[0], gene_value)
+        if random.random() < 1 / (self.person.genes.get_trait(GN.ENHERITANCE) + 1):
+            parent = self.person.biological_parents.opposite_gender_parent(self.person)
+        else:
+            parent = self.person.biological_parents.same_gender_parent(self.person)
+        self.inherit_gene(parent, gene_value)
 
     def inherit_gene(self, parent,  default=5):
         self.predecessor = parent
