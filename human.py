@@ -87,7 +87,7 @@ class Human:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
-            self.social_parents: family.SocParents = family.SocParents(None, none_soc=True)
+            self.social_parents: family.SocParents = family.SocParents(None)
             self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 

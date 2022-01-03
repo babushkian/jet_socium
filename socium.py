@@ -138,8 +138,7 @@ class Socium:
         # добавляем странника именно в это место, потому что список живых людей еще не модифицирован
         # и участвовать в общественной жизни страннику нельзя
         if self.anno.year_starts():
-            if self.anno.year < 1200:
-                self.stranger_comes_to_socium()
+            self.stranger_comes_to_socium()
 
         self.families[0].print_something("\n==============================\n"+ self.anno.display())
         self.families[0].print_something("Количество семей: %d" % len(self.families))

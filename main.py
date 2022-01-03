@@ -15,7 +15,7 @@ import genetics
 random.seed(664)
 # количество людей в начальной популяции
 FIRST_POPULATION = 20
-TIMELINE = Date(200)  # количество лет симуляции
+TIMELINE = Date(100)  # количество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:
@@ -119,7 +119,7 @@ def display_start_genotype(genome) -> str:
 if __name__ == '__main__':
     print('Start.')
 
-    town = Simulation(TIMELINE, estimate_people=100)
+    town = Simulation(TIMELINE, estimate_people=200)
 
     for i in range(1):
         town.populate(FIRST_POPULATION)
