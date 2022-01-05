@@ -301,6 +301,7 @@ class Human:
                 nec += f'\t{status}: {pers.id} |{pers.name.display()}| племя: {pers.tribe_origin} \n'
             else:
                 nec += f'\t{status}: Неизвестно\n'
+        nec += self.social_parents.display()
 
         def show_genes() -> str:
             g = 'Гены:\n'

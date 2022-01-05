@@ -181,7 +181,21 @@ class SocParents:
         '''
         return [self.mother, self.father]
 
+    def display(self):
+        s = 'Социальные родители:\n'
+        for status, gender in zip(['Мать', 'Отец'], Gender):
+            if self.never_parent(gender):
+                s += f'\t{status}: Неизвестно\n'
+            else:
+                s += f'\t{status}({len(self._parents[gender])}):\n'
+                for parent in self._parents[gender]:
+                    pp = parent.person
+                    ps = f'\t{" "*6}{pp.id} |{pp.name.display()}| племя: {pp.tribe_origin}|'
+                    time = f'{parent.start.display(calendar_date=False, verbose=False)} -' \
+                           f'{parent.finish.display(calendar_date=False, verbose=False)}\n'
+                    s+= ps + time
 
+        return s
 
 class Spouses:
     """
@@ -577,7 +591,7 @@ class FamilySupplies:
 
     def make(self, food):
         '''
-        Полняем семейный бюджет.
+        Пополняем семейный бюджет.
         Каждый член семьи вкладывает в бюджет долю, пропорциональную его альтруизму. Долю от
         имеющихся у него запасов, полученных после первоначальной добычи пищи
         '''
