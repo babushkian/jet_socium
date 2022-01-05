@@ -98,6 +98,9 @@ class Socium:
             for fam in self.families:
                 if not fam.obsolete:
                     temp.append(fam)
+                else:
+                    # print('Семья устарела и не обрабатывается')
+                    pass
             self.families = temp
 
         self.anno.increase()
@@ -180,17 +183,21 @@ class Socium:
             for person in a:
                 if person.close_ancestors.isdisjoint(b[-1].close_ancestors): # если не являются близкими родственниками
                     if success_marry_chanse(person, b[-1]):
-                        tup = (person.id, b[-1].id, person.name.display(), person.age.year, b[-1].name.display(), b[-1].age.year)
-                        Human.write_chronicle(Human.chronicle_marriage.format(*tup))
-
-                        pair = [person, b[-1]]
-                        for p in range(2):
-                            pair[p].spouses.marry(pair[1-p])
-                            pair[p].score.update(pair[p].score.MARRY_SCORE)
-                            if pair[p].gender is common.Gender.MALE:
-                                pair[p].family.unite_families(pair[1-p].family)
+                        self.marry(person, b[-1])
                     b.pop() # человек удаляется из списка кандидатов в супруги независтмо от того, заключил он брак или нет
 
+
+    def marry(self, person, engaged):
+        tup = (person.id, engaged.id, person.name.display(), person.age.year, engaged.name.display(), engaged.age.year)
+        Human.write_chronicle(Human.chronicle_marriage.format(*tup))
+        pair:List[Human] = [person, engaged]
+        male_index = None # определяем семьи мужчины и женщины, чтобы правильно их соединить
+        for p in range(2):
+            pair[p].spouses.marry(pair[1 - p])
+            pair[p].score.update(pair[p].score.MARRY_SCORE)
+            if pair[p].gender is common.Gender.MALE:
+                male_index = p
+        pair[male_index].family.unite_families(pair[1 - male_index].family)
 
     def stranger_comes_to_socium(self):
         '''

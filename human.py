@@ -78,10 +78,12 @@ class Human:
 
         if self.biological_parents.mother.is_human:
             self.family: family.Family = self.biological_parents.mother.family
-            self.child_number_in_mothers_family = self.family.add_child(self)
+
             # социальные родители определяются после попадания в семью
             self.social_parents: family.SocParents = family.SocParents(self.family)
             self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
+            # при рождении ребенок добавляется в иждивенцы семьи матери
+            self.child_number_in_mothers_family = self.family.add_child(self)
 
         else:
             self.child_number_in_mothers_family = 0

@@ -15,7 +15,7 @@ import genetics
 random.seed(664)
 # количество людей в начальной популяции
 FIRST_POPULATION = 20
-TIMELINE = Date(100)  # количество лет симуляции
+TIMELINE = Date(200)  # количество лет симуляции
 HOME_DIR = os.getcwd()
 
 class Simulation:

@@ -61,34 +61,17 @@ class SocParents:
     '''
     Социальные родители. У ребенка может смениться множество родителей. Все сони записаны в структуру
     данных. Словарь, в котором лежат два списка родителей: отцов и матерей.
-    Если параметр family=None, социальными родителями назначаются два NoneHuman. Но почему не делать
-    их равными None, непонятно. Ведь есть же параметр none_soc, который именно так и делает
-
+    Если параметр family=None, то список социальных родителей у человека пуст и в дальнейшем не меняется,
+    так как такой человек изначально является главой семьи
+    Метод init вызывается при рождении ребенка. В дальнейшем все его семейные изменения уточняются
+    методом update.
     '''
     def __init__(self, family:Optional[Family]):
         '''
-        Добавляем первых социальных родителей, которых берем из family.
-        Вариант когда человек странник обрабатывать не надо. У него нет и никогда уже не будет
-        социальных родителей, так как он сам глава семьи.
+        Социальные родители добавятся при инициализации объекта Human
         '''
         self._parents: Dict[Gender, List[HumanRec]] = {Gender.FEMALE:[], Gender.MALE:[]}
-        if family:
-            self.assign_parents(family)
 
-    def update(self, family):
-        '''
-        Обновляем список родителей при следующих изменениях в семье:
-        1) Кто-то из родителей умирает
-        2) Происходит развод, и отец для детей больше не родитель
-        3) происходит свадьба. У детей без одного родителя их снова становится двое.
-        4) Ребенок становится отдельной семьей. В силу достижения зрелости  или из-за смерти обоих
-        родителей
-        '''
-        raise NotImplemented('Детям вместо вприсваивания нвогого кшласса родилелей нужно его аптейтить')
-        adults = family.adults_dict()
-        for g, par in adults.items():
-            if self._parents[g] != par:
-                self._parents[g].append(HumanRec(par, par.socium.anno.create()))
 
     def never_parent(self, gender: Gender) -> bool:
         return len(self._parents[gender])==0
@@ -96,11 +79,13 @@ class SocParents:
     def last_parent(self, gender: Gender) -> Optional[HumanRec]:
         if not self.never_parent(gender):
             return self._parents[gender][-1]
+        else:
+            return None
 
     def current_parent(self, gender: Gender) -> Optional[HumanRec]:
         if not self.never_parent(gender):
-            if self._parents[gender][-1].finish is None:
-                return self._parents[gender][-1]
+            if self.last_parent(gender).finish is None:
+                return self.last_parent(gender)
         return None
 
     @property
@@ -114,21 +99,67 @@ class SocParents:
         return f.person if f is not None else None
 
     def assign_parent(self, gender, parent: Optional[human.Human]):
-        self._parents[gender].append(HumanRec(parent, parent.socium.anno.create()))
+        '''
+        Добавляет непустого родителя в список родителей указанного пола
+        '''
+        if parent is not None:
+            self._parents[gender].append(HumanRec(parent, parent.socium.anno.create()))
 
-    def assign_parents(self, family: Family):
-        adults = family.adults_dict()
+    def finish_parentship(self, parent: HumanRec):
+        parent.finish = parent.person.socium.anno.create()
+
+
+    def update(self, family):
+        '''
+        Обновляем список родителей при следующих изменениях в семье:
+        1) Кто-то из родителей умирает
+        2) Происходит развод, и отец для детей больше не родитель
+        3) происходит свадьба. У детей без одного родителя их снова становится двое.
+        4) Ребенок становится отдельной семьей. В силу достижения зрелости  или из-за смерти обоих
+        родителей
+        '''
+        adults: Dict[Gender, Optional[human.Human]] = family.adults_dict()
         for g, par in adults.items():
-            if par is not None:
-                self.assign_parent(g,par)
+            if self.never_parent(g):
+                self.assign_parent(g, par)
+            else:
+                # добавляем родителя только если он отличается от предыдущего
+                # или у того же родителя  был разрыв в родительстве
+                last = self.last_parent(g) # предыдущий ненулевой родитель должен быть если этот if выполнился
+
+                if last.person == par: # если это тот же родитель, что и прошлый
+                    if last.finish is not None: # если родительство прерывалось, записываем как очередного родителя
+                        self.assign_parent(g, par)
+                elif par is None: # новый родитель отсутствует (None) (произошел развод)
+                    if last.finish is None: # завершаем родительство предыдущего родителя
+                        self.finish_parentship(last)
+                    else:
+                        raise NotImplemented('Второй раз применяется None к родителю')
+                else: # другой родитель
+                    if last.finish is None: # прошлое родительство не закончилось, но началось новое
+                        raise NotImplemented('прошлое родительство не закончилось, но началось новое')
+                    else: # прошлый родитель уже не родитель, применяем нового
+                        self.assign_parent(g, par)
+
+
+    def finish_parents(self):
+        '''
+        Вызывается, когда ребенок взрослеет и уходит из семьи. У родителей ставятся даты завершения опекунства.
+        '''
+        for g in Gender:
+            par = self.current_parent(g)
+            if par:
+                self.finish_parentship(par)
 
     def check_parents_alive(self):
         '''
-        Вообще предки сами при своей смерти должны посылать сигналы потомкам, чо они всё
-
+        Вызывается из методов смерти родителей в семье. Завершается родительсвто мертвых родителей.
         В данном случае она проверяет, если человек является опекуном, но уже умер, то в записи
-        отмечается завершение опеки. Непонятно зачем. И довольно неуклюже. Основной смысл в том,
-        чтобы взрослые члены семьи не кормили мертвых стариков. Но у взрослых людей нет социальных
+        отмечается завершение опеки.
+        У странника никогда не будет вызвано ,потому что у него нет социальных родителей.
+
+        Но нужно еще рассматривать тот вариант, когда у взрослых детей уже нет социальных родителей.
+        Чтобы взрослые члены семьи не кормили мертвых стариков. Но у взрослых людей нет социальных
         родителей. А если определять их по последней записи в списке социальных родителей - придется
         постоянно мониторить, живы ли они. Потому что никаких специальных отметок об этом в структуре
         социальных родителей не делается. Разве что действительно, ноны поставить, как концевые
@@ -138,7 +169,7 @@ class SocParents:
             p = self.current_parent(g)
             if p is not None:
                 if p.finish is None and not p.person.is_alive:
-                    p.finish = p.person.socium.anno.create()
+                    self.finish_parentship(p)
 
     @property
     def lst(self):
@@ -150,68 +181,6 @@ class SocParents:
         '''
         return [self.mother, self.father]
 
-
-
-class SocParentsOld:
-    '''
-    Социальные родители. У ребенка может смениться множество родителей. Все сони записаны в структуру
-    данных. Словарь, в котором лежат два списка родителей: отцов и матерей.
-    Если параметр family=None, социальными родителями назначаются два NoneHuman. Но почему не делать
-    их равными None, непонятно. Ведь есть же параметр none_soc, который именно так и делает
-
-    '''
-    def __init__(self, family:Optional[Family], none_soc = False):
-        self._parents: Dict[Gender, Optional[human.Human]] = dict()
-        if family:
-            self.assign_parents(family)
-        else:
-            for g in Gender:
-                if none_soc: # для странников у них нет социальных родителей
-                    self._parents[g] = None
-                else:
-                    self._parents[g] = human.NoneHuman(g)
-
-    @property
-    def mother(self) -> Optional[human.Human]:
-        return self._parents[Gender.FEMALE]
-
-    @property
-    def father(self) -> Optional[human.Human]:
-        return self._parents[Gender.MALE]
-
-    def assign_parents(self, family: Family):
-        # у родителей должна быть раскладка по полам. Если жена есть, с полами все понятно.
-        # Если жены нет, пол главы семьи может быть любой
-        gs = [family.head.gender, opposite_gender(family.head.gender)]
-        if family.wife is not None:
-            ps = [family.head, family.wife]
-        else:
-            ps = [family.head, None]
-
-        for gend, par in zip(gs, ps):
-            self.assign_parent(gend, par)
-
-    def assign_parent(self, gender, parent: Optional[human.Human]):
-        self._parents[gender] = parent
-
-
-    def check_parents_alive(self):
-        for g in Gender:
-            if self._parents[g] is not None and not self._parents[g].is_alive:
-                self._parents[g] = None
-
-    @property
-    def lst(self):
-        '''
-        Возвращает итерируемый объект (список), состоящий из родителей.
-        '''
-        return [self.mother, self.father]
-
-    def same_gender_parent(self, person:human.Human)-> human.Human:
-        return self._parents[person.gender]
-
-    def opposite_gender_parent(self, person:human.Human)-> human.Human:
-        return self._parents[opposite_gender(person.gender)]
 
 
 class Spouses:
@@ -335,7 +304,7 @@ class Family:
         self.husband: Optional[human.Human] = None
         self.wife: Optional[human.Human] = None
         self.all: List[human.Human] = [self.head]  # все члены семьи кроме стариков, которые и так не члены семьи
-        # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом.)
+        # список детей (не обязательно родных, а пришедших в семью вместе с новым супругом. Иждивенцы, короче.)
         self.dependents: List[Optional[human.Human]] = list()
 
         if self.head.biological_parents.mother.is_human:
@@ -372,7 +341,13 @@ class Family:
                     id += ALFABET[l][random.randrange(len(ALFABET[l]))]
         return id[:7]
 
-    def adults_dict(self):
+    def adults_dict(self) -> Dict[Gender, Optional[human.Human]]:
+        '''
+        Выдает словарь взрослых членов семьи по ключу "пол". Вместо отсутствущего члена семьи выдается
+        None. Сначала идет self.head, так как эта позиция просто не может быть пустой (разве что когда
+        глава семьи внезапно умер). Если self.head женского пола, значит жены у нее точно нет. Если
+        мужского - возможно, есть.
+        '''
         gs = [self.head.gender, opposite_gender(self.head.gender)]
         return {g: a for g, a in zip(gs, [self.head, self.wife])}
 
@@ -381,7 +356,7 @@ class Family:
         self.dependents.append(person)
         self.all.append(person)
         person.family = self
-        person.social_parents = SocParents(self) # здесь нужно не пересоздавать родителей, а добавляьб новых родителей в список  (social_parents.update)
+        person.social_parents.update(self)
         return len(self.dependents)
 
 
@@ -457,7 +432,7 @@ class Family:
         '''
         if person not in self.dependents:
             # проверяем наличие роли супруга. Если есть wife, то и husband должен быть.
-            if self.wife: # нельзя применять person.married(), так как в person.die супруг уже убран
+            if self.wife: # при проверке нельзя применять person.married(), так как в person.die супруг уже убран
                 self.spouse_dies(person)
             else: # человек без пары - семья распадается (дети начинают жить самостоятельно)
                 self.orphane_family()
@@ -489,7 +464,6 @@ class Family:
             i.social_parents.check_parents_alive()
         self.family_log_file.write(s)
 
-
     def orphane_family(self):
         '''
         Умирает последний (или единственный) взрослый представитель семьи
@@ -506,14 +480,12 @@ class Family:
         self.family_log_file.write(s)
         self.family_disband(self)
 
-
     def child_dies(self, person: human.Human):
         '''
         В семье умирает ребенок
         '''
         self.dependents.remove(person)
         self.all.remove(person)
-
 
     def del_grown_up_children(self):
         '''
@@ -530,8 +502,8 @@ class Family:
                 self.all.remove(i)
                 # запоминаем племя, в котором вырос ребенок, так как tribe_id по жизни может меняться
                 i.tribe_origin = self.tribe_id
+                i.social_parents.finish_parents()
                 i.family = Family(i)
-
 
 
     def live(self):
@@ -724,7 +696,7 @@ class FamilySupplies:
                 if member is not None:
                     for p in member.social_parents.lst:
                         if p is not None:
-                            raise NotImplemented('Переделать кормление стариков, так как  они не обязательно None, а последние элементы в списке родителей')
+                            # raise NotImplemented('Переделать кормление стариков, так как  они не обязательно None, а последние элементы в списке родителей')
                             family_parents.append(p)
 
             if len(family_parents) > 0:

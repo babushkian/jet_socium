@@ -2,6 +2,8 @@ import main
 from soc_time import Date, ZERO_DATE
 import datetime
 from genetics import Genes
+import random
+
 EXPERIMENTS = 1
 def many_runs(crowd, period):
     counter = 0
@@ -29,15 +31,17 @@ def many_runs(crowd, period):
             town.close()
 
 
-def many_sucsessful_runs(crowd, period, estimated_people):
+def many_sucsessful_runs( period, estimated_people):
     global EXPERIMENTS
     while True:
         t = datetime.datetime.now()
         st = t.strftime("%H:%M:%S %d.%m.%Y")
 
         print(f'симуляция № {EXPERIMENTS} {st}')
-        town = main.Simulation(crowd, Date(period), estimated_people)
-        result, final_date = town.simulate()
+        town = main.Simulation(Date(period), estimated_people)
+        town.populate(main.FIRST_POPULATION)
+        town.soc.roll_genome()
+        result, final_date, _ = town.simulate()
         EXPERIMENTS += 1
         if result:
             print(main.display_start_genotype(Genes.protogenome_profile))
@@ -45,4 +49,5 @@ def many_sucsessful_runs(crowd, period, estimated_people):
 
 if __name__ == '__main__':
     #many_runs(1000, 1800)
-    many_sucsessful_runs(1000, 2000, 400)
+    random.seed(0)
+    many_sucsessful_runs( 1000, 400)
