@@ -80,7 +80,7 @@ class Human:
             self.family: family.Family = self.biological_parents.mother.family
 
             # социальные родители определяются после попадания в семью
-            self.social_parents: family.SocParents = family.SocParents(self.family)
+            self.social_parents: family.SocParents = family.SocParents()
             self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
             # при рождении ребенок добавляется в иждивенцы семьи матери
             self.child_number_in_mothers_family = self.family.add_child(self)
@@ -89,7 +89,7 @@ class Human:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
-            self.social_parents: family.SocParents = family.SocParents(None)
+            self.social_parents: family.SocParents = family.SocParents()
             self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 

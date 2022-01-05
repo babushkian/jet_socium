@@ -2,9 +2,10 @@
 import random
 from typing import Optional, List, Dict
 from dataclasses import dataclass
+from enum import Enum
 
-from abc import ABC, abstractmethod
-from common import ( DIGEST_FOOD_MULTIPLIER,
+
+from common import (DIGEST_FOOD_MULTIPLIER,
                     Gender,
                     opposite_gender)
 from soc_time import Date, FAR_FUTURE
@@ -12,6 +13,12 @@ import human
 
 import genetics
 
+class ParentCause(str, Enum):
+    NONE = ''
+    GROW_UP = 'совершеннолетие'
+    DIVORCE = 'развод'
+    DEATH = 'смерть'
+    PDEATH = 'смерть родителя'
 
 @dataclass
 class HumanRec:
@@ -19,6 +26,9 @@ class HumanRec:
     start: Date
     finish: Optional[Date] = None
 
+@dataclass
+class HumanRecCause(HumanRec):
+    cause: ParentCause = ParentCause.NONE
 
 class BiolParents:
     '''
@@ -66,23 +76,23 @@ class SocParents:
     Метод init вызывается при рождении ребенка. В дальнейшем все его семейные изменения уточняются
     методом update.
     '''
-    def __init__(self, family:Optional[Family]):
+    def __init__(self):
         '''
         Социальные родители добавятся при инициализации объекта Human
         '''
-        self._parents: Dict[Gender, List[HumanRec]] = {Gender.FEMALE:[], Gender.MALE:[]}
+        self._parents: Dict[Gender, List[HumanRecCause]] = {Gender.FEMALE:[], Gender.MALE:[]}
 
 
     def never_parent(self, gender: Gender) -> bool:
         return len(self._parents[gender])==0
 
-    def last_parent(self, gender: Gender) -> Optional[HumanRec]:
+    def last_parent(self, gender: Gender) -> Optional[HumanRecCause]:
         if not self.never_parent(gender):
             return self._parents[gender][-1]
         else:
             return None
 
-    def current_parent(self, gender: Gender) -> Optional[HumanRec]:
+    def current_parent(self, gender: Gender) -> Optional[HumanRecCause]:
         if not self.never_parent(gender):
             if self.last_parent(gender).finish is None:
                 return self.last_parent(gender)
@@ -103,10 +113,11 @@ class SocParents:
         Добавляет непустого родителя в список родителей указанного пола
         '''
         if parent is not None:
-            self._parents[gender].append(HumanRec(parent, parent.socium.anno.create()))
+            self._parents[gender].append(HumanRecCause(parent, parent.socium.anno.create()))
 
-    def finish_parentship(self, parent: HumanRec):
+    def finish_parentship(self, parent: HumanRecCause, cause:ParentCause):
         parent.finish = parent.person.socium.anno.create()
+        parent.cause = cause
 
 
     def update(self, family):
@@ -132,7 +143,7 @@ class SocParents:
                         self.assign_parent(g, par)
                 elif par is None: # новый родитель отсутствует (None) (произошел развод)
                     if last.finish is None: # завершаем родительство предыдущего родителя
-                        self.finish_parentship(last)
+                        self.finish_parentship(last, ParentCause.DIVORCE)
                     else:
                         raise NotImplemented('Второй раз применяется None к родителю')
                 else: # другой родитель
@@ -142,14 +153,14 @@ class SocParents:
                         self.assign_parent(g, par)
 
 
-    def finish_parents(self):
+    def finish_parents(self, cause):
         '''
         Вызывается, когда ребенок взрослеет и уходит из семьи. У родителей ставятся даты завершения опекунства.
         '''
         for g in Gender:
             par = self.current_parent(g)
             if par:
-                self.finish_parentship(par)
+                self.finish_parentship(par, cause)
 
     def check_parents_alive(self):
         '''
@@ -169,7 +180,8 @@ class SocParents:
             p = self.current_parent(g)
             if p is not None:
                 if p.finish is None and not p.person.is_alive:
-                    self.finish_parentship(p)
+                    self.finish_parentship(p, ParentCause.PDEATH)
+
 
     @property
     def lst(self):
@@ -192,8 +204,9 @@ class SocParents:
                     pp = parent.person
                     ps = f'\t{" "*6}{pp.id} |{pp.name.display()}| племя: {pp.tribe_origin}|'
                     time = f'{parent.start.display(calendar_date=False, verbose=False)} -' \
-                           f'{parent.finish.display(calendar_date=False, verbose=False)}\n'
-                    s+= ps + time
+                           f'{parent.finish.display(calendar_date=False, verbose=False)}| '
+                    cause = f'{parent.cause.value}\n'
+                    s+= ps + time+ cause
 
         return s
 
@@ -499,6 +512,7 @@ class Family:
         В семье умирает ребенок
         '''
         self.dependents.remove(person)
+        person.social_parents.finish_parents(ParentCause.DEATH)
         self.all.remove(person)
 
     def del_grown_up_children(self):
@@ -516,7 +530,7 @@ class Family:
                 self.all.remove(i)
                 # запоминаем племя, в котором вырос ребенок, так как tribe_id по жизни может меняться
                 i.tribe_origin = self.tribe_id
-                i.social_parents.finish_parents()
+                i.social_parents.finish_parents(ParentCause.GROW_UP)
                 i.family = Family(i)
 
 
