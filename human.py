@@ -160,7 +160,7 @@ class Human:
         tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
         Human.write_chronicle(Human.chronicle_divorce.format(*tup))
         for s in [self, spouse]:
-            s.spouses.divorce()
+            s.spouses.divorce(family.SpouseCause.DIVORCE)
         self.family.divide_families()
 
     # удалять мертвых людей не надо может быть перемещать в какой-то другой список
@@ -183,8 +183,8 @@ class Human:
                 form = Human.chronicle_widowed_mal
             Human.write_chronicle(form.format(self.spouses.spouse.id, self.spouses.spouse.name.display()))
             sp = self.spouses.spouse
-            self.spouses.divorce()
-            sp.spouses.divorce()
+            self.spouses.divorce(family.SpouseCause.DEATH)
+            sp.spouses.divorce(family.SpouseCause.SDEATH)
         self.family.dead_in_family(self)
 
 
@@ -321,7 +321,7 @@ class Human:
 
         g = show_genes()
         nec += g +"\n"
-        nec += self.spouses.display_all_spouses(self)
+        nec += self.spouses.display(self)
 
         nec +=f'Дети ({len(self.children)}):\n'
         sp = ''

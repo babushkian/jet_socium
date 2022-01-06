@@ -1,6 +1,6 @@
 ﻿from __future__ import annotations
 import random
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TypeVar, Generic
 from dataclasses import dataclass
 from enum import Enum
 
@@ -13,6 +13,13 @@ import human
 
 import genetics
 
+
+class SpouseCause(str, Enum):
+    NONE = ''
+    DIVORCE = 'развод'
+    DEATH = 'смерть'
+    SDEATH = 'смерть супруга'
+
 class ParentCause(str, Enum):
     NONE = ''
     GROW_UP = 'совершеннолетие'
@@ -20,15 +27,16 @@ class ParentCause(str, Enum):
     DEATH = 'смерть'
     PDEATH = 'смерть родителя'
 
+T= TypeVar('T')
+
 @dataclass
-class HumanRec:
+class HumanRecCause(Generic[T]):
     person: human.Human
     start: Date
     finish: Optional[Date] = None
+    cause: ParentCause = Generic[T]
 
-@dataclass
-class HumanRecCause(HumanRec):
-    cause: ParentCause = ParentCause.NONE
+
 
 class BiolParents:
     '''
@@ -217,7 +225,7 @@ class Spouses:
     разводе или овдовел.
     """
     def __init__(self):
-        self._spouses: List[HumanRec] = list()
+        self._spouses: List[HumanRecCause] = list()
 
     @property
     def is_bachelor(self) -> bool:
@@ -257,15 +265,16 @@ class Spouses:
         '''
         Пополняет список супругов и отмечает дату свадьбы.
         '''
-        self._spouses.append(HumanRec(spouse, spouse.socium.anno.create()))
+        self._spouses.append(HumanRecCause(spouse, spouse.socium.anno.create()))
 
-    def divorce(self):
+    def divorce(self, cause:SpouseCause):
         '''
         В запись последнего в списке супруга добавляется дата развода. То есть, он  отмечается как
         бывший.
         Развод еще затрагивает семью. Там обнуляются атрибуты family.husband и family.wife
         '''
         self._spouses[-1].finish = self.spouse.socium.anno.create()
+        self._spouses[-1].cause = cause
 
     def len(self) -> int:
         '''
@@ -273,7 +282,23 @@ class Spouses:
         '''
         return len(self._spouses)
 
-    def display_all_spouses(self, man):
+    def display(self, man):
+        '''
+        Выводит информацию по супругам для некролога.
+        '''
+        s = f'Супруги ({self.len()}):\n'
+        if self.len() > 0:
+            for sp in self._spouses:
+                delta = sp.finish - sp.start
+                name = sp.person.name.display()
+                s += f'\t{sp.person.id}| {name}|'
+                s += f'{sp.start.display(calendar_date=False, verbose=False)} -'
+                s += f'{sp.finish.display(calendar_date=False, verbose=False)}|'
+                s += f'{delta.display(False)}|'
+                s += f' ({sp.cause.value})\n'
+        return s
+
+    def display_all_spouses_old(self, man):
         '''
         Выводит информацию по супругам для некролога.
         '''
