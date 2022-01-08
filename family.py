@@ -32,11 +32,13 @@ T= TypeVar('T')
 @dataclass
 class HumanRecCause(Generic[T]):
     person: human.Human
-    start: Date
-    finish: Optional[Date] = None
-    cause: ParentCause = Generic[T]
+    cause: T
+    start: Date= FAR_FUTURE
+    finish: Date = FAR_FUTURE
 
-
+    def __post_init__(self):
+        self.cause = self.cause.NONE
+        self.start = self.person.socium.anno.create()
 
 class BiolParents:
     '''
@@ -102,7 +104,7 @@ class SocParents:
 
     def current_parent(self, gender: Gender) -> Optional[HumanRecCause]:
         if not self.never_parent(gender):
-            if self.last_parent(gender).finish is None:
+            if self.last_parent(gender).finish == FAR_FUTURE:
                 return self.last_parent(gender)
         return None
 
@@ -121,7 +123,7 @@ class SocParents:
         Добавляет непустого родителя в список родителей указанного пола
         '''
         if parent is not None:
-            self._parents[gender].append(HumanRecCause(parent, parent.socium.anno.create()))
+            self._parents[gender].append(HumanRecCause(parent, ParentCause))
 
     def finish_parentship(self, parent: HumanRecCause, cause:ParentCause):
         parent.finish = parent.person.socium.anno.create()
@@ -147,15 +149,15 @@ class SocParents:
                 last = self.last_parent(g) # предыдущий ненулевой родитель должен быть если этот if выполнился
 
                 if last.person == par: # если это тот же родитель, что и прошлый
-                    if last.finish is not None: # если родительство прерывалось, записываем как очередного родителя
+                    if last.finish != FAR_FUTURE: # если родительство прерывалось, записываем как очередного родителя
                         self.assign_parent(g, par)
                 elif par is None: # новый родитель отсутствует (None) (произошел развод)
-                    if last.finish is None: # завершаем родительство предыдущего родителя
+                    if last.finish == FAR_FUTURE: # завершаем родительство предыдущего родителя
                         self.finish_parentship(last, ParentCause.DIVORCE)
                     else:
                         raise NotImplemented('Второй раз применяется None к родителю')
                 else: # другой родитель
-                    if last.finish is None: # прошлое родительство не закончилось, но началось новое
+                    if last.finish == FAR_FUTURE: # прошлое родительство не закончилось, но началось новое
                         raise NotImplemented('прошлое родительство не закончилось, но началось новое')
                     else: # прошлый родитель уже не родитель, применяем нового
                         self.assign_parent(g, par)
@@ -187,7 +189,7 @@ class SocParents:
         for g in Gender:
             p = self.current_parent(g)
             if p is not None:
-                if p.finish is None and not p.person.is_alive:
+                if p.finish == FAR_FUTURE and not p.person.is_alive:
                     self.finish_parentship(p, ParentCause.PDEATH)
 
 
@@ -250,7 +252,7 @@ class Spouses:
         Возвращает супруга, с которым человек в данный момент состоит в браке.
         '''
         if not self.is_bachelor:
-            if self._spouses[-1].finish is None:
+            if self._spouses[-1].finish == FAR_FUTURE:
                 return self.last_spouse
         return None
 
@@ -265,7 +267,7 @@ class Spouses:
         '''
         Пополняет список супругов и отмечает дату свадьбы.
         '''
-        self._spouses.append(HumanRecCause(spouse, spouse.socium.anno.create()))
+        self._spouses.append(HumanRecCause(spouse, SpouseCause))
 
     def divorce(self, cause:SpouseCause):
         '''
