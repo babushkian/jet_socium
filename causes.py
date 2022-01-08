@@ -179,7 +179,7 @@ class SocParents:
                 self.finish_parentship(par, ParentCause.GROW_UP)
 
 
-    def check_parents_alive(self):
+    def check_parents_alive(self) -> bool:
         '''
         Вызывается из методов смерти родителей в семье. Завершается родительсвто мертвых родителей.
         В данном случае она проверяет, если человек является опекуном, но уже умер, то в записи
@@ -192,13 +192,16 @@ class SocParents:
         постоянно мониторить, живы ли они. Потому что никаких специальных отметок об этом в структуре
         социальных родителей не делается. Разве что действительно, ноны поставить, как концевые
         элементы
+        Если был обнаружен умерший предок, возвращает True
         '''
+        any_dead = False
         for g in Gender:
             p = self.current_parent(g)
             if p is not None:
                 if p.finish == FAR_FUTURE and not p.person.is_alive:
                     self.finish_parentship(p, ParentCause.PDEATH)
-
+                    any_dead = True
+        return any_dead
 
     @property
     def lst(self):

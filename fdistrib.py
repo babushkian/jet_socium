@@ -33,14 +33,14 @@ class FoodDistribution:
         self.food_per_man: float = self.count_food_per_man()
         # abundance - изобилие, при отором не должна происходить конкуренция между семьями за еду
         self.abundance: bool = self.check_abundabce()
-        # первоначаальное распределение еды с учетом младенцев, детей, женщин с детьми и мужчин
+        # первоначальное распределение еды с учетом младенцев, детей, женщин с детьми и мужчин
         self.report = self.basic_food_distribution()
 
 
         self.feeding_log.write(self.report)
         # откладываем часть еды в семейный бюджет
         for fam in self.socium.families:
-            fam.food.make_food_supplies()
+            fam.food.make()
 
         self.family_food_redistibution()
 
@@ -98,9 +98,9 @@ class FoodDistribution:
         delta = family_strongness[0] - family_strongness[1]
         if delta != 0:
             if delta > 0:
-                res = second.food.suppplies
+                res = second.food.supplies
             else:
-                res = first.food.suppplies
+                res = first.food.supplies
             # ОПАСНО, нет проверки на отрицательный общак у терпил
             food_reqisition = res / 15.5 * delta
             pref = "%d:%d|" % (first.head.socium.anno.year, first.head.socium.anno.month)
@@ -131,7 +131,7 @@ class FoodDistribution:
         for fam in self.socium.families:
             fam.food.family_food_display('После создания запасов')
             soc_food_budget += fam.food.budget
-            sum_family_resourses += fam.food.suppplies
+            sum_family_resourses += fam.food.supplies
         self.feeding_log.write(f'{self.socium.anno.display()} еда после создания запасов: {soc_food_budget:7.1f} + {sum_family_resourses:7.1f} = {soc_food_budget + sum_family_resourses:7.1f}\n')
         # Семьи борятся за еду только если на всех не хватает
         if self.abundance is False:
