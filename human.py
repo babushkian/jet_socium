@@ -8,10 +8,11 @@ from names import CharName
 import genetics
 from genetics import GN
 
-from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender, Parnt
+from common import Stage_of_age, Age, STAGE_DICT, Gender, apply_gender
 
 import prop
 import family
+from causes import(Spouses, BiolParents, SocParents, SpouseCause)
 import score
 from soc_time import Date, ZERO_DATE, TIK, YEAR, FAR_FUTURE
 import fetus
@@ -47,7 +48,7 @@ class Human:
     # spouse_death: "из-за сметри супруга", death: "по причине смерти"}
     # такое ощущение, чт надо два наследственных подкласса сделать Male и Female для простоты обработки ситуаций
 
-    def __init__(self, socium, biol_parents:family.BiolParents, gender: Optional[Gender]=None, age_int: int=0):
+    def __init__(self, socium, biol_parents:BiolParents, gender: Optional[Gender]=None, age_int: int=0):
         type(self).GLOBAL_HUMAN_NUMBER += 1
         self.id: str = f'{Human.GLOBAL_HUMAN_NUMBER:07d}'
         self.socium = socium
@@ -62,14 +63,14 @@ class Human:
         self.score = score.Score()
         self.genes: genetics.Genes = genetics.Genes(self)
 
-        self.spouses = family.Spouses()
+        self.spouses = Spouses()
         # в этом списке находятся эмбрионы после зачатия. Переменная используется только женщинами
         self.pregnant: List[Optional[fetus.Fetus]] = list()
         # в список попадают биологические дети человека, не социальные
         self.children: List[Optional[Human]] = list()
 
         # родители, которые зачали ребенка
-        self.biological_parents: family.BiolParents = biol_parents
+        self.biological_parents: BiolParents = biol_parents
 
         # имя надо дать до создания семьи. Тем более что биологические родители известны
         # когда в семье определятся социальные родители, можно переопределить отчество-фамилию,
@@ -80,7 +81,7 @@ class Human:
             self.family: family.Family = self.biological_parents.mother.family
 
             # социальные родители определяются после попадания в семью
-            self.social_parents: family.SocParents = family.SocParents()
+            self.social_parents: SocParents = SocParents()
             self.tribe_origin = None # племя той семьи, в которой вырос ребенок. Используется только во взрослом виде
             # при рождении ребенок добавляется в иждивенцы семьи матери
             self.child_number_in_mothers_family = self.family.add_child(self)
@@ -89,7 +90,7 @@ class Human:
             self.child_number_in_mothers_family = 0
             self.family: family.Family = family.Family(self)
             self.genes.define_adult()
-            self.social_parents: family.SocParents = family.SocParents()
+            self.social_parents: SocParents = SocParents()
             self.tribe_origin = self.family.id # основатель имеет свое изначальное племя
 
 
@@ -160,7 +161,7 @@ class Human:
         tup = (self.id, spouse.id, self.name.display(), self.age.year, spouse.name.display(), spouse.age.year)
         Human.write_chronicle(Human.chronicle_divorce.format(*tup))
         for s in [self, spouse]:
-            s.spouses.divorce(family.SpouseCause.DIVORCE)
+            s.spouses.divorce(SpouseCause.DIVORCE)
         self.family.divide_families()
 
     # удалять мертвых людей не надо может быть перемещать в какой-то другой список
@@ -183,8 +184,8 @@ class Human:
                 form = Human.chronicle_widowed_mal
             Human.write_chronicle(form.format(self.spouses.spouse.id, self.spouses.spouse.name.display()))
             sp = self.spouses.spouse
-            self.spouses.divorce(family.SpouseCause.DEATH)
-            sp.spouses.divorce(family.SpouseCause.SDEATH)
+            self.spouses.divorce(SpouseCause.DEATH)
+            sp.spouses.divorce(SpouseCause.SDEATH)
         self.family.dead_in_family(self)
 
 

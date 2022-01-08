@@ -35,10 +35,10 @@ class HumanRecCause(Generic[T]):
 
 
 @dataclass
-class HumanTest:
+class HumanTest(Generic[T]):
     person: human.Human
     start: Date
-    cause: ParentCause = ParentCause.NONE
+    cause: T
     finish: Date = FAR_FUTURE
 
 
@@ -61,6 +61,7 @@ class HumanRecCause:
 
 
 
+
 start_date = Date(1000, 1, 1)
 finish_date = Date(1010, 1, 1)
 a = HumanRecCause(1, start_date, SpouseCause.NONE)
@@ -77,19 +78,24 @@ print(a.cause==b.cause)
 print('---------------')
 print('---------------')
 print('---------------')
-c = HumanTest(1, start_date)
-print(c)
-print(c.cause)
+c = HumanTest(1, start_date, SpouseCause.DIVORCE)
+print(f'{c=}')
+print(f'{c.cause=}')
+print(f'{type(c.cause)=}')
 
 print('---------------')
 print('---------------')
 print('---------------')
-c = HumanTest2(1, start_date, ParentCause)
+c = HumanTest2(1, start_date, ParentCause.NONE)
 b = HumanTest2(1, start_date,  SpouseCause)
 print(c)
-print(c.cause)
-print(b.cause)
+print(f'{c.cause=}')
+print(f'{b.cause=}')
+
 print(c==b)
-print(type(c.cause))
-print(type(b.cause))
+print(f'{type(c.cause)=}')
+print(f'{type(b.cause)=}')
 print(ParentCause.NONE==SpouseCause.NONE)
+print(HumanTest.__annotations__)
+print(c.__annotations__)
+print(b.__annotations__)

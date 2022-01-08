@@ -7,7 +7,8 @@ from pprint import pprint
 import common
 from soc_time import Date, Anno
 #import family
-from family import Family, SocParents, BiolParents
+from family import Family
+from causes import BiolParents
 from human import Human
 from fdistrib import FoodDistribution
 import statistics
