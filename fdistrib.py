@@ -140,6 +140,7 @@ class FoodDistribution:
         soc_food_budget = 0
         for fam in self.socium.families:
             fam.food.distribute()
+            #fam.food.distribute_disp()
             fam.food.family_food_display("FINAL")
             soc_food_budget += fam.food.budget
         self.feeding_log.write(f'{self.socium.anno.display()} Потребленная еда: {soc_food_budget:7.1f}\n')

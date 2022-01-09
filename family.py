@@ -1,6 +1,6 @@
 ﻿from __future__ import annotations
 import random
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Set
 
 
 
@@ -342,8 +342,8 @@ class FamilySupplies:
         fam_list - оставшиеся члены семьи, для которых еще не посчитаны пропорции распределения бюджета
         Считаем распределение еды на всех членов семьи. В какой пропорции нужно поделить еду на
         членов семьи, переданных в переменной fam_list. При распределении еды члены семьи выбывают
-        по одному, поэтому функция вызывается несколько раз - пока есть хотя бы один член с
-        нераспределенной пайкой.
+        по одному. Функция может быть вызвана повторно: если кому то его доля покажется слишком
+        большой и он не будет брать ее целиком.
         '''
         # доля еды из семейного бюджета на каждого человека.
         # Сначала вычисляются абсолютные значения еды, но потом нормализуются по denominator
@@ -363,6 +363,18 @@ class FamilySupplies:
         return portions
 
 
+    def old_ones(self)->Set[human.Human]:
+        '''
+        Возвращаем множество живых стариков, чтобы покормить их
+        '''
+        family_parents = set()
+        for member in [self.family.head, self.family.wife]:
+            if member is not None:
+                for p in member.social_parents.last_parents:
+                    if p.is_alive:
+                        family_parents.add(p)
+        return family_parents
+
     def distribute(self):
         # Новая концепция, попробовать кормить детей так, чтобы у всех детей сытость была на одном уровне примерно
         # а потом о родителях думать
@@ -373,14 +385,17 @@ class FamilySupplies:
         Если после всех членов семьи остается еда ...
         '''
         members_list = self.family.all.copy()
+        # первоначальный расчет пропорций, как делить общую пайку. Если кому-то из семьи доля будет
+        # слишком большой для оставшейся семьи пропорции будут рассчитываться снова
+        # и членов семьи будет меньше и пайка будет уменьшена за счет предыдущего человека, забравшего свою долю
+        # Доля вычисляется в процентах от пайки, а потом переводится в абсолютную величину сравнивается
+        # с идеальной порцией еды.  При окончательном подсчете абсолютные порции у членов семьи опять
+        # переводятся в проценты пля показа окончательного соотношения
         portions = self._calculate_portions(members_list)
-
-        s = self.display_distr_header(portions)
-
         # пища, уже отданная из общих запасов кому-то из семьи
-        given_away_food = 0
-        distributed_food: Dict[human.Human, float] = dict()
-        display_main_struct: Dict[human.Human, Dict[str, Any]]  = dict()
+        given_away_food = 0.0
+        # Выкидываем из списка семьи одного человека и для него рассчитываем порцию
+        # и так для каждого человека
         while len(members_list)>0:
             member = members_list.pop()
             supplies_share = self._supplies * portions[member] # доля человека из общих запасов
@@ -390,9 +405,74 @@ class FamilySupplies:
             # берет, что положено или добивает до идеальной порции
             get_food  = min(supplies_share, ideal_food - member.health.have_food)
             member.health.have_food_change(get_food)
-            distributed_food[member] = get_food
-            given_away_food += get_food
-            rest_of_food =  self._supplies - given_away_food
+            given_away_food += get_food # общее количество разобранной еды пополняется порцией конкретного человека
+
+            # если положенная порция у человека больше идеальной, он всю ее не съедает
+            # а берет из общака ровно столько, чтобы добить до идеальной
+            # из-за этого остальные пропорции нарушаются, и надо пересчитывать их заново уже для
+            #  поэтому сбрасываем переменную self._supplies и рассчитываем для уменьшенной семьи новые пропорции
+            if temp_food > ideal_food and len(members_list) > 0:
+                self._supplies -= given_away_food
+                given_away_food = 0
+                portions = self._calculate_portions(members_list)
+        self._supplies -= given_away_food
+
+
+        if self._supplies > 10: # если цифра меньше, стариков не кормим, просто раскидываем между членами семьи
+            family_parents = self.old_ones()
+            lfp = len(family_parents)
+            if lfp > 0:
+                food_per_parent = self._supplies / lfp
+                for par in family_parents:
+                    par.health.have_food_change(food_per_parent)
+                self._supplies = 0
+
+        if self._supplies > 0.1: # распределять микроскопические остатки бессмысленно, согласен на потери
+            portions = self._calculate_portions(self.family.all)
+            for member in self.family.all:
+                member.health.have_food_change(self._supplies * portions[member])
+
+
+
+
+    def distribute_disp(self):
+        # Новая концепция, попробовать кормить детей так, чтобы у всех детей сытость была на одном уровне примерно
+        # а потом о родителях думать
+        '''
+        Распределение пищи между членами семьи
+        Если для одного еды слишком много, оставшаяся от него еда перераспределяется между
+        оставшимися членами семьи
+        Если после всех членов семьи остается еда ...
+        '''
+        members_list = self.family.all.copy()
+        # первоначальный расчет пропорций, как делить общую пайку. Если кому-то из семьи доля будет
+        # слишком большой для оставшейся семьи пропорции будут рассчитываться снова
+        # и членов семьи будет меньше и пайка будет уменьшена за счет предыдущего человека, забравшего свою долю
+        # Доля вычисляется в процентах от пайки, а потом переводится в абсолютную величину сравнивается
+        # с идеальной порцией еды.  При окончательном подсчете абсолютные порции у членов семьи опять
+        # переводятся в проценты пля показа окончательного соотношения
+        portions = self._calculate_portions(members_list)
+
+        s = self.display_distr_header(portions)
+
+        # пища, уже отданная из общих запасов кому-то из семьи
+        given_away_food = 0.0
+        distributed_food: Dict[human.Human, float] = dict()
+        display_main_struct: Dict[human.Human, Dict[str, Any]]  = dict()
+        # Выкидываем из списка семьи одного человека и для него рассчитываем порцию
+        # и так для каждого человека
+        while len(members_list)>0:
+            member = members_list.pop()
+            supplies_share = self._supplies * portions[member] # доля человека из общих запасов
+            # личный запас плюс доля от семейных запасов, то, что положено человеку
+            temp_food = member.health.have_food + supplies_share
+            ideal_food = member.health.ideal_food_amount()
+            # берет, что положено или добивает до идеальной порции
+            get_food  = min(supplies_share, ideal_food - member.health.have_food)
+            member.health.have_food_change(get_food)
+            distributed_food[member] = get_food # то, что человек уже взял из общих запасов
+            given_away_food += get_food # общее количество разобранной еды пополняется порцией конкретного человека
+            rest_of_food =  self._supplies - given_away_food # остаток пайка только в целях вывода на экран
 
             display_main_struct[member] = {'врем доля':temp_food}
             display_main_struct[member]['идеал доля'] = ideal_food
@@ -400,54 +480,39 @@ class FamilySupplies:
             display_main_struct[member]['остаток припасов'] = rest_of_food
             display_main_struct[member]['пересчет пропорций'] = dict()
 
+            # если положенная порция у человека больше идеальной, он всю ее не съедает
+            # а берет из общака ровно столько, чтобы добить до идеальной
+            # из-за этого остальные пропорции нарушаются, и надо пересчитывать их заново уже для
+            #  поэтому сбрасываем переменную self._supplies и рассчитываем для уменьшенной семьи новые пропорции
             if temp_food > ideal_food and len(members_list) > 0:
-                # если кто-то не съел свою порцию, обновляем значение запасов и считаем ноаве пропорции исходя из изменившихся запасов
                 self._supplies -= given_away_food
                 given_away_food = 0
                 portions = self._calculate_portions(members_list)
                 display_main_struct[member]['пересчет пропорций'] = portions
+        self._supplies -= given_away_food
+
         s += self.display_distr_main_round(display_main_struct)
 
-
-        self._supplies -= given_away_food
-        # если после распределения еды что-то осталось
-        s += f'{self.family.id}| осталось запасов:{self._supplies}\n'
-        if self._supplies > 0.01:
-            # если есть живые старики, кормим стариков
-            family_parents = [] # тут должен быть set, чтобы случайно один родственник не пролез два раза в сучае кровосмесительного брака
-            for member in [self.family.head,self.family.wife]:
-                if member is not None:
-                    for p in member.social_parents.lst:
-                        if p is not None:
-                            # raise NotImplemented('Переделать кормление стариков, так как  они не обязательно None, а последние элементы в списке родителей')
-                            family_parents.append(p)
-
-            if len(family_parents) > 0:
-                food_per_parent = self._supplies / len(family_parents)
-                s = s + self.rec_prefix + f'КОРМИМ СТАРИКОВ: {len(family_parents)} человека, каждому по {food_per_parent:5.1f} еды\n'
-                for i in family_parents:
-                    i.health.have_food_change(food_per_parent)
+        if self._supplies > 10: # если цифра меньше, стариков не кормим, просто раскидываем между членами семьи
+            family_parents = self.old_ones()
+            lfp = len(family_parents)
+            if lfp > 0:
+                food_per_parent = self._supplies / lfp
+                for par in family_parents:
+                    par.health.have_food_change(food_per_parent)
                 self._supplies = 0
-            else:
-                s = s + self.rec_prefix + f'\tРАСПРЕДЕЛЯЕМ ОСТАТКИ: \n'
-                # если нет, перераспределяем остатки между членами семьи, не пропадать же еде
-                portions = self._calculate_portions(self.family.all)
-                for member in self.family.all:
-                    s = s + self.rec_prefix + f'\t{self.family.get_family_role_sting(member):6s}| {member.id}| {portions[member]*100:4.1f}% - {self._supplies * portions[member]} еды \n'
-                    member.health.have_food_change(self._supplies * portions[member])
-                    distributed_food[member] += self._supplies * portions[member]
-                self._supplies = 0
+                s += self.display_feed_olds(food_per_parent, lfp)
 
-        s +=  self.rec_prefix + f'окончательное распределение:\n'
-        sum_dist_food = 0
-        for member in self.family.all:
-            sum_dist_food += distributed_food[member]
-        for member in self.family.all:
-            persent = distributed_food[member]/sum_dist_food * 100 if sum_dist_food > 0 else 999
-            s = s + self.rec_prefix + f'\t{self.family.get_family_role_sting(member):6s}({member.age.year:3d})| {member.id}| {persent:4.1f}% - {distributed_food[member]:5.1f} еды \n'
+        if self._supplies > 0.1: # распределять микроскопические остатки бессмысленно, согласен на потери
+            portions = self._calculate_portions(self.family.all)
+            for member in self.family.all:
+                member.health.have_food_change(self._supplies * portions[member])
+                distributed_food[member] += self._supplies * portions[member]
 
+            s += self.display_spend_leftovers(portions)
+            self._supplies = 0
+        s += self.display_final(distributed_food)
         self.family.family_feeding.write(s)
-
 
     @property
     def supplies(self):
@@ -505,9 +570,10 @@ class FamilySupplies:
 
     def display_distr_main_round(self, md):
         pref = self.rec_prefix
+        s =''
         for member in md:
             mmd = md[member]
-            s = pref + f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
+            s += pref + f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
             s += f" доля: {mmd['врем доля']:5.1f}| идеально: {mmd['идеал доля']:5.1f}"
             s += f" взято из запасов: {mmd['взято еды']:5.1f}| остаток: {mmd['остаток припасов']:6.1f}|\n"
             l = len(mmd['пересчет пропорций'])
@@ -517,45 +583,26 @@ class FamilySupplies:
                 for mem in per:
                     s += pref + f'\t{self.family.get_family_role_sting(mem)} {per[mem]:5.3f}\n'
                 s += '\n'
+        leftovers = self._supplies if self._supplies> 1e-3 else 0.0
+        s += f'{self.family.id}| осталось запасов:{leftovers:6.2f}\n'
         return s
 
-"""
-        while len(members_list)>0:
-            member = members_list.pop()
-            s +=  self.rec_prefix + f'{self.family.get_family_role_sting(member):6s}| {member.id}|'
-            supplies_share = self._supplies * portions[member] # доля человека из общих запасов
-            # личный запас плюс доля от семейных запасов, то, что положено человеку
-            temp_food = member.health.have_food + supplies_share
-            ideal_food = member.health.ideal_food_amount()
-            # берет, что положено или добивает до идеальной порции
-            get_food  = min(supplies_share, ideal_food - member.health.have_food)
-            member.health.have_food_change(get_food)
-            distributed_food[member] = get_food
-            given_away_food += get_food
-            rest_of_food =  self._supplies - given_away_food
+    def display_feed_olds(self, food_per_parent:float, lfp:int)->str:
+        return self.rec_prefix + f'КОРМИМ СТАРИКОВ: {lfp} человека, каждому по {food_per_parent:5.1f} еды\n'
 
-            display_main_struct[member] = {'врем доля':temp_food}
-            display_main_struct[member]['идеал доля'] = ideal_food
-            display_main_struct[member]['взято еды'] = get_food
-            display_main_struct[member]['остаток припасов'] = rest_of_food
-            display_main_struct[member]['пересчет пропорций'] = dict()
-            s += f' доля: {temp_food:5.1f}| идеально: {ideal_food:5.1f}'
-            s += f' взято из запасов: {get_food:5.1f}| остаток: {rest_of_food:6.1f}|\n'
+    def display_spend_leftovers(self, portions) -> str:
+        s =  self.rec_prefix + f'\tРАСПРЕДЕЛЯЕМ ОСТАТКИ: \n'
+        for member in self.family.all:
+            s += self.rec_prefix + f'\t{self.family.get_family_role_sting(member):6s}| {member.id}| ' \
+                    f'{portions[member] * 100:4.1f}% - {self._supplies * portions[member]:5.2f} еды \n'
+        return s
 
-            if temp_food > ideal_food and len(members_list) > 0:
-                # если кто-то не съел свою порцию, обновляем значение запасов и считаем ноаве пропорции исходя из изменившихся запасов
-                self._supplies -= given_away_food
-                given_away_food = 0
-                portions = self._calculate_portions(members_list)
-                display_main_struct[member]['пересчет пропорций'] = portions
-                s = s + self.rec_prefix +  f'\tПЕРЕРАССЧЕТ ({len(members_list)} членов семьи):\n'
-                for mem in members_list:
-                    s = s + self.rec_prefix + f'\t{self.family.get_family_role_sting(mem)} {portions[mem]:5.3f}\n'
-                s += '\n'
-
-"""
+    def display_final(self, distributed_food) -> str:
+        s =  self.rec_prefix + f'окончательное распределение:\n'
+        sum_dist_food = sum(distributed_food.values()) # если ребенок остается один, у него может отсутствовать еда
+        for member in self.family.all:
+            persent = distributed_food[member]/sum_dist_food * 100 if sum_dist_food > 0 else 0
+            s += self.rec_prefix + f'\t{self.family.get_family_role_sting(member):6s}({member.age.year:3d})| {member.id}| {persent:4.1f}% - {distributed_food[member]:5.1f} еды \n'
+        return s
 
 
-class PrintFoodDist:
-    def __init__(self, file):
-        self.file = file

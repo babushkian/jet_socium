@@ -14,7 +14,7 @@ RACES = ['австралийцы', 'арабы', 'атланты', 'галлы',
 def init_sim_dir():
     global SIM_DIR
     cur_date = time.time()
-    SIM_DIR = 'sim_' + time.strftime("%Y_%m_%d_%H.%M.%S", time.localtime(cur_date))
+    SIM_DIR = 'sim_' + time.strftime("%Y_%m_%d_%H.%M.%S", time.localtime(cur_date)) + f'.{int((cur_date%1)*100//1):02d}'
     try:
         os.mkdir(SIM_DIR)
     except:

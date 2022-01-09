@@ -33,7 +33,7 @@ class Socium:
         self.families: List[Family] = list()
 
         self.stat = statistics.Soc_stat(self)
-        self.food = FoodDistribution(self)
+        self.soc_food = FoodDistribution(self)
 
         self.person_stat_file = open('./person_features_table.csv', 'w', encoding="UTF16")
         self.person_stat = csv.writer(self.person_stat_file, delimiter='\t', lineterminator='\n')
@@ -116,7 +116,7 @@ class Socium:
 
         #  Распределение еды.Общий ресурс веды делится на всех жителей.
         #  Потом еда распределяется внутри семьи, а потом каждый употребляет еду индивидуально
-        self.food.distribute()
+        self.soc_food.distribute()
 
         # женим холостых людей
         self.search_spouce()

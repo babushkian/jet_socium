@@ -213,6 +213,15 @@ class SocParents:
         '''
         return [self.mother, self.father]
 
+    @property
+    def last_parents(self)->List[human.Human]:
+        olds = []
+        for  g in Gender:
+            par = self.last_parent(g)
+            if par is not None:
+                olds.append(par.person)
+        return olds
+
     def display(self):
         s = 'Социальные родители:\n'
         for status, gender in zip(['Мать', 'Отец'], Gender):
