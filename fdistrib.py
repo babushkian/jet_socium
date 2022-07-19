@@ -20,7 +20,7 @@ class FoodDistribution:
 
     @classmethod
     def init_files(cls):
-        cls.feeding_log = open("./global_food_distribution.log", "w", encoding="utf16")
+        cls.feeding_log = open("./global_food_distribution.log", "w", encoding="utf-8-sig")
 
     @classmethod
     def close(cls):

@@ -63,9 +63,9 @@ class Family:
 
     @classmethod
     def init_files(cls):
-        cls.family_log_file = open("./families.log", "w", encoding="utf16")
-        cls.family_food_file = open("./family_food_distrib.log", "w", encoding="utf16")
-        cls.family_feeding = open("./family_feeding.log", "w", encoding="utf16")
+        cls.family_log_file = open("./families.log", "w", encoding="utf-8-sig")
+        cls.family_food_file = open("./family_food_distrib.log", "w", encoding="utf-8-sig")
+        cls.family_feeding = open("./family_feeding.log", "w", encoding="utf-8-sig")
 
     @classmethod
     def close(cls):

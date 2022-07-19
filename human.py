@@ -108,8 +108,8 @@ class Human:
 
     @classmethod
     def init_files(cls):
-        #Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf16')
-        cls.chronicle = open('./chronicle.txt', 'w', encoding='utf16')
+        #Human.chronicle = open('./xoutput/chronicle.txt', 'w', encoding='utf-8-sig')
+        cls.chronicle = open('./chronicle.txt', 'w', encoding='utf-8-sig')
 
     @classmethod
     def close(cls):

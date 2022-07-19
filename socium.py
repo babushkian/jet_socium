@@ -35,7 +35,7 @@ class Socium:
         self.stat = statistics.Soc_stat(self)
         self.soc_food = FoodDistribution(self)
 
-        self.person_stat_file = open('./person_features_table.csv', 'w', encoding="UTF16")
+        self.person_stat_file = open('./person_features_table.csv', 'w', encoding="utf-8-sig")
         self.person_stat = csv.writer(self.person_stat_file, delimiter='\t', lineterminator='\n')
         pers_stat_header = list()
         for i in genetics.GN:
@@ -261,7 +261,7 @@ class Socium:
 
 
     def hall_of_fame(self, list_of_dead):
-        hall= open("./hall_of_fame.txt", "a", encoding = "UTF16")
+        hall= open("./hall_of_fame.txt", "a", encoding = "utf-8-sig")
         list_of_dead.sort(key=lambda x: x.id)
         for person in list_of_dead:
             # записи про каждого мертвого человека с подробностями его жизни

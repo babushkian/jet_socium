@@ -28,9 +28,9 @@ class Simulation:
 
     def init_logs(self):
         common.init_sim_dir()
-        self.lohfile = open("./population.txt", "w", encoding="UTF16")
-        self.every_man_state_log = open("./human_state.txt", "w", encoding="UTF16")
-        self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="UTF16")
+        self.lohfile = open("./population.txt", "w", encoding="utf-8-sig")
+        self.every_man_state_log = open("./human_state.txt", "w", encoding="utf-8-sig")
+        self.tribes_verbose = open("./tribes_verbose.txt", "w", encoding="utf-8-sig")
 
     def close(self):
         self.lohfile.close()

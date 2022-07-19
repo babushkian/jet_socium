@@ -33,7 +33,7 @@ class Soc_stat():
 
         # список, содержащий все гены человека для подсчета их средних значений
 
-        self.genes_average = open("./genes_average.csv", "w", encoding="UTF16")
+        self.genes_average = open("./genes_average.csv", "w", encoding="utf-8-sig")
         header = "year\t"
         sex = ["women_", "men_"]
         for g in range(len(sex)):
@@ -42,19 +42,19 @@ class Soc_stat():
         header = header[:-1] +"\n"
         self.genes_average.write(header)
 
-        self.ss = open("./statistics.csv", "w", encoding="UTF16")
+        self.ss = open("./statistics.csv", "w", encoding="utf-8-sig")
 
-        self.death_dist = open("./death_distribution.csv", "w", encoding="UTF16")
+        self.death_dist = open("./death_distribution.csv", "w", encoding="utf-8-sig")
         dead_head = "год\t"
         for i in range(11):
             dead_head += ">%s\t" % str(i * 10)
         dead_head += "муж смерть\tжен смерть\n"
         self.death_dist.write(dead_head)
 
-        self.childern_average = open("./children_average.csv", "w", encoding="UTF16")
+        self.childern_average = open("./children_average.csv", "w", encoding="utf-8-sig")
         self.childern_average.write("год\tсредн детей у мужчин\tсредн детей у женщин\n")
-        self.children_m = open("./children_distribution_men.csv", "w", encoding="UTF16")
-        self.children_f = open("./children_distribution_fem.csv", "w", encoding="UTF16")
+        self.children_m = open("./children_distribution_men.csv", "w", encoding="utf-8-sig")
+        self.children_f = open("./children_distribution_fem.csv", "w", encoding="utf-8-sig")
 
         head = "год\t"
         for i in range(CHILDREN_COUNT_TRESHOLD):
